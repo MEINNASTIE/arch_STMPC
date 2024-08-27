@@ -5,7 +5,6 @@
     "es2021": true
   },
   "extends": [
-    "prettier",
     "plugin:react/jsx-runtime",
     "plugin:jsx-a11y/recommended",
     "plugin:react-hooks/recommended",
@@ -71,18 +70,6 @@
       "error",
       {
         "ignoreRestSiblings": false
-      }
-    ],
-    "prettier/prettier": [
-      "warn",
-      {
-        "bracketSpacing": true,
-        "printWidth": 140,
-        "singleQuote": true,
-        "trailingComma": "none",
-        "tabWidth": 4,
-        "useTabs": false,
-        "endOfLine": "auto"
       }
     ]
   }
