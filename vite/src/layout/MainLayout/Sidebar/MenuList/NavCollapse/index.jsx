@@ -32,7 +32,7 @@ const NavCollapse = ({ menu, level }) => {
   const handleClick = () => {
     setOpen(!open);
     setSelected(!selected ? menu.id : null);
-    if (menu?.id !== 'authentication') {
+    if (menu?.id !== 'meas-station-settings' && menu?.id !== 'spectrotracer') {
       navigate(menu.children[0]?.url);
     }
   };

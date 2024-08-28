@@ -5,8 +5,6 @@ import { Link, useLocation } from 'react-router-dom';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
-import Avatar from '@mui/material/Avatar';
-import Chip from '@mui/material/Chip';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -80,7 +78,12 @@ const NavItem = ({ item, level }) => {
         alignItems: 'flex-start',
         backgroundColor: level > 1 ? 'transparent !important' : 'inherit',
         py: level > 1 ? 1 : 1.25,
-        pl: `${level * 24}px`
+        pl: `${level * 24}px`,
+        border: customization.isOpen.findIndex((id) => id === item.id) > -1 ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
+        transition: 'border-color 0.3s ease', 
+        '&:hover': {
+          borderColor: theme.palette.primary.main 
+        },
       }}
       selected={customization.isOpen.findIndex((id) => id === item.id) > -1}
       onClick={() => itemHandler(item.id)}
@@ -100,15 +103,6 @@ const NavItem = ({ item, level }) => {
           )
         }
       />
-      {item.chip && (
-        <Chip
-          color={item.chip.color}
-          variant={item.chip.variant}
-          size={item.chip.size}
-          label={item.chip.label}
-          avatar={item.chip.avatar && <Avatar>{item.chip.avatar}</Avatar>}
-        />
-      )}
     </ListItemButton>
   );
 };

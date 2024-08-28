@@ -12,12 +12,10 @@ import PerfectScrollbar from 'react-perfect-scrollbar';
 import { BrowserView, MobileView } from 'react-device-detect';
 
 // project imports
-import MenuCard from './MenuCard';
 import MenuList from './MenuList';
-import LogoSection from '../LogoSection';
-import Chip from 'ui-component/extended/Chip';
 
 import { drawerWidth } from 'store/constant';
+import Logo from 'ui-component/Logo';
 
 // ==============================|| SIDEBAR DRAWER ||============================== //
 
@@ -27,11 +25,6 @@ const Sidebar = ({ drawerOpen, drawerToggle, window }) => {
 
   const drawer = (
     <>
-      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-        <Box sx={{ display: 'flex', p: 2, mx: 'auto' }}>
-          <LogoSection />
-        </Box>
-      </Box>
       <BrowserView>
         <PerfectScrollbar
           component="div"
@@ -42,18 +35,21 @@ const Sidebar = ({ drawerOpen, drawerToggle, window }) => {
           }}
         >
           <MenuList />
-          <MenuCard />
-          <Stack direction="row" justifyContent="center" sx={{ mb: 2 }}>
-            <Chip label={import.meta.env.VITE_APP_VERSION} disabled chipcolor="secondary" size="small" sx={{ cursor: 'pointer' }} />
+
+          {/* Logo Image */}
+          <Stack direction="row" justifyContent="left" sx={{ mt: 8, mb: 2 }}>
+            <Logo />
           </Stack>
+          
         </PerfectScrollbar>
       </BrowserView>
       <MobileView>
         <Box sx={{ px: 2 }}>
           <MenuList />
-          <MenuCard />
-          <Stack direction="row" justifyContent="center" sx={{ mb: 2 }}>
-            <Chip label={import.meta.env.VITE_APP_VERSION} disabled chipcolor="secondary" size="small" sx={{ cursor: 'pointer' }} />
+
+          {/* Logo Image */}
+          <Stack direction="row" justifyContent="center" sx={{ mt: 8 }}>
+            <Logo />
           </Stack>
         </Box>
       </MobileView>
