@@ -26,12 +26,19 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
+// QR Code library
+import { QRCodeSVG } from 'qrcode.react';
 
 const AuthLogin = ({ ...others }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-
+  
   const [showPassword, setShowPassword] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [email, setEmail] = useState('');
+  const [totpUrl, setTotpUrl] = useState('');
+
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
   };
@@ -48,7 +55,10 @@ const AuthLogin = ({ ...others }) => {
       });
       localStorage.setItem('token', response.data.token);
 
-      navigate('/');
+      const totpResponse = await axios.get(`http://127.0.0.1:5000/generate_totp?username=${values.username}`);
+      setEmail(values.username);
+      setTotpUrl(totpResponse.data.otp_url); 
+      setShowOtp(true);
 
       setStatus({ success: true });
       setSubmitting(false);
@@ -56,6 +66,18 @@ const AuthLogin = ({ ...others }) => {
       setStatus({ success: false });
       setErrors({ submit: 'Invalid username or password' });
       setSubmitting(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    try {
+      await axios.post('http://127.0.0.1:5000/verify_totp', {
+        username: email,
+        otp
+      });
+      navigate('/');
+    } catch (error) {
+      alert('Invalid OTP');
     }
   };
 
@@ -149,6 +171,38 @@ const AuthLogin = ({ ...others }) => {
           </form>
         )}
       </Formik>
+
+      {showOtp && (
+        <Box sx={{ mt: 2 }}>
+          <FormControl fullWidth>
+            <InputLabel htmlFor="otp">Enter OTP</InputLabel>
+            <OutlinedInput
+              id="otp"
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              label="OTP"
+            />
+            <FormHelperText id="otp-helper-text">Enter the OTP sent to your application</FormHelperText>
+          </FormControl>
+          <Button disableElevation onClick={handleVerifyOtp} variant="contained" color="secondary" fullWidth size="large">
+            Verify OTP
+          </Button>
+
+          {totpUrl && (
+            <Grid container justifyContent="center" alignItems="center" sx={{ mt: 4 }}>
+            <Box display="flex" flexDirection="column" alignItems="center">
+              <Typography variant="subtitle1" gutterBottom>
+                Scan the QR code with your authenticator app:
+              </Typography>
+              <Box sx={{ mt: 2 }}>
+                <QRCodeSVG value={totpUrl} size={150} />
+              </Box>
+            </Box>
+          </Grid>
+          )}
+        </Box>
+      )}
     </>
   );
 };
