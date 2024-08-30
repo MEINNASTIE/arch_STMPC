@@ -1,21 +1,19 @@
 import PropTypes from 'prop-types';
-
-// material-ui
 import { useTheme } from '@mui/material/styles';
 import Divider from '@mui/material/Divider';
-import List from '@mui/material/List';
+import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 // project imports
 import NavItem from '../NavItem';
 import NavCollapse from '../NavCollapse';
 
-// ==============================|| SIDEBAR MENU LIST GROUP ||============================== //
+// ==============================|| SIDEBAR MENU GROUP WITHOUT LIST ||============================== //
 
 const NavGroup = ({ item }) => {
   const theme = useTheme();
 
-  // menu list collapse & items
+  // Render menu items
   const items = item.children?.map((menu) => {
     switch (menu.type) {
       case 'collapse':
@@ -33,31 +31,33 @@ const NavGroup = ({ item }) => {
 
   return (
     <>
-      <List
-        subheader={
-          item.title && (
-            <Typography variant="caption" sx={{ ...theme.typography.menuCaption }} display="block" gutterBottom>
-              {item.title}
-              {item.caption && (
-                <Typography variant="caption" sx={{ ...theme.typography.subMenuCaption }} display="block" gutterBottom>
-                  {item.caption}
-                </Typography>
-              )}
-            </Typography>
-          )
-        }
-      >
-        {items}
-      </List>
+      <Box sx={{ mb: 1.25 }}>
+        {/* Group Title */}
+        {item.title && (
+          <Typography variant="caption" sx={{ ...theme.typography.menuCaption }} gutterBottom>
+            {item.title}
+            {item.caption && (
+              <Typography variant="caption" sx={{ ...theme.typography.subMenuCaption }} gutterBottom>
+                {item.caption}
+              </Typography>
+            )}
+          </Typography>
+        )}
 
-      {/* group divider */}
+        {/* Menu Items */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {items}
+        </Box>
+      </Box>
+
+      {/* Group Divider */}
       <Divider sx={{ mt: 0.25, mb: 1.25 }} />
     </>
   );
 };
 
 NavGroup.propTypes = {
-  item: PropTypes.object
+  item: PropTypes.object.isRequired
 };
 
 export default NavGroup;

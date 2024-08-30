@@ -17,7 +17,7 @@ def encode_token(user_id):
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
-@app.route('/free')
+@app.route('/')
 def hello():
     return 'Hello, World!'
 

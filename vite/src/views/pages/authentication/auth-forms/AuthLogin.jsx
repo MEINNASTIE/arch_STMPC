@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -25,8 +26,11 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
+
 const AuthLogin = ({ ...others }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
@@ -42,8 +46,10 @@ const AuthLogin = ({ ...others }) => {
         username: values.username,
         password: values.password
       });
-
       localStorage.setItem('token', response.data.token);
+
+      navigate('/');
+
       setStatus({ success: true });
       setSubmitting(false);
     } catch (error) {
