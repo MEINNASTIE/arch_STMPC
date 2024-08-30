@@ -7,11 +7,6 @@ import Loadable from 'ui-component/Loadable';
 // dashboard routing
 const DashboardDefault = Loadable(lazy(() => import('views/dashboard')));
 
-// utilities routing
-const UtilsTypography = Loadable(lazy(() => import('views/utilities/Typography')));
-const UtilsColor = Loadable(lazy(() => import('views/utilities/Color')));
-const UtilsShadow = Loadable(lazy(() => import('views/utilities/Shadow')));
-
 // sample page routing
 const SamplePage = Loadable(lazy(() => import('views/sample-page')));
 
@@ -39,7 +34,7 @@ const MainRoutes = {
       children: [
         {
           path: 'util-typography',
-          element: <UtilsTypography />
+          element:  <SamplePage />
         }
       ]
     },
@@ -48,7 +43,7 @@ const MainRoutes = {
       children: [
         {
           path: 'util-color',
-          element: <UtilsColor />
+          element:  <SamplePage />
         }
       ]
     },
@@ -57,7 +52,7 @@ const MainRoutes = {
       children: [
         {
           path: 'util-shadow',
-          element: <UtilsShadow />
+          element:  <SamplePage />
         }
       ]
     },
@@ -70,7 +65,7 @@ const MainRoutes = {
       children: [
         {
           path: 'util-typography',
-          element: <UtilsTypography />
+          element:  <SamplePage />
         }
       ]
     },

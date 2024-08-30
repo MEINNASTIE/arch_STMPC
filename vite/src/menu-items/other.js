@@ -15,7 +15,7 @@ const other = {
       id: 'documentation',
       title: 'Logout',
       type: 'item',
-      url: 'https://codedthemes.gitbook.io/berry/',
+      url: '/free/pages/login/login3',
       external: true,
       target: true
     }

@@ -35,10 +35,10 @@ const Header = ({ handleLeftDrawerToggle }) => {
       sx={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between', 
-        width: '100%', 
+        justifyContent: 'space-between',
+        width: '100%',
         [theme.breakpoints.down('md')]: {
-          flexDirection: 'column', 
+          flexDirection: 'column',
           alignItems: 'flex-start'
         }
       }}
@@ -51,7 +51,7 @@ const Header = ({ handleLeftDrawerToggle }) => {
           width: 228,
           [theme.breakpoints.down('md')]: {
             width: 'auto',
-            marginBottom: 2 
+            marginBottom: 2
           }
         }}
       >
@@ -59,15 +59,15 @@ const Header = ({ handleLeftDrawerToggle }) => {
           <Avatar
             variant="rounded"
             sx={{
-              borderRadius: '10px', 
+              borderRadius: '10px',
               ...theme.typography.commonAvatar,
               ...theme.typography.mediumAvatar,
               transition: 'all .2s ease-in-out',
               background: theme.palette.secondary.light,
               color: theme.palette.secondary.dark,
               '&:hover': {
-                background: theme.palette.secondary.dark,
-                color: theme.palette.secondary.light
+                background: theme.palette.secondary.main, 
+                color: theme.palette.secondary.contrastText 
               }
             }}
             onClick={handleLeftDrawerToggle}
@@ -84,9 +84,9 @@ const Header = ({ handleLeftDrawerToggle }) => {
           display: 'flex',
           alignItems: 'center',
           ml: 'auto',
-          backgroundColor: theme.palette.primary.main, 
-          borderRadius: '8px', 
-          padding: '8px 16px', 
+          backgroundColor: theme.palette.primary.main,
+          borderRadius: '8px',
+          padding: '8px 16px',
           [theme.breakpoints.down('md')]: {
             display: 'flex',
             flexDirection: 'column',
@@ -106,17 +106,18 @@ const Header = ({ handleLeftDrawerToggle }) => {
             <IconButton
               sx={{
                 p: 1,
-                color: 'white', 
+                color: 'white',
                 '&:hover': {
-                  color: index === 5 ? theme.palette.success.light : theme.palette.primary.light, 
+                  color: index === 5 ? theme.palette.success.light : theme.palette.primary.light,
+                  backgroundColor: theme.palette.action.hover 
                 }
               }}
-              onClick={label ? handleMenuOpen : undefined} // For dropdowns (if label exists)
+              onClick={label ? handleMenuOpen : undefined} 
             >
               {icon}
             </IconButton>
             {label && (
-              <Typography variant="caption" sx={{ ml: 0.5, color: 'white' }}> 
+              <Typography variant="caption" sx={{ ml: 0.5, color: 'white' }}>
                 {label}
               </Typography>
             )}
@@ -130,6 +131,12 @@ const Header = ({ handleLeftDrawerToggle }) => {
           onClose={handleMenuClose}
           MenuListProps={{
             'aria-labelledby': 'basic-button',
+          }}
+          PaperProps={{
+            elevation: 1, 
+            sx: {
+              boxShadow: theme.shadows[2], 
+            },
           }}
         >
           <MenuItem onClick={handleMenuClose}>Option 1</MenuItem>

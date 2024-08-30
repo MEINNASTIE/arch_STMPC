@@ -27,18 +27,16 @@ const pages = {
 
       children: [
         {
-          id: 'login3',
+          id: 'one',
           title: 'Login',
           type: 'item',
-          url: '/pages/login/login3',
-          target: true
+     
         },
         {
-          id: 'register3',
+          id: 'two',
           title: 'Register',
           type: 'item',
-          url: '/pages/register/register3',
-          target: true
+     
         }
       ]
     },
@@ -49,18 +47,16 @@ const pages = {
 
       children: [
         {
-          id: 'login3',
+          id: 'three',
           title: 'Login',
           type: 'item',
-          url: '/pages/login/login3',
-          target: true
+        
         },
         {
-          id: 'register3',
+          id: 'four',
           title: 'Register',
           type: 'item',
-          url: '/pages/register/register3',
-          target: true
+       
         }
       ]
     },
@@ -71,18 +67,16 @@ const pages = {
 
       children: [
         {
-          id: 'login3',
+          id: 'five',
           title: 'Login',
           type: 'item',
-          url: '/pages/login/login3',
-          target: true
+       
         },
         {
-          id: 'register3',
+          id: 'six',
           title: 'Register',
           type: 'item',
-          url: '/pages/register/register3',
-          target: true
+      
         }
       ]
     },
@@ -93,18 +87,16 @@ const pages = {
 
       children: [
         {
-          id: 'login3',
+          id: 'seven',
           title: 'Login',
           type: 'item',
-          url: '/pages/login/login3',
-          target: true
+        
         },
         {
-          id: 'register3',
+          id: 'eight',
           title: 'Register',
           type: 'item',
-          url: '/pages/register/register3',
-          target: true
+         
         }
       ]
     },
