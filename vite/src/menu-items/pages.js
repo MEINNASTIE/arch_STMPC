@@ -10,7 +10,6 @@
 
 const pages = {
   id: 'pages',
-  title: 'Main',
   type: 'group',
   children: [
     {

@@ -31,7 +31,7 @@ const NavGroup = ({ item }) => {
 
   return (
     <>
-      <Box sx={{ mb: 1.25 }}>
+      <Box sx={{ mb: 1 }}>
         {/* Group Title */}
         {item.title && (
           <Typography variant="caption" sx={{ ...theme.typography.menuCaption }} gutterBottom>

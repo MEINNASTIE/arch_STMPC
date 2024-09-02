@@ -1,12 +1,10 @@
 import dashboard from './dashboard';
 import pages from './pages';
-import other from './other';
-import setTime from './time';
 
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems = {
-  items: [dashboard, pages, other, setTime]
+  items: [dashboard, pages]
 };
 
 export default menuItems;

@@ -8,7 +8,6 @@ import { useTheme } from '@mui/material/styles';
 import Collapse from '@mui/material/Collapse';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 
@@ -16,7 +15,6 @@ import Typography from '@mui/material/Typography';
 import NavItem from '../NavItem';
 
 // assets
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 
 // ==============================|| SIDEBAR MENU LIST COLLAPSE ITEMS ||============================== //
@@ -82,19 +80,6 @@ const NavCollapse = ({ menu, level }) => {
     }
   });
 
-  const Icon = menu.icon;
-  const menuIcon = menu.icon ? (
-    <Icon strokeWidth={1.5} size="1.3rem" style={{ marginTop: 'auto', marginBottom: 'auto' }} />
-  ) : (
-    <FiberManualRecordIcon
-      sx={{
-        width: selected === menu.id ? 8 : 6,
-        height: selected === menu.id ? 8 : 6
-      }}
-      fontSize={level > 0 ? 'inherit' : 'medium'}
-    />
-  );
-
   return (
     <>
       <ListItemButton
@@ -104,12 +89,16 @@ const NavCollapse = ({ menu, level }) => {
           alignItems: 'flex-start',
           backgroundColor: level > 1 ? 'transparent !important' : 'inherit',
           py: level > 1 ? 1 : 1.25,
-          pl: `${level * 24}px`
+          pl: `${level * 24}px`,
+          border: selected === menu.id ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
+          transition: 'border-color 0.3s ease',
+          '&:hover': {
+            borderColor: theme.palette.primary.main
+          },
         }}
         selected={selected === menu.id}
         onClick={handleClick}
       >
-        <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
         <ListItemText
           primary={
             <Typography variant={selected === menu.id ? 'h5' : 'body1'} color="inherit" sx={{ my: 'auto' }}>
