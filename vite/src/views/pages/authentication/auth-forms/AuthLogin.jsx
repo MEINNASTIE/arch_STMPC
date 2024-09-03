@@ -75,7 +75,7 @@ const AuthLogin = ({ ...others }) => {
         username: email,
         otp
       });
-      navigate('/');
+      navigate('/main');
     } catch (error) {
       alert('Invalid OTP');
     }

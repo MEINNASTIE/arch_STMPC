@@ -1,10 +1,15 @@
+import NavGroup from './NavGroup';
+import menuItem from 'menu-items';
+
+// material-ui
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import { Divider, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+
+// assets
 import { IconFileExport, IconClockHour5 } from '@tabler/icons-react';
-import NavGroup from './NavGroup';
-import menuItem from 'menu-items';
+
 
 // ==============================|| SIDEBAR MENU LIST ||============================== //
 
@@ -14,7 +19,7 @@ const MenuList = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    navigate('/pages/login/login3');
+    navigate('/');
   };
 
   const navItems = menuItem.items.map((item) => {
@@ -115,6 +120,7 @@ const MenuList = () => {
               ...theme.typography.menuCaption,
               display: 'flex',
               alignItems: 'center',
+              gap: '0.5rem',
             }}
             gutterBottom
           >

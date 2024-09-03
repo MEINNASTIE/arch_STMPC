@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [react(), jsconfigPaths()],
   // https://github.com/jpuri/react-draft-wysiwyg/issues/1317
   // be wary of the trailing slash in the base, its important to take notice later to change for build
-  base: '/free',
+  base: '/',
   define: {
     global: 'window'
   },

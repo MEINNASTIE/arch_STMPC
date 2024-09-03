@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
@@ -10,44 +9,65 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import MenuItem from '@mui/material/MenuItem';
 
 // project imports
 import { gridSpacing } from 'store/constant';
 
 // Validation Schema for User Form
 const userValidationSchema = Yup.object({
-  firstName: Yup.string().required('First Name is required'),
-  lastName: Yup.string().required('Last Name is required'),
-  email: Yup.string().email('Invalid email').required('Email is required')
+  locationName: Yup.string().required('Required'),
+  saveSystemProtocol: Yup.string().required('Required'),
+  saveTimeProtocol: Yup.string().required('Required'),
+  MeasurementStationName: Yup.string().required('Required'),
+  dhcpEnable: Yup.string().required('Required'),
+  ipAddressOne: Yup.string().required('Required'),
+  subNetMaskOne: Yup.string().required('Required'),
+  ipAddressTwo: Yup.string().required('Required'),
+  subNetMaskTwo: Yup.string().required('Required'),
+  gateway: Yup.string().required('Required'),
+  dnsServer: Yup.string().required('Required')
 });
 
 // ==============================|| DEFAULT DASHBOARD ||============================== //
 
 const Dashboard = () => {
-  const [isLoading, setLoading] = useState(true);
-
-  // User Formik
   const userFormik = useFormik({
     initialValues: {
-      firstName: '',
-      lastName: '',
-      email: ''
+      locationName: '',
+      saveSystemProtocol: 'Yes',
+      saveTimeProtocol: 'Yes',
+      MeasurementStationName: '',
+      dhcpEnable: 'Enabled',
+      ipAddressOne: '',
+      subNetMaskOne: '',
+      ipAddressTwo: '',
+      subNetMaskTwo: '',
+      gateway: '',
+      dnsServer: ''
     },
     validationSchema: userValidationSchema,
     onSubmit: (values) => {
-      console.log('User Form Data', values);
+      console.log('Editable Form Data', values);
     }
   });
 
-  // Payment Formik (Read-only form)
   const paymentFormik = useFormik({
     initialValues: {
-      cardNumber: 'LOCATION',
-      expirationDate: 'Yes',
-      cvv: 'Yes'
+      locationName: 'LOCATION',
+      saveSystemProtocol: 'Yes',
+      saveTimeProtocol: 'Yes',
+      MeasurementStationName: 'Spectrotracer',
+      dhcpEnable: 'Enabled',
+      ipAddressOne: '192.168.163.156',
+      subNetMaskOne: '255.255.255.0',
+      ipAddressTwo: '192.168.10.222',
+      subNetMaskTwo: '255.255.255.0',
+      gateway: '192.168.10.241',
+      dnsServer: '0.0.0.0'
     },
     onSubmit: (values) => {
-      console.log('Payment Form Data', values);
+      console.log('Active Form Data', values);
     }
   });
 
@@ -58,13 +78,11 @@ const Dashboard = () => {
 
   return (
     <Grid container spacing={gridSpacing}>
-      {/* Heading */}
       <Grid item xs={12}>
         <Typography variant="h4" gutterBottom>
           Meas. Station Settings
         </Typography>
       </Grid>
-      {/* Top Save Button */}
       <Grid item xs={12}>
         <Box display="flex" justifyContent="flex-start">
           <Button color="primary" variant="contained" onClick={handleSave}>
@@ -73,7 +91,6 @@ const Dashboard = () => {
         </Box>
       </Grid>
 
-      {/* User Form */}
       <Grid item xs={12} md={6}>
         <Card>
           <CardContent>
@@ -90,12 +107,12 @@ const Dashboard = () => {
                 <Grid item xs={8}>
                   <TextField
                     fullWidth
-                    id="firstName"
-                    name="firstName"
-                    value={userFormik.values.firstName}
+                    id="locationName"
+                    name="locationName"
+                    value={userFormik.values.locationName}
                     onChange={userFormik.handleChange}
-                    error={userFormik.touched.firstName && Boolean(userFormik.errors.firstName)}
-                    helperText={userFormik.touched.firstName && userFormik.errors.firstName}
+                    error={userFormik.touched.locationName && Boolean(userFormik.errors.locationName)}
+                    helperText={userFormik.touched.locationName && userFormik.errors.locationName}
                   />
                 </Grid>
                 <Grid item xs={4}>
@@ -105,29 +122,170 @@ const Dashboard = () => {
                 </Grid>
                 <Grid item xs={8}>
                   <TextField
+                    select 
                     fullWidth
-                    id="lastName"
-                    name="lastName"
-                    value={userFormik.values.lastName}
+                    id="saveSystemProtocol"
+                    name="saveSystemProtocol"
+                    value={userFormik.values.saveSystemProtocol}
                     onChange={userFormik.handleChange}
-                    error={userFormik.touched.lastName && Boolean(userFormik.errors.lastName)}
-                    helperText={userFormik.touched.lastName && userFormik.errors.lastName}
-                  />
+                    error={userFormik.touched.saveSystemProtocol && Boolean(userFormik.errors.saveSystemProtocol)}
+                    helperText={userFormik.touched.saveSystemProtocol && userFormik.errors.saveSystemProtocol}
+                  >
+                    <MenuItem value="Yes">Yes</MenuItem>
+                    <MenuItem value="No">No</MenuItem>
+                  </TextField>
                 </Grid>
                 <Grid item xs={4}>
                   <Typography variant="body1" align="right">
-                    Save time protocol P9: 
+                    Save time protocol P9:
+                  </Typography>
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    select
+                    fullWidth
+                    id="saveTimeProtocol"
+                    name="saveTimeProtocol"
+                    value={userFormik.values.saveTimeProtocol}
+                    onChange={userFormik.handleChange}
+                    error={userFormik.touched.saveTimeProtocol && Boolean(userFormik.errors.saveTimeProtocol)}
+                    helperText={userFormik.touched.saveTimeProtocol && userFormik.errors.saveTimeProtocol}
+                  >
+                    <MenuItem value="Yes">Yes</MenuItem>
+                    <MenuItem value="No">No</MenuItem>
+                  </TextField>
+                </Grid>
+
+                <Grid item xs={4}>
+                  <Typography variant="body1" align="right">
+                    Measurement station name:
                   </Typography>
                 </Grid>
                 <Grid item xs={8}>
                   <TextField
                     fullWidth
-                    id="email"
-                    name="email"
-                    value={userFormik.values.email}
+                    id="MeasurementStationName"
+                    name="MeasurementStationName"
+                    value={userFormik.values.MeasurementStationName}
                     onChange={userFormik.handleChange}
-                    error={userFormik.touched.email && Boolean(userFormik.errors.email)}
-                    helperText={userFormik.touched.email && userFormik.errors.email}
+                    error={userFormik.touched.MeasurementStationName && Boolean(userFormik.errors.MeasurementStationName)}
+                    helperText={userFormik.touched.MeasurementStationName && userFormik.errors.MeasurementStationName}
+                  />
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="body1" align="right">
+                    DHCP enable:
+                  </Typography>
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    select
+                    fullWidth
+                    id="dhcpEnable"
+                    name="dhcpEnable"
+                    value={userFormik.values.dhcpEnable}
+                    onChange={userFormik.handleChange}
+                    error={userFormik.touched.dhcpEnable && Boolean(userFormik.errors.dhcpEnable)}
+                    helperText={userFormik.touched.dhcpEnable && userFormik.errors.dhcpEnable}
+                  >
+                    <MenuItem value="Enabled">Enabled</MenuItem>
+                    <MenuItem value="Disabled">Disabled</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="body1" align="right">
+                    IP address 1:
+                  </Typography>
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="ipAddressOne"
+                    name="ipAddressOne"
+                    value={userFormik.values.ipAddressOne}
+                    onChange={userFormik.handleChange}
+                    error={userFormik.touched.ipAddressOne && Boolean(userFormik.errors.ipAddressOne)}
+                    helperText={userFormik.touched.ipAddressOne && userFormik.errors.ipAddressOne}
+                  />
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="body1" align="right">
+                    Subnet mask 1:
+                  </Typography>
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="subNetMaskOne"
+                    name="subNetMaskOne"
+                    value={userFormik.values.subNetMaskOne}
+                    onChange={userFormik.subNetMaskOne}
+                    error={userFormik.touched.subNetMaskOne && Boolean(userFormik.errors.subNetMaskOne)}
+                    helperText={userFormik.touched.subNetMaskOne && userFormik.errors.subNetMaskOne}
+                  />
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="body1" align="right">
+                    IP address 2:
+                  </Typography>
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="ipAddressTwo"
+                    name="ipAddressTwo"
+                    value={userFormik.values.ipAddressTwo}
+                    onChange={userFormik.handleChange}
+                    error={userFormik.touched.ipAddressTwo && Boolean(userFormik.errors.ipAddressTwo)}
+                    helperText={userFormik.touched.ipAddressTwo && userFormik.errors.ipAddressTwo}
+                  />
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="body1" align="right">
+                    Subnet mask 2:
+                  </Typography>
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="subNetMaskTwo"
+                    name="subNetMaskTwo"
+                    value={userFormik.values.subNetMaskTwo}
+                    onChange={userFormik.handleChange}
+                    error={userFormik.touched.subNetMaskTwo && Boolean(userFormik.errors.subNetMaskTwo)}
+                    helperText={userFormik.touched.subNetMaskTwo && userFormik.errors.subNetMaskTwo}
+                  />
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="body1" align="right">
+                    Gateway:
+                  </Typography>
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="gateway"
+                    name="gateway"
+                    value={userFormik.values.gateway}
+                    onChange={userFormik.handleChange}
+                    error={userFormik.touched.gateway && Boolean(userFormik.errors.gateway)}
+                    helperText={userFormik.touched.gateway && userFormik.errors.gateway}
+                  />
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="body1" align="right">
+                    DNS Server:
+                  </Typography>
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="dnsServer"
+                    name="dnsServer"
+                    value={userFormik.values.dnsServer}
+                    onChange={userFormik.handleChange}
+                    error={userFormik.touched.dnsServer && Boolean(userFormik.errors.dnsServer)}
+                    helperText={userFormik.touched.dnsServer && userFormik.errors.dnsServer}
                   />
                 </Grid>
               </Grid>
@@ -136,7 +294,6 @@ const Dashboard = () => {
         </Card>
       </Grid>
 
-      {/* Payment Form (Read-Only) */}
       <Grid item xs={12} md={6}>
         <Card>
           <CardContent>
@@ -148,9 +305,9 @@ const Dashboard = () => {
                 <Grid item xs={8}>
                   <TextField
                     fullWidth
-                    id="cardNumber"
-                    name="cardNumber"
-                    value={paymentFormik.values.cardNumber}
+                    id="locationName"
+                    name="locationName"
+                    value={paymentFormik.values.locationName}
                     InputProps={{
                       readOnly: true,
                     }}
@@ -159,9 +316,9 @@ const Dashboard = () => {
                 <Grid item xs={8}>
                   <TextField
                     fullWidth
-                    id="expirationDate"
-                    name="expirationDate"
-                    value={paymentFormik.values.expirationDate}
+                    id="saveSystemProtocol"
+                    name="saveSystemProtocol"
+                    value={paymentFormik.values.saveSystemProtocol}
                     InputProps={{
                       readOnly: true,
                     }}
@@ -170,9 +327,97 @@ const Dashboard = () => {
                 <Grid item xs={8}>
                   <TextField
                     fullWidth
-                    id="cvv"
-                    name="cvv"
-                    value={paymentFormik.values.cvv}
+                    id="saveTimeProtocol"
+                    name="saveTimeProtocol"
+                    value={paymentFormik.values.saveTimeProtocol}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="MeasurementStationName"
+                    name="MeasurementStationName"
+                    value={paymentFormik.values.MeasurementStationName}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="dhcpEnable"
+                    name="dhcpEnable"
+                    value={paymentFormik.values.dhcpEnable}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="ipAddressOne"
+                    name="ipAddressOne"
+                    value={paymentFormik.values.ipAddressOne}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="subNetMaskOne"
+                    name="subNetMaskOne"
+                    value={paymentFormik.values.subNetMaskOne}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="ipAddressTwo"
+                    name="ipAddressTwo"
+                    value={paymentFormik.values.ipAddressTwo}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="subNetMaskTwo"
+                    name="subNetMaskTwo"
+                    value={paymentFormik.values.subNetMaskTwo}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="gateway"
+                    name="gateway"
+                    value={paymentFormik.values.gateway}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={8}>
+                  <TextField
+                    fullWidth
+                    id="dnsServer"
+                    name="dnsServer"
+                    value={paymentFormik.values.dnsServer}
                     InputProps={{
                       readOnly: true,
                     }}
@@ -184,7 +429,6 @@ const Dashboard = () => {
         </Card>
       </Grid>
 
-      {/* Bottom Save Button */}
       <Grid item xs={12}>
         <Box display="flex" justifyContent="flex-start">
           <Button color="primary" variant="contained" onClick={handleSave}>
