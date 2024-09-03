@@ -26,78 +26,143 @@ const pages = {
 
       children: [
         {
+          id: 'settings',
+          title: 'Settings',
+          type: 'item',
+     
+        },
+        {
           id: 'one',
-          title: 'Login',
+          title: 'GM Board settings',
           type: 'item',
      
         },
         {
           id: 'two',
-          title: 'Register',
+          title: 'Alarm setttings',
+          type: 'item',
+     
+        },
+        {
+          id: 'three',
+          title: 'Radio nuclides 1-5',
+          type: 'item',
+     
+        },
+        {
+          id: 'four',
+          title: 'Radio nuclides 6-10',
+          type: 'item',
+     
+        },
+        {
+          id: 'five',
+          title: 'Radio nuclides 11-15',
+          type: 'item',
+     
+        },
+        {
+          id: 'six',
+          title: 'Regions of interest 1-5',
+          type: 'item',
+     
+        },
+        {
+          id: 'seven',
+          title: 'Regions of interest 6-10',
+          type: 'item',
+     
+        },
+        {
+          id: 'eight',
+          title: 'Output formats',
+          type: 'item',
+     
+        },
+        {
+          id: 'nine',
+          title: 'CTBTO settings',
+          type: 'item',
+     
+        },
+        {
+          id: 'ten',
+          title: 'ADAM ANALOG outputs 1-6',
+          type: 'item',
+     
+        },
+        {
+          id: 'eleven',
+          title: 'ADAM DIGITAL outputs 1-6',
           type: 'item',
      
         }
       ]
     },
     {
-      id: 'ftp-forwarding',
+      id: 'spectrotracer',
       title: 'FTP forwarding',
       type: 'collapse',
 
       children: [
         {
-          id: 'three',
-          title: 'Login',
+          id: 'commonSettings',
+          title: 'Common settings',
           type: 'item',
         
         },
         {
-          id: 'four',
-          title: 'Register',
-          type: 'item',
-       
-        }
-      ]
-    },
-    {
-      id: 'connectivity',
-      title: 'Connectivity',
-      type: 'collapse',
-
-      children: [
-        {
-          id: 'five',
-          title: 'Login',
+          id: 'formatsToTransmit',
+          title: 'Formats to transmit',
           type: 'item',
        
         },
         {
-          id: 'six',
-          title: 'Register',
+          id: 'sessionOne',
+          title: 'Session1 config',
           type: 'item',
-      
+       
+        },
+        {
+          id: 'sessionTwo',
+          title: 'Session2 config',
+          type: 'item',
+       
         }
       ]
     },
     {
-      id: 'meteo-station-value',
+      id: 'spectrotracer',
+      title: 'Conectivity',
+      type: 'collapse',
+
+      children: [
+        {
+          id: 'connectivitySettings',
+          title: 'Connectivity',
+          type: 'item',
+        },
+        {
+          id: 'network',
+          title: 'Network',
+          type: 'item',
+        },
+        {
+          id: 'cellModem',
+          title: 'Cell Modem',
+          type: 'item',
+        },
+        {
+          id: 'vpn',
+          title: 'VPN',
+          type: 'item',
+        },
+      ]
+    },
+    {
+      id: 'spectrotracer',
       title: 'Meteo station value',
       type: 'collapse',
-
-      children: [
-        {
-          id: 'seven',
-          title: 'Login',
-          type: 'item',
-        
-        },
-        {
-          id: 'eight',
-          title: 'Register',
-          type: 'item',
-         
-        }
-      ]
     },
   ]
 };

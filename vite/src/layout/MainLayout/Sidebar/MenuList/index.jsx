@@ -38,10 +38,10 @@ const MenuList = () => {
   return (
     <>
       <Box>
-        {navItems}
-        <Box
+      <Box
           sx={{
             mt: 2,
+            pl: 2, 
             cursor: 'pointer',
             borderRadius: `${theme.customization?.borderRadius || 8}px`,
             border: '2px solid transparent',
@@ -50,7 +50,32 @@ const MenuList = () => {
               borderColor: theme.palette.primary.main,
             },
           }}
-          onClick={() => console.log('Change Password clicked')}
+        >
+          <Typography
+            variant="caption"
+            sx={{ ...theme.typography.menuCaption }}
+            display="block"
+            gutterBottom
+          >
+            Restart
+          </Typography>
+        </Box>
+
+        <Divider sx={{ mt: 1.25, mb: 1.25 }} />
+        
+        {navItems}
+        <Box
+          sx={{
+            mt: 2,
+            pl: 2, 
+            cursor: 'pointer',
+            borderRadius: `${theme.customization?.borderRadius || 8}px`,
+            border: '2px solid transparent',
+            transition: 'border-color 0.3s ease',
+            '&:hover': {
+              borderColor: theme.palette.primary.main,
+            },
+          }}
         >
           <Typography
             variant="caption"
@@ -64,6 +89,7 @@ const MenuList = () => {
 
         <Box sx={{
             mt: 2,
+            pl: 2,
             cursor: 'pointer',
             borderRadius: `${theme.customization?.borderRadius || 8}px`,
             border: '2px solid transparent',
@@ -83,10 +109,11 @@ const MenuList = () => {
           </Typography>
         </Box>
 
-        <Divider sx={{ mt: 0.25, mb: 1.25 }} />
+        <Divider sx={{ mt: 1.25, mb: 1.25 }} />
 
         <Box sx={{
             mt: 2,
+            pl: 2,
             cursor: 'pointer',
             borderRadius: `${theme.customization?.borderRadius || 8}px`,
             border: '2px solid transparent',
@@ -95,7 +122,7 @@ const MenuList = () => {
               borderColor: theme.palette.primary.main,
             },
           }}  
-          onClick={() => console.log('Set Time clicked')}>
+          >
           <Typography
             variant="caption"
             sx={{ ...theme.typography.menuCaption,
@@ -107,13 +134,23 @@ const MenuList = () => {
             gutterBottom
           >
             <IconClockHour5 stroke={1.5} size="1.9rem" />
-            <p>Set Time</p>
+            <p style={{margin: 0}}>Set Time</p>
           </Typography>
         </Box>
 
-        <Divider sx={{ mt: 0.25, mb: 1.25 }} />
+        <Divider sx={{ mt: 1.25, mb: 1.25 }} />
 
-        <Box sx={{ mt: 2, cursor: 'pointer' }}>
+        <Box sx={{ 
+            mt: 2, 
+            pl: 2,
+            cursor: 'pointer',
+            borderRadius: `${theme.customization?.borderRadius || 8}px`,
+            border: '2px solid transparent',
+            transition: 'border-color 0.3s ease',
+            '&:hover': {
+              borderColor: theme.palette.primary.main,
+            }, 
+          }}>
           <Typography
             variant="caption"
             sx={{
