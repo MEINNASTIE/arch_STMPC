@@ -1,20 +1,7 @@
-### this file serves as a small guidance into setting up nginx reverse proxy with authelia for a simple react authentication web application
-#### by meinna
-
-// enable authelia on system and check // same for nginx 
-sudo systemctl enable authelia
-sudo systemctl start authelia
-sudo systemctl status authelia
+### file serving a gunicorn via nginx for authentication
 
 // path to nginx configuration file
 /etc/nginx/nginx.conf
-
-// path to configuration.yml
-/etc/authelia/configuration.yml
-/etc/authelia/users_database.yml
-
-// path to system authelia.service
-/etc/systemd/system/authelia.service
 
 pay attention to have it also configured for the yocto environment // when it comes to nginx and authelia especially
 
@@ -30,3 +17,10 @@ setup template by berry which requires to be integrated
     - routing system develop more
     - implement another authentication system
     - handle more pages
+
+#### regarding gunicorn
+
+`gunicorn --workers 3 app:app` have at least 3 workers working for efficiency 
+`sudo gunicorn --workers 3 --bind unix:/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/gunicorn.sock app:app` to run a socket for gunicorn 
+
+to check unix user: id -un // group:  id -gn

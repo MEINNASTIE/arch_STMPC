@@ -20,6 +20,10 @@ def encode_token(user_id):
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
+@app.route('/', methods=['GET'])
+def hello_world():
+    return jsonify({'message': 'Hello, World!'})
+
 @app.route('/generate_totp', methods=['GET'])
 def generate_totp():
     username = request.args.get('username')
