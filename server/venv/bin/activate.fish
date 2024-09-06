@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/home/meinna/VCS_Projects/authelia_config_react/server/venv"
+set -gx VIRTUAL_ENV "/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

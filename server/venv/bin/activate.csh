@@ -9,7 +9,7 @@ alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PA
 # Unset irrelevant variables.
 deactivate nondestructive
 
-setenv VIRTUAL_ENV "/home/meinna/VCS_Projects/authelia_config_react/server/venv"
+setenv VIRTUAL_ENV "/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/venv"
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/bin:$PATH"

@@ -1,4 +1,4 @@
-#!/home/meinna/VCS_Projects/authelia_config_react/server/venv/bin/python3
+#!/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

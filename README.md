@@ -1,11 +1,74 @@
 ### file serving a gunicorn via nginx for authentication
+this environment has been specifically set up for arch linux to run on systemd as a service, the config is set based on distro
+
+#### nginx example config
+
+```
+worker_processes 3;
+
+user #user user - should be defined by chosen rights depending on system;
+error_log  /var/log/nginx/error.log warn;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024; 
+    accept_mutex off; 
+}
+
+http {
+    server {
+        listen 80;
+        server_name 127.0.0.1;
+
+        # Define the root directory for static files
+        location /server {
+            alias /your_path/server;
+        }
+
+        # Proxy requests to Gunicorn
+        location / {
+            proxy_pass http://unix:/your_path/gunicorn.sock;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Optionally handle error pages
+        error_page 500 502 503 504 /404.html;
+        location = /404.html {
+            root /your_path/server/;
+            internal;
+        }
+    }
+}
+```
 
 // path to nginx configuration file
 /etc/nginx/nginx.conf
 
-pay attention to have it also configured for the yocto environment // when it comes to nginx and authelia especially
+#### gunicorn.service config
 
-notes:
+```
+[Unit]
+Description=Gunicorn service to serve Flask app
+After=network.target
+
+[Service]
+User= #user
+Group= #user
+WorkingDirectory=/your_path/server/
+Environment="PATH=/your_path/server/venv/bin/"
+ExecStart=/your_path/server/venv/bin/gunicorn --workers 3 --bind unix:/your_path/server/gunicorn.sock app:app
+
+[Install]
+WantedBy=multi-user.target
+```
+
+// path to gunicorn.service file
+/etc/systemd/system/gunicorn.service
+
+*notes:
 `python app.py` - start python backend server
 `npm run dev` - current start until migration
 
