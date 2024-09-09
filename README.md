@@ -76,6 +76,8 @@ WantedBy=multi-user.target
 
 setup template by berry which requires to be integrated
 
+- npm run build // dist present always for nginx testing 
+
 #### tasks:
     - routing system develop more
     - implement another authentication system
