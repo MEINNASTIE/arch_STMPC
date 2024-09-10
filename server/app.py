@@ -20,11 +20,11 @@ def encode_token(user_id):
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
-@app.route('/', methods=['GET'])
+@app.route('/api', methods=['GET'])
 def hello_world():
     return jsonify({'message': 'Hello, World!'})
 
-@app.route('/generate_totp', methods=['GET'])
+@app.route('/api/generate_totp', methods=['GET'])
 def generate_totp():
     username = request.args.get('username')
     
@@ -35,7 +35,7 @@ def generate_totp():
     totp = pyotp.TOTP(secret)
     return jsonify({'otp_url': totp.provisioning_uri(username, issuer_name='YourApp')})
 
-@app.route('/verify_totp', methods=['POST'])
+@app.route('/api/verify_totp', methods=['POST'])
 def verify_totp():
     data = request.json
     username = data.get('username')
@@ -50,7 +50,7 @@ def verify_totp():
         return jsonify({'message': 'OTP is valid'})
     return jsonify({'error': 'Invalid OTP'}), 400
 
-@app.route('/login', methods=['POST'])
+@app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     username = data.get('username')
@@ -62,7 +62,7 @@ def login():
 
     return jsonify({'message': 'Invalid credentials'}), 401
 
-@app.route('/protected', methods=['GET'])
+@app.route('/api/protected', methods=['GET'])
 def protected():
     token = request.headers.get('Authorization')
     if not token:

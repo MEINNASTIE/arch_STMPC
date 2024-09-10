@@ -49,13 +49,13 @@ const AuthLogin = ({ ...others }) => {
 
   const handleSubmit = async (values, { setErrors, setSubmitting, setStatus }) => {
     try {
-      const response = await axios.post('http://127.0.0.1/login', {
+      const response = await axios.post('http://127.0.0.1/api/login', {
         username: values.username,
         password: values.password
       });
       localStorage.setItem('token', response.data.token);
 
-      const totpResponse = await axios.get(`http://127.0.0.1/generate_totp?username=${values.username}`);
+      const totpResponse = await axios.get(`http://127.0.0.1/api/generate_totp?username=${values.username}`);
       setEmail(values.username);
       setTotpUrl(totpResponse.data.otp_url); 
       setShowOtp(true);
@@ -71,7 +71,7 @@ const AuthLogin = ({ ...others }) => {
 
   const handleVerifyOtp = async () => {
     try {
-      await axios.post('http://127.0.0.1/verify_totp', {
+      await axios.post('http://127.0.0.1/api/verify_totp', {
         username: email,
         otp
       });
