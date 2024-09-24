@@ -51,7 +51,9 @@ def verify_totp():
     return jsonify({'error': 'Invalid OTP'}), 400
 
 @app.route('/api/login', methods=['POST'])
+@cross_origin()
 def login():
+    print(f"Request method: {request.method}")
     data = request.json
     username = data.get('username')
     password = data.get('password')
@@ -77,6 +79,13 @@ def protected():
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token!'}), 401
 
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    return response
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 
@@ -94,7 +103,7 @@ if __name__ == '__main__':
 
 # CORS(app)
 
-# # Example storage (use a database in production)
+# # # Example storage (use a database in production)
 # user_secrets = {
 #     'admin': pyotp.random_base32()  # Generate a TOTP secret for the user
 # }
@@ -116,7 +125,7 @@ if __name__ == '__main__':
 #         return jsonify({'otp_url': totp.provisioning_uri(username, issuer_name='YourApp')})
 #     return jsonify({'error': 'User not found'}), 404
 
-# @app.route('/verify_totp', methods=['POST'])
+# @app.route('/api/verify_totp', methods=['POST'])
 # def verify_totp():
 #     data = request.json
 #     username = data.get('username')
@@ -131,7 +140,7 @@ if __name__ == '__main__':
 #         return jsonify({'message': 'OTP is valid'})
 #     return jsonify({'error': 'Invalid OTP'}), 400
 
-# @app.route('/login', methods=['POST'])
+# @app.route('/api/login', methods=['POST'])
 # def login():
 #     data = request.json
 #     username = data.get('username')
@@ -143,7 +152,7 @@ if __name__ == '__main__':
 
 #     return jsonify({'message': 'Invalid credentials'}), 401
 
-# @app.route('/protected', methods=['GET'])
+# @app.route('/api/protected', methods=['GET'])
 # def protected():
 #     token = request.headers.get('Authorization')
 #     if not token:

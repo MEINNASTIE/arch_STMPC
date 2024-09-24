@@ -1,4 +1,4 @@
-### file serving a gunicorn via nginx for authentication
+cd ### file serving a gunicorn via nginx for authentication
 this environment has been specifically set up for arch linux to run on systemd as a service, the config is set based on distro
 
 #### nginx example config
@@ -89,3 +89,11 @@ setup template by berry which requires to be integrated
 `sudo gunicorn --workers 3 --bind unix:/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/gunicorn.sock app:app` to run a socket for gunicorn 
 
 to check unix user: id -un // group:  id -gn
+
+#### self certificate ssl for local testing
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt
+
+#### SSL certificate 
+sudo certbot --nginx -d yourdomain.com
+
+mono storageApi.exe - to run local web config 
