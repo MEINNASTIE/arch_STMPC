@@ -1,4 +1,4 @@
-cd ### file serving a gunicorn via nginx for authentication
+### file serving a gunicorn via nginx for authentication
 this environment has been specifically set up for arch linux to run on systemd as a service, the config is set based on distro
 
 #### nginx example config
@@ -6,7 +6,7 @@ this environment has been specifically set up for arch linux to run on systemd a
 ```
 worker_processes 3;
 
-user #user user - should be defined by chosen rights depending on system;
+user meinna meinna;
 error_log  /var/log/nginx/error.log warn;
 pid /run/nginx.pid;
 
@@ -16,28 +16,52 @@ events {
 }
 
 http {
+    include /etc/nginx/mime.types;  
+    default_type application/octet-stream; 
+
     server {
-        listen 80;
+	listen 80;
+	server_name 127.0.0.1;
+
+	# Redirect all HTTP traffic to HTTPS
+	return 301 https://$host$request_uri;
+    }
+
+    server {
+        listen 443 ssl;
         server_name 127.0.0.1;
 
-        # Define the root directory for static files
-        location /server {
-            alias /your_path/server;
+	# self assigned for testing
+	ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+        ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+
+	ssl_protocols TLSv1.2 TLSv1.3;
+	ssl_ciphers HIGH:!aNULL:!MD5;
+
+        location / {
+            root /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/vite/dist/;
+            try_files $uri /index.html;
         }
 
-        # Proxy requests to Gunicorn
-        location / {
-            proxy_pass http://unix:/your_path/gunicorn.sock;
+	 location /server {
+	 alias /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/;
+	}
+
+        location /api {
+            proxy_pass http://unix:/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/gunicorn.sock;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+
+	    add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
         }
 
-        # Optionally handle error pages
         error_page 500 502 503 504 /404.html;
         location = /404.html {
-            root /your_path/server/;
+            root /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/;
             internal;
         }
     }

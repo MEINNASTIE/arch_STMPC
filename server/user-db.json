@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "username": "alex",
+        "hashB64": "cccccCCCCC",
+        "totp_secret": "JBSWY3DPEHPK3PXP"  
+    },
+    {
+        "id": 23,
+        "username": "peter",
+        "hashB64": "bbbbbBBBBB",
+        "totp_secret": "KRSXG5DOLZGQUYMR"  
+    },
+    {
+        "id": 3,
+        "username": "mike",
+        "hashB64": "aaaaaAAAAA",
+        "totp_secret": "MFRGGZDFMZTWQ2LK"  
+    }
+]
