@@ -103,7 +103,7 @@ CORS(app)
 
 USE_JSON_FILE = True  # Set to False when using actual API in production
 JSON_FILE = 'user-db.json'
-API_BASE_URL = "http://your-api-server.com/api/user" 
+API_BASE_URL = "http://127.0.0.1:8005/api/config/etc..." # replace later 
 
 def load_users():
     if not os.path.exists(JSON_FILE):
@@ -154,7 +154,7 @@ def update_user_totp_secret(username, secret):
 
 @app.route('/api', methods=['GET'])
 def hello_world():
-   return jsonify({'message': 'Hello, World!'})
+   return jsonify({'message': 'Lain is forever!'})
 
 @app.route('/api/generate_totp', methods=['GET'])
 def generate_totp():
