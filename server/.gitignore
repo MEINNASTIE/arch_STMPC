@@ -3,3 +3,4 @@ venv/
 
 # gunicorn socket 
 gunicorn.sock
+config.py
