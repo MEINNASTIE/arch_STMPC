@@ -1,95 +1,4 @@
-# from flask import Flask, request, jsonify
-# import datetime
-# import jwt
-# import pyotp
-# from flask_cors import CORS
-
-# app = Flask(__name__)
-# app.config['SECRET_KEY'] = '1234'
-
-# CORS(app)
-
-# # Example storage (use a database in production)
-# user_secrets = {}
-
-# def encode_token(user_id):
-#     payload = {
-#         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
-#         'iat': datetime.datetime.utcnow(),
-#         'sub': user_id
-#     }
-#     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
-
-# @app.route('/api', methods=['GET'])
-# def hello_world():
-#     return jsonify({'message': 'Hello, World!'})
-
-# @app.route('/api/generate_totp', methods=['GET'])
-# def generate_totp():
-#     username = request.args.get('username')
-#     if username in user_secrets:
-#         secret = user_secrets[username]
-#         totp = pyotp.TOTP(secret)
-#         return jsonify({'otp_url': totp.provisioning_uri(username, issuer_name='YourApp')})
-#     return jsonify({'error': 'User not found'}), 404
-
-# @app.route('/api/verify_totp', methods=['POST'])
-# def verify_totp():
-#     data = request.json
-#     username = data.get('username')
-#     otp = data.get('otp')
-
-#     secret = user_secrets.get(username)
-#     if not secret:
-#         return jsonify({'error': 'Invalid user'}), 400
-
-#     totp = pyotp.TOTP(secret)
-#     if totp.verify(otp):
-#         return jsonify({'message': 'OTP is valid'})
-#     return jsonify({'error': 'Invalid OTP'}), 400
-
-# @app.route('/api/login', methods=['POST'])
-# def login():
-#     print(f"Request method: {request.method}")
-#     data = request.json
-#     username = data.get('username')
-#     password = data.get('password')
-
-#     if username == 'admin' and password == 'admin':
-#         token = encode_token(username)
-#         return jsonify({'token': token})
-
-#     return jsonify({'message': 'Invalid credentials'}), 401
-
-# @app.route('/api/protected', methods=['GET'])
-# def protected():
-#     token = request.headers.get('Authorization')
-#     if not token:
-#         return jsonify({'message': 'Token is missing!'}), 403
-
-#     try:
-#         token = token.split(" ")[1]
-#         payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-#         return jsonify({'message': 'Protected content', 'user': payload['sub']})
-#     except jwt.ExpiredSignatureError:
-#         return jsonify({'message': 'Token has expired!'}), 401
-#     except jwt.InvalidTokenError:
-#         return jsonify({'message': 'Invalid token!'}), 401
-
-# @app.after_request
-# def after_request(response):
-#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-#     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-#     return response
-
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
-# simulation with a json and api 
-
 import json
-import os
 import pyotp
 import requests
 import jwt
@@ -101,75 +10,71 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = '1234'
 CORS(app)
 
-USE_JSON_FILE = True  # Set to False when using actual API in production
-JSON_FILE = 'user-db.json'
-API_BASE_URL = "http://127.0.0.1:8005/api/config/etc..." # replace later 
-
-def load_users():
-    if not os.path.exists(JSON_FILE):
-        return []
-    with open(JSON_FILE, 'r') as file:
-        return json.load(file)
-
-def save_users(users):
-    with open(JSON_FILE, 'w') as file:
-        json.dump(users, file, indent=4)
-
-def get_user_from_file(username):
-    users = load_users()
-    for user in users:
-        if user['username'] == username:
-            return user
-    return None
+API_BASE_URL = "http://127.0.0.1:8005/api" 
 
 def get_user_from_api(username):
-    response = requests.get(f"{API_BASE_URL}/{username}")
+    print(f"Fetching user: {username}")  
+    response = requests.get(f"{API_BASE_URL}/user/{username}")
     if response.status_code == 200:
-        return response.json()
+        user = response.json()
+        print(f"User data fetched: {user}")  
+        return user
+    print(f"User {username} not found.")
     return None
 
-def get_user(username):
-    if USE_JSON_FILE:
-        return get_user_from_file(username)
-    return get_user_from_api(username)
-
-def update_user_totp_secret_in_file(username, secret):
-    users = load_users()
-    for user in users:
-        if user['username'] == username:
-            user['totp_secret'] = secret
-            save_users(users)
-            return True
-    return False
-
 def update_user_totp_secret_in_api(username, secret):
+    print(f"Updating TOTP secret for {username}")
     payload = {'totp_secret': secret}
-    response = requests.post(f"{API_BASE_URL}/{username}", json=payload)
+    response = requests.post(f"{API_BASE_URL}/user/{username}", json=payload)
     return response.status_code == 200
-
-def update_user_totp_secret(username, secret):
-    if USE_JSON_FILE:
-        return update_user_totp_secret_in_file(username, secret)
-    return update_user_totp_secret_in_api(username, secret)
 
 @app.route('/api', methods=['GET'])
 def hello_world():
-   return jsonify({'message': 'Lain is forever!'})
+    return jsonify({'message': 'Lain is forever!'})
+
+@app.route('/api/users/count', methods=['GET'])
+def get_user_count():
+    response = requests.get(f"{API_BASE_URL}/users")
+    if response.status_code == 200:
+        users = response.json()
+        print(f"User count fetched: {len(users)} users")  
+        return jsonify({'count': len(users)})
+    return jsonify({'message': 'Error fetching users'}), 500
+
+@app.route('/api/users', methods=['GET'])
+def get_all_users():
+    response = requests.get(f"{API_BASE_URL}/users")
+    if response.status_code == 200:
+        users = response.json()
+        print(f"Fetched users: {users}")  
+        return jsonify(users)
+    return jsonify([])
+
+@app.route('/api/user/<identifier_type>/<identifier>', methods=['GET'])
+def get_user_details(identifier_type, identifier):
+    print(f"Fetching user by {identifier_type}: {identifier}")
+    response = requests.get(f"{API_BASE_URL}/user/{identifier_type}/{identifier}")
+    if response.status_code == 200:
+        user = response.json()
+        print(f"User details fetched: {user}") 
+        return jsonify(user)
+    return jsonify({'message': 'User not found'}), 404
 
 @app.route('/api/generate_totp', methods=['GET'])
 def generate_totp():
     username = request.args.get('username')
-    user_data = get_user(username)
+    user_data = get_user_from_api(username)
     
     if user_data:
+        user_id = user_data['id']
         secret = user_data.get('totp_secret')
         
         if not secret:
             secret = pyotp.random_base32()
-            update_user_totp_secret(username, secret)
+            update_user_totp_secret_in_api(username, secret)
         
         totp = pyotp.TOTP(secret)
-        otp_url = totp.provisioning_uri(username, issuer_name='YourApp')
+        otp_url = totp.provisioning_uri(user_id, issuer_name='YourApp')
         return jsonify({'otp_url': otp_url})
     
     return jsonify({'error': 'User not found'}), 404
@@ -179,7 +84,7 @@ def verify_totp():
     data = request.json
     username = data.get('username')
     otp = data.get('otp')
-    user_data = get_user(username)
+    user_data = get_user_from_api(username)
     
     if not user_data:
         return jsonify({'error': 'Invalid user'}), 400
@@ -207,20 +112,17 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
-    # if username == 'admin' and password == 'admin':
-    #     token = encode_token(username)
-    #     return jsonify({'token': token})
+    print(f"Login attempt by user: {username}") 
 
-    # return jsonify({'message': 'Invalid credentials'}), 401
+    response = requests.get(f"{API_BASE_URL}/user/{username}")
+    if response.status_code == 200:
+        user = response.json()
+        if user.get('hashB64') == password:
+            token = encode_token(user['id'])
+            print(f"Login successful for user: {username}") 
+            return jsonify({'token': token})
 
-    users = load_users() 
-
-    user = next((user for user in users if user['username'] == username), None)
-
-    if user and user.get('hashB64') == password: 
-        token = encode_token(user['id'])  
-        return jsonify({'token': token})
-
+    print(f"Login failed for user: {username}") 
     return jsonify({'message': 'Invalid credentials'}), 401
 
 @app.route('/api/protected', methods=['GET'])
@@ -230,8 +132,9 @@ def protected():
         return jsonify({'message': 'Token is missing!'}), 403
 
     try:
-        token = token.split(" ")[1]
+        token = token.split(" ")[1] 
         payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        print(f"Access granted to user: {payload['sub']}") 
         return jsonify({'message': 'Protected content', 'user': payload['sub']})
     except jwt.ExpiredSignatureError:
         return jsonify({'message': 'Token has expired!'}), 401

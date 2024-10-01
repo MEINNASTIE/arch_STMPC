@@ -32,7 +32,7 @@ import { QRCodeSVG } from 'qrcode.react';
 const AuthLogin = ({ ...others }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otp, setOtp] = useState('');
@@ -57,8 +57,8 @@ const AuthLogin = ({ ...others }) => {
 
       const totpResponse = await axios.get(`https://192.168.10.129/api/generate_totp?username=${values.username}`);
       setEmail(values.username);
-      setTotpUrl(totpResponse.data.otp_url); 
-      setShowOtp(true);
+      setTotpUrl(totpResponse.data.otp_url);
+      setShowOtp(true); // Switch to OTP form
 
       setStatus({ success: true });
       setSubmitting(false);
@@ -84,96 +84,88 @@ const AuthLogin = ({ ...others }) => {
 
   return (
     <>
-      <Grid container direction="column" justifyContent="center" spacing={2}>
-        <Grid item xs={12} container alignItems="center" justifyContent="center">
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle1">Sign in with username</Typography>
-          </Box>
-        </Grid>
-      </Grid>
+      {!showOtp ? (
+        <Formik
+          initialValues={{
+            username: '',
+            password: '',
+            submit: null
+          }}
+          validationSchema={Yup.object().shape({
+            username: Yup.string().max(255).required('Username is required'),
+            password: Yup.string().max(255).required('Password is required')
+          })}
+          onSubmit={handleSubmit}
+        >
+          {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+            <form noValidate onSubmit={handleSubmit} {...others}>
+              <FormControl fullWidth error={Boolean(touched.username && errors.username)} sx={{ ...theme.typography.customInput }}>
+                <InputLabel htmlFor="outlined-adornment-username-login">Username</InputLabel>
+                <OutlinedInput
+                  id="outlined-adornment-username-login"
+                  type="text"
+                  value={values.username}
+                  name="username"
+                  onBlur={handleBlur}
+                  onChange={handleChange}
+                  label="Username"
+                  inputProps={{}}
+                />
+                {touched.username && errors.username && (
+                  <FormHelperText error id="standard-weight-helper-text-username-login">
+                    {errors.username}
+                  </FormHelperText>
+                )}
+              </FormControl>
 
-      <Formik
-        initialValues={{
-          username: '',
-          password: '',
-          submit: null
-        }}
-        validationSchema={Yup.object().shape({
-          username: Yup.string().max(255).required('Username is required'),
-          password: Yup.string().max(255).required('Password is required')
-        })}
-        onSubmit={handleSubmit}
-      >
-        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
-          <form noValidate onSubmit={handleSubmit} {...others}>
-            <FormControl fullWidth error={Boolean(touched.username && errors.username)} sx={{ ...theme.typography.customInput }}>
-              <InputLabel htmlFor="outlined-adornment-username-login">Username</InputLabel>
-              <OutlinedInput
-                id="outlined-adornment-username-login"
-                type="text"
-                value={values.username}
-                name="username"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                label="Username"
-                inputProps={{}}
-              />
-              {touched.username && errors.username && (
-                <FormHelperText error id="standard-weight-helper-text-username-login">
-                  {errors.username}
-                </FormHelperText>
+              <FormControl fullWidth error={Boolean(touched.password && errors.password)} sx={{ ...theme.typography.customInput }}>
+                <InputLabel htmlFor="outlined-adornment-password-login">Password</InputLabel>
+                <OutlinedInput
+                  id="outlined-adornment-password-login"
+                  type={showPassword ? 'text' : 'password'}
+                  value={values.password}
+                  name="password"
+                  onBlur={handleBlur}
+                  onChange={handleChange}
+                  endAdornment={
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        onMouseDown={handleMouseDownPassword}
+                        edge="end"
+                        size="large"
+                      >
+                        {showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  }
+                  label="Password"
+                  inputProps={{}}
+                />
+                {touched.password && errors.password && (
+                  <FormHelperText error id="standard-weight-helper-text-password-login">
+                    {errors.password}
+                  </FormHelperText>
+                )}
+              </FormControl>
+              {errors.submit && (
+                <Box sx={{ mt: 3 }}>
+                  <FormHelperText error>{errors.submit}</FormHelperText>
+                </Box>
               )}
-            </FormControl>
 
-            <FormControl fullWidth error={Boolean(touched.password && errors.password)} sx={{ ...theme.typography.customInput }}>
-              <InputLabel htmlFor="outlined-adornment-password-login">Password</InputLabel>
-              <OutlinedInput
-                id="outlined-adornment-password-login"
-                type={showPassword ? 'text' : 'password'}
-                value={values.password}
-                name="password"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                endAdornment={
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={handleClickShowPassword}
-                      onMouseDown={handleMouseDownPassword}
-                      edge="end"
-                      size="large"
-                    >
-                      {showPassword ? <Visibility /> : <VisibilityOff />}
-                    </IconButton>
-                  </InputAdornment>
-                }
-                label="Password"
-                inputProps={{}}
-              />
-              {touched.password && errors.password && (
-                <FormHelperText error id="standard-weight-helper-text-password-login">
-                  {errors.password}
-                </FormHelperText>
-              )}
-            </FormControl>
-            {errors.submit && (
-              <Box sx={{ mt: 3 }}>
-                <FormHelperText error>{errors.submit}</FormHelperText>
+              <Box sx={{ mt: 2 }}>
+                <AnimateButton>
+                  <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="secondary">
+                    Log in
+                  </Button>
+                </AnimateButton>
               </Box>
-            )}
-
-            <Box sx={{ mt: 2 }}>
-              <AnimateButton>
-                <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="secondary">
-                  Log in
-                </Button>
-              </AnimateButton>
-            </Box>
-          </form>
-        )}
-      </Formik>
-
-      {showOtp && (
+            </form>
+          )}
+        </Formik>
+      ) : (
         <Box sx={{ mt: 2 }}>
           <FormControl fullWidth>
             <InputLabel htmlFor="otp">Enter OTP</InputLabel>
@@ -186,21 +178,21 @@ const AuthLogin = ({ ...others }) => {
             />
             <FormHelperText id="otp-helper-text">Enter the OTP sent to your application</FormHelperText>
           </FormControl>
-          <Button disableElevation onClick={handleVerifyOtp} variant="contained" color="secondary" fullWidth size="large">
+          <Button disableElevation onClick={handleVerifyOtp} variant="contained" color="secondary" fullWidth size="large" sx={{ mt: 2 }}>
             Verify OTP
           </Button>
 
           {totpUrl && (
             <Grid container justifyContent="center" alignItems="center" sx={{ mt: 4 }}>
-            <Box display="flex" flexDirection="column" alignItems="center">
-              <Typography variant="subtitle1" gutterBottom>
-                Scan the QR code with your authenticator app:
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                <QRCodeSVG value={totpUrl} size={150} />
+              <Box display="flex" flexDirection="column" alignItems="center">
+                <Typography variant="subtitle1" gutterBottom>
+                  Scan the QR code with your authenticator app:
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <QRCodeSVG value={totpUrl} size={150} />
+                </Box>
               </Box>
-            </Box>
-          </Grid>
+            </Grid>
           )}
         </Box>
       )}
