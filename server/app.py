@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = '1234'
 CORS(app)
 
-API_BASE_URL = "http://127.0.0.1:8005/api" 
+API_BASE_URL = "https://192.168.10.221:8005/api" 
 
 def get_user_from_api(username):
     print(f"Fetching user: {username}")  

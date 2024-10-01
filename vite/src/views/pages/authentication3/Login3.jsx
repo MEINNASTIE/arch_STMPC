@@ -15,20 +15,6 @@ import AuthFooter from 'ui-component/cards/AuthFooter';
 // ================================|| AUTH - LOGIN ||================================ //
 
 const Login = () => {
-  const [usersExist, setUsersExist] = useState(null);
-
-  useEffect(() => {
-    const checkUsersExist = async () => {
-      try {
-        const response = await axios.get('https://192.168.10.129/api/users/count');
-        setUsersExist(response.data.length > 0);
-      } catch (error) {
-        console.error('Error checking users:', error);
-      }
-    };
-
-    checkUsersExist();
-  }, []);
 
   return (
     <AuthWrapper1>

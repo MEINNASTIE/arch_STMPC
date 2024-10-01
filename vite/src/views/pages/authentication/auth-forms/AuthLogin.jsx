@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,6 +38,28 @@ const AuthLogin = ({ ...others }) => {
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
   const [totpUrl, setTotpUrl] = useState('');
+  const [loading, setLoading] = useState(true); 
+  const [usersExist, setUsersExist] = useState(true);
+
+  useEffect(() => {
+    const fetchUserCount = async () => {
+      try {
+        const response = await axios.get('http://192.168.10.221:8005/api/users/count');
+        if (response.data.count === 0) {
+          setUsersExist(false);
+          navigate('/register'); 
+        } else {
+          setUsersExist(true);
+        }
+      } catch (error) {
+        console.error('Error fetching user count:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserCount();
+  }, [navigate]);
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
@@ -49,16 +71,16 @@ const AuthLogin = ({ ...others }) => {
 
   const handleSubmit = async (values, { setErrors, setSubmitting, setStatus }) => {
     try {
-      const response = await axios.post('https://192.168.10.129/api/login', {
+      const response = await axios.post('https://192.168.10.221:8005/api/login', {
         username: values.username,
         password: values.password
       });
       localStorage.setItem('token', response.data.token);
 
-      const totpResponse = await axios.get(`https://192.168.10.129/api/generate_totp?username=${values.username}`);
+      const totpResponse = await axios.get(`https://192.168.10.221:8005/api/generate_totp?username=${values.username}`);
       setEmail(values.username);
       setTotpUrl(totpResponse.data.otp_url);
-      setShowOtp(true); // Switch to OTP form
+      setShowOtp(true); 
 
       setStatus({ success: true });
       setSubmitting(false);
@@ -72,7 +94,7 @@ const AuthLogin = ({ ...others }) => {
 
   const handleVerifyOtp = async () => {
     try {
-      await axios.post('https://192.168.10.129/api/verify_totp', {
+      await axios.post('https://192.168.10.221:8005/api/verify_totp', {
         username: email,
         otp
       });
@@ -81,6 +103,10 @@ const AuthLogin = ({ ...others }) => {
       alert('Invalid OTP');
     }
   };
+
+  if (loading) {
+    return <Typography>Loading...</Typography>; 
+  }
 
   return (
     <>
@@ -109,7 +135,6 @@ const AuthLogin = ({ ...others }) => {
                   onBlur={handleBlur}
                   onChange={handleChange}
                   label="Username"
-                  inputProps={{}}
                 />
                 {touched.username && errors.username && (
                   <FormHelperText error id="standard-weight-helper-text-username-login">
@@ -134,14 +159,12 @@ const AuthLogin = ({ ...others }) => {
                         onClick={handleClickShowPassword}
                         onMouseDown={handleMouseDownPassword}
                         edge="end"
-                        size="large"
                       >
                         {showPassword ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   }
                   label="Password"
-                  inputProps={{}}
                 />
                 {touched.password && errors.password && (
                   <FormHelperText error id="standard-weight-helper-text-password-login">
