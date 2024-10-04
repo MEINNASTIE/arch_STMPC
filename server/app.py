@@ -5,12 +5,22 @@ import jwt
 import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import base64
+import hashlib
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '1234'
-CORS(app)
 
-API_BASE_URL = "https://192.168.10.221:8005/api" 
+CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+API_BASE_URL = "https://localhost/api" 
+
+def generate_hash(username, password):
+    """Generate a base64-encoded hash from the username and password."""
+    hash_input = f"{username};{password}".encode('utf-8')
+    hash_digest = hashlib.sha256(hash_input).digest()
+    hash_b64 = base64.b64encode(hash_digest).decode('utf-8')
+    return hash_b64
 
 def get_user_from_api(username):
     print(f"Fetching user: {username}")  
@@ -27,6 +37,22 @@ def update_user_totp_secret_in_api(username, secret):
     payload = {'totp_secret': secret}
     response = requests.post(f"{API_BASE_URL}/user/{username}", json=payload)
     return response.status_code == 200
+
+def create_initial_admin(username, password):
+    """ Create the initial admin user via the external user management server. """
+    print(f"Creating initial admin user: {username}")
+    username_password_hash = generate_hash(username, password)
+
+    payload = {
+        "hash": username_password_hash
+    }
+
+    response = requests.post(f"{API_BASE_URL}/user/initadmin", json=payload)
+    if response.status_code == 201:
+        print(f"Admin user {username} created successfully.")
+        return response.json() 
+    print(f"Failed to create admin user: {response.json()}")
+    return None
 
 @app.route('/api', methods=['GET'])
 def hello_world():
@@ -112,17 +138,22 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
-    print(f"Login attempt by user: {username}") 
+    if not username or not password:
+        return jsonify({'message': 'Username and password are required'}), 400
 
-    response = requests.get(f"{API_BASE_URL}/user/{username}")
+    print(f"Login attempt by user: {username}")
+    hash_b64 = generate_hash(username, password)
+
+    response = requests.get(f"{API_BASE_URL}/user/hash/{username}")
+
     if response.status_code == 200:
         user = response.json()
-        if user.get('hashB64') == password:
+        if user.get('hashB64') == hash_b64:
             token = encode_token(user['id'])
-            print(f"Login successful for user: {username}") 
+            print(f"Login successful for user: {username}")
             return jsonify({'token': token})
 
-    print(f"Login failed for user: {username}") 
+    print(f"Login failed for user: {username}")
     return jsonify({'message': 'Invalid credentials'}), 401
 
 @app.route('/api/protected', methods=['GET'])
@@ -141,6 +172,55 @@ def protected():
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token!'}), 401
 
+@app.route('/api/user/initadmin', methods=['POST'])
+def init_admin():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required."}), 400
+    username_password_hash = generate_hash(username, password)
+
+    payload = {
+        "hash": username_password_hash
+    }
+    response = requests.post(f"{API_BASE_URL}/user/initadmin", json=payload)
+
+    if response.status_code == 201:
+        return jsonify(response.json()), 201
+    return jsonify({"error": "Failed to create initial admin."}), 500
+
+@app.route('/api/user', methods=['POST'])
+def create_user():
+    """Create a new user."""
+    data = request.json
+    username = data.get('username')
+    rolename = data.get('rolename')
+    password = data.get('password')
+    exp_date = data.get('expDate', '2999-01-01')  
+    enabled = data.get('enabled', 1)
+
+    if not username or not password or not rolename:
+        return jsonify({'error': 'Username, password, and rolename are required.'}), 400
+
+    username_password_hash = generate_hash(username, password)
+
+    payload = {
+        'username': username,
+        'rolename': rolename,
+        'hash': username_password_hash,
+        'expDate': exp_date,
+        'enabled': enabled
+    }
+
+    response = requests.post(f"{API_BASE_URL}/user", json=payload)
+
+    if response.status_code == 201:
+        return jsonify(response.json()), 201  
+    else:
+        return jsonify({'error': 'Failed to create user'}), response.status_code
+
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
@@ -148,4 +228,4 @@ def after_request(response):
     return response
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)

@@ -1,60 +1,74 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
-// material-ui
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
-import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Typography from '@mui/material/Typography';
-
-// third party
 import * as Yup from 'yup';
 import { Formik } from 'formik';
-
-// project imports
 import AnimateButton from 'ui-component/extended/AnimateButton';
-
-// assets
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-
-// QR Code library
 import { QRCodeSVG } from 'qrcode.react';
+
+const generateHashB64 = async (username, password) => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${username};${password}`);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashString = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return btoa(hashString);
+};
 
 const AuthLogin = ({ ...others }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-
   const [showPassword, setShowPassword] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
   const [totpUrl, setTotpUrl] = useState('');
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const [usersExist, setUsersExist] = useState(true);
+  const [userCount, setUserCount] = useState(0);
+  const [currentUser, setCurrentUser] = useState('');
+  const [userList, setUserList] = useState([]); 
+  const [newUser, setNewUser] = useState({ username: '', password: '' });
 
   useEffect(() => {
     const fetchUserCount = async () => {
       try {
-        const response = await axios.get('http://192.168.10.221:8005/api/users/count');
-        if (response.data.count === 0) {
+        const response = await axios.get('https://localhost/api/users/count');
+        console.log('API Response:', response.data);
+        setUserCount(response.data.payload.count);
+        if (response.data.payload.count === 0) {
           setUsersExist(false);
-          navigate('/register'); 
+          navigate('/register');
         } else {
           setUsersExist(true);
+          await fetchUserList(); 
         }
       } catch (error) {
         console.error('Error fetching user count:', error);
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchUserList = async () => {
+      try {
+        const response = await axios.get('https://localhost/api/users'); 
+        console.log('User List:', response.data.payload);
+        setUserList(response.data.payload); 
+      } catch (error) {
+        console.error('Error fetching user list:', error);
       }
     };
 
@@ -69,18 +83,48 @@ const AuthLogin = ({ ...others }) => {
     event.preventDefault();
   };
 
+  const handleAddUser = async () => {
+    try {
+      const hashB64 = await generateHashB64(newUser.username, newUser.password);
+  
+      const response = await axios.post('https://localhost/api/users', {
+        username: newUser.username,
+        password: hashB64
+      });
+  
+      if (response.status === 201) {
+        alert('User added successfully');
+        await fetchUserList(); 
+      } else {
+        alert('Failed to add user');
+      }
+    } catch (error) {
+      console.error('Error adding user:', error);
+      alert('Error adding user');
+    }
+  };  
+
   const handleSubmit = async (values, { setErrors, setSubmitting, setStatus }) => {
     try {
-      const response = await axios.post('https://192.168.10.221:8005/api/login', {
-        username: values.username,
-        password: values.password
-      });
-      localStorage.setItem('token', response.data.token);
+      const hashB64 = await generateHashB64(values.username, values.password);
 
-      const totpResponse = await axios.get(`https://192.168.10.221:8005/api/generate_totp?username=${values.username}`);
-      setEmail(values.username);
-      setTotpUrl(totpResponse.data.otp_url);
-      setShowOtp(true); 
+      const response = await axios.post('https://localhost/api/user/initadmin', {
+        hash: hashB64
+      });
+
+      if (response.status === 200) {
+        const { token } = response.data;
+        localStorage.setItem('token', token);
+
+        const totpResponse = await axios.get(`https://localhost/api/generate_totp?username=${values.username}`);
+        setEmail(values.username);
+        setTotpUrl(totpResponse.data.otp_url);
+        setShowOtp(true);
+
+        setCurrentUser(values.username);
+      } else {
+        setErrors({ submit: 'Failed to initialize admin' });
+      }
 
       setStatus({ success: true });
       setSubmitting(false);
@@ -94,7 +138,7 @@ const AuthLogin = ({ ...others }) => {
 
   const handleVerifyOtp = async () => {
     try {
-      await axios.post('https://192.168.10.221:8005/api/verify_totp', {
+      await axios.post('https://localhost/api/verify_totp', {
         username: email,
         otp
       });
@@ -105,11 +149,14 @@ const AuthLogin = ({ ...others }) => {
   };
 
   if (loading) {
-    return <Typography>Loading...</Typography>; 
+    return <Typography>Loading...</Typography>;
   }
 
   return (
     <>
+      <Typography variant="h6">User Count: {userCount}</Typography>
+      {currentUser && <Typography variant="h6">Logging in as: {currentUser}</Typography>}
+
       {!showOtp ? (
         <Formik
           initialValues={{
@@ -172,53 +219,102 @@ const AuthLogin = ({ ...others }) => {
                   </FormHelperText>
                 )}
               </FormControl>
-              {errors.submit && (
-                <Box sx={{ mt: 3 }}>
-                  <FormHelperText error>{errors.submit}</FormHelperText>
-                </Box>
-              )}
 
-              <Box sx={{ mt: 2 }}>
-                <AnimateButton>
-                  <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="secondary">
-                    Log in
-                  </Button>
-                </AnimateButton>
-              </Box>
+              <AnimateButton>
+                <Button
+                  disableElevation
+                  fullWidth
+                  size="large"
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                >
+                  Login
+                </Button>
+              </AnimateButton>
             </form>
           )}
         </Formik>
       ) : (
-        <Box sx={{ mt: 2 }}>
+        <Box>
+          <Typography variant="h6">Enter the OTP:</Typography>
+          <QRCodeSVG value={totpUrl} />
           <FormControl fullWidth>
-            <InputLabel htmlFor="otp">Enter OTP</InputLabel>
             <OutlinedInput
-              id="otp"
               type="text"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              label="OTP"
+              placeholder="Enter OTP"
             />
-            <FormHelperText id="otp-helper-text">Enter the OTP sent to your application</FormHelperText>
           </FormControl>
-          <Button disableElevation onClick={handleVerifyOtp} variant="contained" color="secondary" fullWidth size="large" sx={{ mt: 2 }}>
+          <Button variant="contained" color="primary" onClick={handleVerifyOtp}>
             Verify OTP
           </Button>
-
-          {totpUrl && (
-            <Grid container justifyContent="center" alignItems="center" sx={{ mt: 4 }}>
-              <Box display="flex" flexDirection="column" alignItems="center">
-                <Typography variant="subtitle1" gutterBottom>
-                  Scan the QR code with your authenticator app:
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  <QRCodeSVG value={totpUrl} size={150} />
-                </Box>
-              </Box>
-            </Grid>
-          )}
         </Box>
       )}
+
+      {/* User List Display */}
+      <Box mt={2}>
+        <Typography variant="h6">User List:</Typography>
+        {userList.length > 0 ? (
+          <ul>
+            {userList.map(user => (
+              <li key={user.userId}>
+                <Typography variant="body1">{user.username} - Role: {user.rolename}</Typography>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Typography>No users found.</Typography>
+        )}
+      </Box>
+
+      <Box mt={2}>
+      <Typography variant="h6">Add New User</Typography>
+      <FormControl fullWidth sx={{ mt: 1 }}>
+        <InputLabel htmlFor="new-username">New Username</InputLabel>
+        <OutlinedInput
+          id="new-username"
+          type="text"
+          value={newUser.username}
+          onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+          label="New Username"
+        />
+      </FormControl>
+      <FormControl fullWidth sx={{ mt: 2 }}>
+        <InputLabel htmlFor="new-password">New Password</InputLabel>
+        <OutlinedInput
+          id="new-password"
+          type={showPassword ? 'text' : 'password'}
+          value={newUser.password}
+          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+          endAdornment={
+            <InputAdornment position="end">
+              <IconButton
+                aria-label="toggle password visibility"
+                onClick={handleClickShowPassword}
+                onMouseDown={handleMouseDownPassword}
+                edge="end"
+              >
+                {showPassword ? <Visibility /> : <VisibilityOff />}
+              </IconButton>
+            </InputAdornment>
+          }
+          label="New Password"
+        />
+      </FormControl>
+      <Button
+        disableElevation
+        fullWidth
+        size="large"
+        variant="contained"
+        color="primary"
+        sx={{ mt: 2 }}
+        onClick={handleAddUser}
+      >
+        Add User
+      </Button>
+    </Box>
     </>
   );
 };
