@@ -172,24 +172,32 @@ def protected():
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token!'}), 401
 
-@app.route('/api/user/initadmin', methods=['POST'])
-def init_admin():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
+def init_user(username, password):
+    user_pass = f"{username};{password}"
+    
+    hashB64 = base64.b64encode(user_pass.encode()).decode()
 
-    if not username or not password:
-        return jsonify({"error": "Username and password are required."}), 400
-    username_password_hash = generate_hash(username, password)
+    url = f"https://localhost/api/user/initadmin?hash={hashB64}"
+    
+    try:
+        response = requests.post(url, verify=False)
 
-    payload = {
-        "hash": username_password_hash
-    }
-    response = requests.post(f"{API_BASE_URL}/user/initadmin", json=payload)
+        if response.status_code == 200:
+            payload = response.json()
+            return payload
+        else:
+            print(f"Error: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+        
+user_payload = init_user('some_user', 'some_password')
 
-    if response.status_code == 201:
-        return jsonify(response.json()), 201
-    return jsonify({"error": "Failed to create initial admin."}), 500
+if user_payload:
+    print("User initialization successful:")
+    print(user_payload)
+
 
 @app.route('/api/user', methods=['POST'])
 def create_user():

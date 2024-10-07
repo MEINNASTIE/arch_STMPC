@@ -37,23 +37,15 @@ const AuthLogin = ({ ...others }) => {
   const [totpUrl, setTotpUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [usersExist, setUsersExist] = useState(true);
-  const [userCount, setUserCount] = useState(0);
-  const [currentUser, setCurrentUser] = useState('');
-  const [userList, setUserList] = useState([]); 
-  const [newUser, setNewUser] = useState({ username: '', password: '' });
 
   useEffect(() => {
     const fetchUserCount = async () => {
       try {
         const response = await axios.get('https://localhost/api/users/count');
-        console.log('API Response:', response.data);
-        setUserCount(response.data.payload.count);
         if (response.data.payload.count === 0) {
           setUsersExist(false);
-          navigate('/register');
         } else {
           setUsersExist(true);
-          await fetchUserList(); 
         }
       } catch (error) {
         console.error('Error fetching user count:', error);
@@ -62,18 +54,8 @@ const AuthLogin = ({ ...others }) => {
       }
     };
 
-    const fetchUserList = async () => {
-      try {
-        const response = await axios.get('https://localhost/api/users'); 
-        console.log('User List:', response.data.payload);
-        setUserList(response.data.payload); 
-      } catch (error) {
-        console.error('Error fetching user list:', error);
-      }
-    };
-
     fetchUserCount();
-  }, [navigate]);
+  }, []);
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
@@ -83,53 +65,24 @@ const AuthLogin = ({ ...others }) => {
     event.preventDefault();
   };
 
-  const handleAddUser = async () => {
-    try {
-      const hashB64 = await generateHashB64(newUser.username, newUser.password);
-  
-      const response = await axios.post('https://localhost/api/users', {
-        username: newUser.username,
-        password: hashB64
-      });
-  
-      if (response.status === 201) {
-        alert('User added successfully');
-        await fetchUserList(); 
-      } else {
-        alert('Failed to add user');
-      }
-    } catch (error) {
-      console.error('Error adding user:', error);
-      alert('Error adding user');
-    }
-  };  
-
   const handleSubmit = async (values, { setErrors, setSubmitting, setStatus }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
-
-      const response = await axios.post('https://localhost/api/user/initadmin', {
-        hash: hashB64
-      });
+      const response = usersExist
+        ? await axios.post(`https://localhost/api/login`)
+        : await axios.post(`https://localhost/api/user/initadmin?hash=${hashB64}`);
 
       if (response.status === 200) {
-        const { token } = response.data;
+        const { token } = response.data.payload;
         localStorage.setItem('token', token);
-
-        const totpResponse = await axios.get(`https://localhost/api/generate_totp?username=${values.username}`);
-        setEmail(values.username);
-        setTotpUrl(totpResponse.data.otp_url);
-        setShowOtp(true);
-
-        setCurrentUser(values.username);
+        setStatus({ success: true });
+        navigate('/main');
       } else {
-        setErrors({ submit: 'Failed to initialize admin' });
+        setErrors({ submit: 'Failed to log in or initialize user' });
       }
 
-      setStatus({ success: true });
       setSubmitting(false);
     } catch (error) {
-      console.error('Login error:', error);
       setStatus({ success: false });
       setErrors({ submit: 'Invalid username or password' });
       setSubmitting(false);
@@ -154,9 +107,6 @@ const AuthLogin = ({ ...others }) => {
 
   return (
     <>
-      <Typography variant="h6">User Count: {userCount}</Typography>
-      {currentUser && <Typography variant="h6">Logging in as: {currentUser}</Typography>}
-
       {!showOtp ? (
         <Formik
           initialValues={{
@@ -172,6 +122,9 @@ const AuthLogin = ({ ...others }) => {
         >
           {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
             <form noValidate onSubmit={handleSubmit} {...others}>
+              <Typography variant="h4" align="center">
+                {usersExist ? 'User Login' : 'Admin Initialization'}
+              </Typography>
               <FormControl fullWidth error={Boolean(touched.username && errors.username)} sx={{ ...theme.typography.customInput }}>
                 <InputLabel htmlFor="outlined-adornment-username-login">Username</InputLabel>
                 <OutlinedInput
@@ -228,8 +181,9 @@ const AuthLogin = ({ ...others }) => {
                   type="submit"
                   variant="contained"
                   color="primary"
+                  disabled={isSubmitting}
                 >
-                  Login
+                  {usersExist ? 'Login' : 'Initialize Admin'}
                 </Button>
               </AnimateButton>
             </form>
@@ -252,69 +206,6 @@ const AuthLogin = ({ ...others }) => {
           </Button>
         </Box>
       )}
-
-      {/* User List Display */}
-      <Box mt={2}>
-        <Typography variant="h6">User List:</Typography>
-        {userList.length > 0 ? (
-          <ul>
-            {userList.map(user => (
-              <li key={user.userId}>
-                <Typography variant="body1">{user.username} - Role: {user.rolename}</Typography>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <Typography>No users found.</Typography>
-        )}
-      </Box>
-
-      <Box mt={2}>
-      <Typography variant="h6">Add New User</Typography>
-      <FormControl fullWidth sx={{ mt: 1 }}>
-        <InputLabel htmlFor="new-username">New Username</InputLabel>
-        <OutlinedInput
-          id="new-username"
-          type="text"
-          value={newUser.username}
-          onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-          label="New Username"
-        />
-      </FormControl>
-      <FormControl fullWidth sx={{ mt: 2 }}>
-        <InputLabel htmlFor="new-password">New Password</InputLabel>
-        <OutlinedInput
-          id="new-password"
-          type={showPassword ? 'text' : 'password'}
-          value={newUser.password}
-          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-          endAdornment={
-            <InputAdornment position="end">
-              <IconButton
-                aria-label="toggle password visibility"
-                onClick={handleClickShowPassword}
-                onMouseDown={handleMouseDownPassword}
-                edge="end"
-              >
-                {showPassword ? <Visibility /> : <VisibilityOff />}
-              </IconButton>
-            </InputAdornment>
-          }
-          label="New Password"
-        />
-      </FormControl>
-      <Button
-        disableElevation
-        fullWidth
-        size="large"
-        variant="contained"
-        color="primary"
-        sx={{ mt: 2 }}
-        onClick={handleAddUser}
-      >
-        Add User
-      </Button>
-    </Box>
     </>
   );
 };

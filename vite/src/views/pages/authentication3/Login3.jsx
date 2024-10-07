@@ -25,9 +25,13 @@ const Login = () => {
               <AuthCardWrapper>
                 <Grid container spacing={2} alignItems="center" justifyContent="center">
                   <Grid item sx={{ mb: 3 }}>
-                    <Link to="#" aria-label="logo">
-                      <Logo />
-                    </Link>
+                  <Typography 
+                      variant="h3"  
+                      fontWeight="bold"
+                      align="center"
+                    >
+                      SpectroTRACER
+                  </Typography>
                   </Grid>
                   <Grid item xs={12}>
                     <Grid container direction={{ xs: 'column-reverse', md: 'row' }} alignItems="center" justifyContent="center">
