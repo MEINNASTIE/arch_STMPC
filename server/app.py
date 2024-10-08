@@ -11,10 +11,11 @@ import hashlib
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '1234'
 
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "http://localhost"}})
 
 API_BASE_URL = "https://localhost/api" 
 
+# to generate hash password for the user
 def generate_hash(username, password):
     """Generate a base64-encoded hash from the username and password."""
     hash_input = f"{username};{password}".encode('utf-8')
@@ -22,6 +23,7 @@ def generate_hash(username, password):
     hash_b64 = base64.b64encode(hash_digest).decode('utf-8')
     return hash_b64
 
+# getting user from username
 def get_user_from_api(username):
     print(f"Fetching user: {username}")  
     response = requests.get(f"{API_BASE_URL}/user/{username}")
@@ -32,12 +34,14 @@ def get_user_from_api(username):
     print(f"User {username} not found.")
     return None
 
+# updating user totp secret
 def update_user_totp_secret_in_api(username, secret):
     print(f"Updating TOTP secret for {username}")
     payload = {'totp_secret': secret}
     response = requests.post(f"{API_BASE_URL}/user/{username}", json=payload)
     return response.status_code == 200
 
+# create initial admin user
 def create_initial_admin(username, password):
     """ Create the initial admin user via the external user management server. """
     print(f"Creating initial admin user: {username}")
@@ -54,19 +58,35 @@ def create_initial_admin(username, password):
     print(f"Failed to create admin user: {response.json()}")
     return None
 
+# check admin user
+def admin_exists():
+    """Check if an admin user already exists."""
+    response = requests.get(f"{API_BASE_URL}/users")  
+    if response.status_code == 200:
+        users = response.json()
+        for user in users:
+            if user.get('rolename') == 'admin':  
+                return True
+    return False
+
+# only for testing endpoint
 @app.route('/api/hello', methods=['GET'])
 def hello_world():
     return jsonify({'message': 'Lain is forever!'})
 
+# for user count
 @app.route('/api/users/count', methods=['GET'])
 def get_user_count():
+    """Get user count and check for admin existence."""
+    admin_exist = admin_exists()
     response = requests.get(f"{API_BASE_URL}/users")
     if response.status_code == 200:
         users = response.json()
-        print(f"User count fetched: {len(users)} users")  
-        return jsonify({'count': len(users)})
+        print(f"User count fetched: {len(users)} users (Admin exists: {admin_exist})")  
+        return jsonify({'count': len(users), 'admin_exists': admin_exist})
     return jsonify({'message': 'Error fetching users'}), 500
 
+# for getting all users
 @app.route('/api/users', methods=['GET'])
 def get_all_users():
     response = requests.get(f"{API_BASE_URL}/users")
@@ -76,6 +96,7 @@ def get_all_users():
         return jsonify(users)
     return jsonify([])
 
+# identify a user
 @app.route('/api/user/<identifier_type>/<identifier>', methods=['GET'])
 def get_user_details(identifier_type, identifier):
     print(f"Fetching user by {identifier_type}: {identifier}")
@@ -86,6 +107,7 @@ def get_user_details(identifier_type, identifier):
         return jsonify(user)
     return jsonify({'message': 'User not found'}), 404
 
+# to generate totp
 @app.route('/api/generate_totp', methods=['GET'])
 def generate_totp():
     username = request.args.get('username')
@@ -105,6 +127,7 @@ def generate_totp():
     
     return jsonify({'error': 'User not found'}), 404
 
+# to verify totp
 @app.route('/api/verify_totp', methods=['POST'])
 def verify_totp():
     data = request.json
@@ -124,6 +147,7 @@ def verify_totp():
         return jsonify({'message': 'OTP is valid'})
     return jsonify({'error': 'Invalid OTP'}), 400
 
+# encoding token for a user
 def encode_token(user_id):
     payload = {
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
@@ -132,6 +156,7 @@ def encode_token(user_id):
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
+# login endpoint
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -144,6 +169,9 @@ def login():
     print(f"Login attempt by user: {username}")
 
     hash_b64 = generate_hash(username, password)
+
+    if not admin_exists(): 
+        return create_initial_admin(username, password)
 
     response = requests.get(f"{API_BASE_URL}/user/hash/{username}")
 
@@ -159,7 +187,7 @@ def login():
     print(f"Login failed for user: {username}")
     return jsonify({'message': 'Invalid credentials'}), 401
 
-
+# a protected endpoint
 @app.route('/api/protected', methods=['GET'])
 def protected():
     token = request.headers.get('Authorization')
@@ -176,6 +204,7 @@ def protected():
     except jwt.InvalidTokenError:
         return jsonify({'message': 'Invalid token!'}), 401
 
+# initializing admin user
 def init_user(username, password):
     user_pass = f"{username};{password}"
     
@@ -202,7 +231,7 @@ if user_payload:
     print("User initialization successful:")
     print(user_payload)
 
-
+# creating a user   
 @app.route('/api/user', methods=['POST'])
 def create_user():
     """Create a new user."""
@@ -233,11 +262,11 @@ def create_user():
     else:
         return jsonify({'error': 'Failed to create user'}), response.status_code
 
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    return response
+# @app.after_request
+# def after_request(response):
+#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+#     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+#     return response
 
 if __name__ == '__main__':
     app.run(debug=True)

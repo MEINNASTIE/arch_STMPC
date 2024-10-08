@@ -114,6 +114,9 @@ setup template by berry which requires to be integrated
 
 to check unix user: id -un // group:  id -gn
 
+- security 
+gunicorn --certfile=path/to/cert.pem --keyfile=path/to/key.pem -w 4 -b 0.0.0.0:443 app:app
+
 #### self certificate ssl for local testing
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt
 
@@ -121,4 +124,3 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/privat
 sudo certbot --nginx -d yourdomain.com
 
 mono storageApi.exe - to run local web config 
-
