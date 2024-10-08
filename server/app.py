@@ -54,7 +54,7 @@ def create_initial_admin(username, password):
     print(f"Failed to create admin user: {response.json()}")
     return None
 
-@app.route('/api', methods=['GET'])
+@app.route('/api/hello', methods=['GET'])
 def hello_world():
     return jsonify({'message': 'Lain is forever!'})
 
@@ -142,19 +142,23 @@ def login():
         return jsonify({'message': 'Username and password are required'}), 400
 
     print(f"Login attempt by user: {username}")
+
     hash_b64 = generate_hash(username, password)
 
     response = requests.get(f"{API_BASE_URL}/user/hash/{username}")
 
     if response.status_code == 200:
         user = response.json()
-        if user.get('hashB64') == hash_b64:
+        stored_hash_b64 = user.get('hashB64')
+
+        if stored_hash_b64 and stored_hash_b64 == hash_b64:
             token = encode_token(user['id'])
             print(f"Login successful for user: {username}")
             return jsonify({'token': token})
 
     print(f"Login failed for user: {username}")
     return jsonify({'message': 'Invalid credentials'}), 401
+
 
 @app.route('/api/protected', methods=['GET'])
 def protected():

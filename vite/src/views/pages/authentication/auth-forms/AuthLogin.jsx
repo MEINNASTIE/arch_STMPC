@@ -24,7 +24,7 @@ const generateHashB64 = async (username, password) => {
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashString = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return btoa(hashString);
+  return btoa(hashString); 
 };
 
 const AuthLogin = ({ ...others }) => {
@@ -37,16 +37,13 @@ const AuthLogin = ({ ...others }) => {
   const [totpUrl, setTotpUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [usersExist, setUsersExist] = useState(true);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   useEffect(() => {
     const fetchUserCount = async () => {
       try {
         const response = await axios.get('https://localhost/api/users/count');
-        if (response.data.payload.count === 0) {
-          setUsersExist(false);
-        } else {
-          setUsersExist(true);
-        }
+        setUsersExist(response.data.payload.count > 0);
       } catch (error) {
         console.error('Error fetching user count:', error);
       } finally {
@@ -58,18 +55,19 @@ const AuthLogin = ({ ...others }) => {
   }, []);
 
   const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
+    setShowPassword(prev => !prev);
   };
 
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
 
-  const handleSubmit = async (values, { setErrors, setSubmitting, setStatus }) => {
+  const handleSubmit = async (values, { setErrors, setStatus }) => {
+    setIsSubmitting(true);
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
       const response = usersExist
-        ? await axios.post(`https://localhost/api/login`)
+        ? await axios.post('https://localhost/api/login', { username: values.username, password: hashB64 })
         : await axios.post(`https://localhost/api/user/initadmin?hash=${hashB64}`);
 
       if (response.status === 200) {
@@ -80,21 +78,17 @@ const AuthLogin = ({ ...others }) => {
       } else {
         setErrors({ submit: 'Failed to log in or initialize user' });
       }
-
-      setSubmitting(false);
     } catch (error) {
-      setStatus({ success: false });
-      setErrors({ submit: 'Invalid username or password' });
-      setSubmitting(false);
+      console.error('Login error:', error);
+      setErrors({ submit: error.response?.data?.message || 'Invalid username or password' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleVerifyOtp = async () => {
     try {
-      await axios.post('https://localhost/api/verify_totp', {
-        username: email,
-        otp
-      });
+      await axios.post('https://localhost/api/verify_totp', { username: email, otp });
       navigate('/main');
     } catch (error) {
       alert('Invalid OTP');
@@ -120,7 +114,7 @@ const AuthLogin = ({ ...others }) => {
           })}
           onSubmit={handleSubmit}
         >
-          {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+          {({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
             <form noValidate onSubmit={handleSubmit} {...others}>
               <Typography variant="h4" align="center">
                 {usersExist ? 'User Login' : 'Admin Initialization'}
@@ -186,6 +180,11 @@ const AuthLogin = ({ ...others }) => {
                   {usersExist ? 'Login' : 'Initialize Admin'}
                 </Button>
               </AnimateButton>
+              {errors.submit && (
+                <FormHelperText error>
+                  {errors.submit}
+                </FormHelperText>
+              )}
             </form>
           )}
         </Formik>
