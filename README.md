@@ -124,3 +124,6 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/privat
 sudo certbot --nginx -d yourdomain.com
 
 mono storageApi.exe - to run local web config 
+
+notes to self: 
+- the paths of the servers must be separated and flask server must work on its own just like the mono one for the spectrotracer. 

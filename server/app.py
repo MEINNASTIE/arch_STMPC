@@ -69,11 +69,6 @@ def admin_exists():
                 return True
     return False
 
-# only for testing endpoint
-@app.route('/api/hello', methods=['GET'])
-def hello_world():
-    return jsonify({'message': 'Lain is forever!'})
-
 # for user count
 @app.route('/api/users/count', methods=['GET'])
 def get_user_count():
@@ -157,35 +152,41 @@ def encode_token(user_id):
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
 # login endpoint
-@app.route('/api/login', methods=['POST'])
-def login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
+# @app.route('/login', methods=['POST'])
+# def login():
+#     try:
+#         data = request.json
+#         username = data.get('username')
+#         password = data.get('password')
 
-    if not username or not password:
-        return jsonify({'message': 'Username and password are required'}), 400
+#         if not username or not password:
+#             return jsonify({'message': 'Username and password are required'}), 400
 
-    print(f"Login attempt by user: {username}")
+#         print(f"Login attempt by user: {username}")
 
-    hash_b64 = generate_hash(username, password)
+#         hash_b64 = generate_hash(username, password)
 
-    if not admin_exists(): 
-        return create_initial_admin(username, password)
+#         if not admin_exists():
+#             return create_initial_admin(username, password)
 
-    response = requests.get(f"{API_BASE_URL}/user/hash/{username}")
+#         response = requests.get(f"{API_BASE_URL}/user/hash/{username}")
 
-    if response.status_code == 200:
-        user = response.json()
-        stored_hash_b64 = user.get('hashB64')
+#         if response.status_code == 200:
+#             user = response.json()
+#             stored_hash_b64 = user.get('hashB64')
 
-        if stored_hash_b64 and stored_hash_b64 == hash_b64:
-            token = encode_token(user['id'])
-            print(f"Login successful for user: {username}")
-            return jsonify({'token': token})
+#             if stored_hash_b64 and stored_hash_b64 == hash_b64:
+#                 token = encode_token(user['id'])
+#                 print(f"Login successful for user: {username}")
+#                 return jsonify({'token': token})
 
-    print(f"Login failed for user: {username}")
-    return jsonify({'message': 'Invalid credentials'}), 401
+#         print(f"Login failed for user: {username}")
+#         return jsonify({'message': 'Invalid credentials'}), 401
+
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
+#         return jsonify({'message': 'Internal Server Error'}), 500
+
 
 # a protected endpoint
 @app.route('/api/protected', methods=['GET'])
@@ -269,4 +270,5 @@ def create_user():
 #     return response
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+

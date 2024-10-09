@@ -61,7 +61,7 @@ const AuthLogin = () => {
   const handleLogin = async (values, { setErrors, setStatus }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
-      const response = await axios.post('https://localhost/api/login', { username: values.username, password: hashB64 });
+      const response = await axios.post('https://localhost/login', { username: values.username, password: hashB64 });
       
       if (response.status === 200) {
         const { token } = response.data.payload;
