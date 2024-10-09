@@ -17,10 +17,6 @@ const AuthenticationRoutes = {
       path: '/',
       element: <AuthLogin3 /> 
     },
-    // {
-    //   path: '/pages/login/login3',
-    //   element: <AuthLogin3 />
-    // }
   ]
 };
 

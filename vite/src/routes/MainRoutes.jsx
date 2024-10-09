@@ -7,8 +7,11 @@ import Loadable from 'ui-component/Loadable';
 // dashboard routing
 const DashboardDefault = Loadable(lazy(() => import('views/dashboard')));
 
-// sample page routing
-const SamplePage = Loadable(lazy(() => import('views/sample-page')));
+// measurement page
+const MeasurementPage = Loadable(lazy(() => import('views/meas/meas_status')));
+
+// ftp status page
+const FTPPage = Loadable(lazy(() => import('views/meas/ftp')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -18,7 +21,7 @@ const MainRoutes = {
   children: [
     {
       path: '/main',
-      element: <DashboardDefault />
+      element: <MeasurementPage />
     },
     {
       path: 'dashboard',
@@ -30,44 +33,8 @@ const MainRoutes = {
       ]
     },
     {
-      path: 'utils',
-      children: [
-        {
-          path: 'util-typography',
-          element:  <SamplePage />
-        }
-      ]
-    },
-    {
-      path: 'utils',
-      children: [
-        {
-          path: 'util-color',
-          element:  <SamplePage />
-        }
-      ]
-    },
-    {
-      path: 'utils',
-      children: [
-        {
-          path: 'util-shadow',
-          element:  <SamplePage />
-        }
-      ]
-    },
-    {
-      path: 'sample-page',
-      element: <SamplePage />
-    },
-    {
-      path: 'setTime',
-      children: [
-        {
-          path: 'util-typography',
-          element:  <SamplePage />
-        }
-      ]
+      path: 'ftp',
+          element:  <FTPPage />
     },
   ]
 };

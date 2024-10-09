@@ -7,58 +7,101 @@ this environment has been specifically set up for arch linux to run on systemd a
 worker_processes 3;
 
 user meinna meinna;
-error_log  /var/log/nginx/error.log warn;
+error_log /var/log/nginx/error.log warn;
 pid /run/nginx.pid;
 
 events {
-    worker_connections 1024; 
-    accept_mutex off; 
+    worker_connections 1024;
+    accept_mutex off;
 }
 
 http {
-    include /etc/nginx/mime.types;  
-    default_type application/octet-stream; 
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
 
+    # HTTP to HTTPS redirection
     server {
-	listen 80;
-	server_name 127.0.0.1;
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        
+        root /home/meinna/mpcapp/web;
+        index index.html index.htm;
+        server_name _;
 
-	# Redirect all HTTP traffic to HTTPS
-	return 301 https://$host$request_uri;
-    }
+        # Redirect all HTTP to HTTPS
+        return 301 https://$host$request_uri;
 
-    server {
-        listen 443 ssl;
-        server_name 127.0.0.1;
-
-	# self assigned for testing
-	ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
-        ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
-
-	ssl_protocols TLSv1.2 TLSv1.3;
-	ssl_ciphers HIGH:!aNULL:!MD5;
-
-        location / {
-            root /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/vite/dist/;
-            try_files $uri /index.html;
-        }
-
-	 location /server {
-	 alias /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/;
-	}
-
-        location /api {
-            proxy_pass http://unix:/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/gunicorn.sock;
+	location /api {
+            proxy_pass http://localhost:8005/api;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
 
-	    add_header 'Access-Control-Allow-Origin' '*';
+            # CORS settings (ensure these are set correctly only once)
+            add_header 'Access-Control-Allow-Origin' '*';
             add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-            add_header 'Access-Control-Allow-Headers' 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
+            add_header 'Access-Control-Allow-Headers' 'Origin, X-Requested-With, Content-Type, Accept';
+
+            # Handle OPTIONS method
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' '*';
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+                add_header 'Access-Control-Allow-Headers' 'Origin, X-Requested-With, Content-Type, Accept';
+                return 204;  # Respond to preflight requests
+            }
+        }
+    }
+
+    # HTTPS server block
+    server {
+        listen 443 ssl;
+        server_name 192.168.10.129;
+
+        # SSL configuration
+        ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+        ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+
+        # Serve static files (for your app)
+        location / {
+            root /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/vite/dist/;
+            try_files $uri /index.html;
         }
 
+        # Proxy /login to Flask Gunicorn server (for authentication)
+        location /login {
+            proxy_pass http://unix:/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/login_gunicorn.sock;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+	    # CORS settings for the login API
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Origin, X-Requested-With, Content-Type, Accept, Authorization' always;
+
+            # Handle OPTIONS preflight requests
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' '*';
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+                add_header 'Access-Control-Allow-Headers' 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
+                return 204;
+            }
+        }
+
+        # Proxy all other /api requests to the Mono server
+        location /api {
+            proxy_pass http://localhost:8005;  
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Error page for server errors
         error_page 500 502 503 504 /404.html;
         location = /404.html {
             root /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/;
@@ -89,7 +132,25 @@ ExecStart=/your_path/server/venv/bin/gunicorn --workers 3 --bind unix:/your_path
 WantedBy=multi-user.target
 ```
 
-// path to gunicorn.service file
+#### login.service config
+
+```
+[Unit]
+Description=Gunicorn service to serve login Flask app
+After=network.target
+
+[Service]
+User=meinna
+Group=meinna
+WorkingDirectory=/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/
+Environment="PATH=/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/venv/bin/"
+ExecStart=/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/venv/bin/gunicorn --workers 3 --bind unix:/home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/login_gunicorn.sock login:app
+
+[Install]
+WantedBy=multi-user.target
+```
+
+// local path to gunicorn.service file
 /etc/systemd/system/gunicorn.service
 
 *notes:
@@ -98,14 +159,9 @@ WantedBy=multi-user.target
 
 #### regarding vite config
 
-setup template by berry which requires to be integrated
+berry template integrated with regular react functionalities
 
-- npm run build // dist present always for nginx testing 
-
-#### tasks:
-    - routing system develop more
-    - implement another authentication system
-    - handle more pages
+- npm run build // dist present for development testing but ready for production 
 
 #### regarding gunicorn
 
@@ -124,6 +180,3 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/privat
 sudo certbot --nginx -d yourdomain.com
 
 mono storageApi.exe - to run local web config 
-
-notes to self: 
-- the paths of the servers must be separated and flask server must work on its own just like the mono one for the spectrotracer. 

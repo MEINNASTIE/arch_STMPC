@@ -100,7 +100,7 @@ const pages = {
       ]
     },
     {
-      id: 'spectrotracer',
+      id: 'FTP',
       title: 'FTP forwarding',
       type: 'collapse',
 
@@ -132,7 +132,7 @@ const pages = {
       ]
     },
     {
-      id: 'spectrotracer',
+      id: 'connectivity',
       title: 'Conectivity',
       type: 'collapse',
 
@@ -160,7 +160,7 @@ const pages = {
       ]
     },
     {
-      id: 'spectrotracer',
+      id: 'meteoStation',
       title: 'Meteo station value',
       type: 'collapse',
     },
