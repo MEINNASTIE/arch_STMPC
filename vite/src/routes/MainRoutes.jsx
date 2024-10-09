@@ -13,6 +13,9 @@ const MeasurementPage = Loadable(lazy(() => import('views/meas/meas_status')));
 // ftp status page
 const FTPPage = Loadable(lazy(() => import('views/meas/ftp')));
 
+// system status page
+const SystemStatus = Loadable(lazy(() => import('views/system/system_status')));
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -36,6 +39,10 @@ const MainRoutes = {
       path: 'ftp',
           element:  <FTPPage />
     },
+    {
+      path: 'system-status',
+          element: <SystemStatus />
+    }
   ]
 };
 
