@@ -16,16 +16,14 @@ import { Formik } from 'formik';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { QRCodeSVG } from 'qrcode.react';
 
-// Utility function to generate SHA-256 hash
 const generateHashB64 = async (username, password) => {
   const encoder = new TextEncoder();
   const data = encoder.encode(`${username};${password}`);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashString = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return btoa(hashString); 
+  return btoa(hashString);
 };
 
 const AuthLogin = () => {
@@ -39,6 +37,7 @@ const AuthLogin = () => {
     const fetchUserCount = async () => {
       try {
         const response = await axios.get('https://localhost/api/users/count');
+        console.log('User count response:', response.data);
         setUsersExist(response.data.payload.count > 0);
       } catch (error) {
         console.error('Error fetching user count:', error);
@@ -58,43 +57,70 @@ const AuthLogin = () => {
     event.preventDefault();
   };
 
-  const handleLogin = async (values, { setErrors, setStatus }) => {
+  const handleAuthentication = async (url, data, setErrors, setStatus, navigate) => {
     try {
-      const hashB64 = await generateHashB64(values.username, values.password);
-      const response = await axios.post('https://localhost/login', { username: values.username, password: hashB64 });
-      
-      if (response.status === 200) {
-        const { token } = response.data.payload;
-        localStorage.setItem('token', token);
-        setStatus({ success: true });
-        navigate('/main');
+      console.log('Sending request to:', url);
+      console.log('Request data:', data);
+
+      const response = await axios.post(url, data);
+      console.log('Response:', response.data);
+
+      if (response.status === 200 || response.status === 201) {
+        const { payload } = response.data;
+        if (payload && payload.token) {
+          localStorage.setItem('token', payload.token);
+          setStatus({ success: true });
+          navigate('/main');
+        } else {
+          setErrors({ submit: 'Invalid response format' });
+        }
       } else {
-        setErrors({ submit: 'Failed to log in' });
+        setErrors({ submit: 'Authentication failed' });
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setErrors({ submit: error.response?.data?.message || 'Invalid username or password' });
+      console.error('Authentication error:', error);
+      setErrors({ submit: error.response?.data?.message || 'An error occurred' });
     }
   };
+
+  const handleLogin = async (values, { setErrors, setStatus }) => {
+    try {
+     
+      const hashB64 = await generateHashB64(values.username, values.password);
+      const loginData = {
+        username: values.username,
+        password: hashB64, 
+      };
+  
+      return handleAuthentication('https://localhost/login', loginData, setErrors, setStatus, navigate);
+    } catch (error) {
+      console.error('Error generating hash for login:', error);
+      setErrors({ submit: 'An error occurred during login' });
+    }
+  };
+   
 
   const handleInitAdmin = async (values, { setErrors, setStatus }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
-      const response = await axios.post(`https://localhost/api/user/initadmin?hash=${hashB64}`);
-
-      if (response.status === 201) {
-        const { token } = response.data.payload;
-        localStorage.setItem('token', token);
+      const url = `https://localhost/api/user/initadmin?hash=${hashB64}`;
+  
+      console.log('Sending request to:', url);
+      const response = await axios.post(url, {});
+  
+      if (response.status === 200 || response.status === 201) {
+        console.log('Admin created:', response.data);
+        setUsersExist(true); 
         setStatus({ success: true });
-        navigate('/main');
+        navigate('/main'); 
       } else {
-        setErrors({ submit: 'Failed to initialize admin user' });
+        setErrors({ submit: 'Admin creation failed' });
       }
     } catch (error) {
-      console.error('Admin init error:', error);
-      setErrors({ submit: error.response?.data?.message || 'Failed to initialize admin' });
+      console.error('Admin creation error:', error);
+      setErrors({ submit: error.response?.data?.message || 'An error occurred' });
     }
-  };
+  };  
 
   const Form = ({ isAdminInit }) => (
     <Formik
