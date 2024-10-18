@@ -49,75 +49,65 @@ const AuthLogin = () => {
     fetchUserCount();
   }, []);
 
-  const handleClickShowPassword = () => {
-    setShowPassword(prev => !prev);
-  };
+  const handleClickShowPassword = () => { setShowPassword(prev => !prev);};
+  const handleMouseDownPassword = (event) => { event.preventDefault(); };
 
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
-
-  const handleAuthentication = async (url, data, setErrors, setStatus, navigate) => {
+  const handleAuthentication = async (url, data, setErrors, setStatus) => {
     try {
-      console.log('Sending request to:', url);
-      console.log('Request data:', data);
-
       const response = await axios.post(url, data);
-      console.log('Response:', response.data);
-
+      console.log('Authentication response:', response); // Log the full response
       if (response.status === 200 || response.status === 201) {
         const { payload } = response.data;
+        console.log('Payload received:', payload); // Log the payload
         if (payload && payload.token) {
           localStorage.setItem('token', payload.token);
           setStatus({ success: true });
           navigate('/main');
         } else {
+          console.log('Invalid response format:', response.data); // Log the response if the format is invalid
           setErrors({ submit: 'Invalid response format' });
         }
       } else {
+        console.log('Authentication failed with status:', response.status); // Log the failed status
         setErrors({ submit: 'Authentication failed' });
       }
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error('Authentication error:', error); // Log the error itself
       setErrors({ submit: error.response?.data?.message || 'An error occurred' });
     }
   };
-
+  
   const handleLogin = async (values, { setErrors, setStatus }) => {
     try {
-     
       const hashB64 = await generateHashB64(values.username, values.password);
-      const loginData = {
-        username: values.username,
-        password: hashB64, 
-      };
-  
-      return handleAuthentication('https://localhost/login', loginData, setErrors, setStatus, navigate);
+      console.log('Generated hash:', hashB64); // Log the generated hash
+      const loginData = { username: values.username, password: hashB64 };
+      console.log('Login data:', loginData); // Log the login data before sending
+      await handleAuthentication('https://localhost/login', loginData, setErrors, setStatus);
     } catch (error) {
-      console.error('Error generating hash for login:', error);
+      console.error('Login error:', error); // Log any login error
       setErrors({ submit: 'An error occurred during login' });
     }
   };
-   
-
+  
   const handleInitAdmin = async (values, { setErrors, setStatus }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
+      console.log('Generated hash for admin init:', hashB64); // Log the generated hash for admin init
       const url = `https://localhost/api/user/initadmin?hash=${hashB64}`;
-  
-      console.log('Sending request to:', url);
+      console.log('Admin init URL:', url); // Log the URL used for admin initialization
       const response = await axios.post(url, {});
-  
+      console.log('Admin initialization response:', response); // Log the response for admin initialization
       if (response.status === 200 || response.status === 201) {
-        console.log('Admin created:', response.data);
-        setUsersExist(true); 
+        setUsersExist(true);
         setStatus({ success: true });
-        navigate('/main'); 
+        navigate('/main');
       } else {
+        console.log('Admin creation failed with status:', response.status); // Log the failed status
         setErrors({ submit: 'Admin creation failed' });
       }
     } catch (error) {
-      console.error('Admin creation error:', error);
+      console.error('Admin init error:', error); // Log the error
       setErrors({ submit: error.response?.data?.message || 'An error occurred' });
     }
   };  

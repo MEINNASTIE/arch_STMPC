@@ -180,3 +180,8 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/privat
 sudo certbot --nginx -d yourdomain.com
 
 mono storageApi.exe - to run local web config 
+
+### what must be addressed
+
+- to change the logic of the authentication
+- to add logic for config dynamic page generation 
