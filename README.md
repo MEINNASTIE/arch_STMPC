@@ -185,3 +185,5 @@ mono storageApi.exe - to run local web config
 
 - to change the logic of the authentication
 - to add logic for config dynamic page generation 
+
+I cannot seem to find a good way to authenticate this. I need the /login and /logout... I must make them. 

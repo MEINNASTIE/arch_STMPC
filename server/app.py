@@ -1,3 +1,4 @@
+# imports 
 import json
 import pyotp
 import requests
@@ -8,16 +9,44 @@ from flask_cors import CORS
 import base64
 import hashlib
 
+# setup 
+#
 # insert later for production
 # import os
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_default_key')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '1234'
-
 CORS(app, resources={r"/api/*": {"origins": "http://localhost"}})
 
+# configuration
 API_BASE_URL = "https://localhost/api" 
+
+# utilities 
+#
+# for user count
+@app.route('/api/users/count', methods=['GET'])
+def get_user_count():
+    """Get user count and check for admin existence."""
+    admin_exist = admin_exists()
+    response = requests.get(f"{API_BASE_URL}/users")
+    if response.status_code == 200:
+        users = response.json()
+        user_count = len(users)
+        
+        if user_count == 0:
+            print("No users found, retrying after a delay...")
+            time.sleep(2)  
+            response = requests.get(f"{API_BASE_URL}/users")
+            if response.status_code == 200:
+                users = response.json()
+                user_count = len(users)
+                admin_exist = admin_exists() 
+        print(f"User count fetched: {user_count} users (Admin exists: {admin_exist})")  
+        return jsonify({'count': user_count, 'admin_exists': admin_exist})
+    
+    return jsonify({'message': 'Error fetching users'}), 500
+
 
 # to generate hash password for the user
 def generate_hash(username, password):
@@ -72,18 +101,6 @@ def admin_exists():
             if user.get('rolename') == 'admin':  
                 return True
     return False
-
-# for user count
-@app.route('/api/users/count', methods=['GET'])
-def get_user_count():
-    """Get user count and check for admin existence."""
-    admin_exist = admin_exists()
-    response = requests.get(f"{API_BASE_URL}/users")
-    if response.status_code == 200:
-        users = response.json()
-        print(f"User count fetched: {len(users)} users (Admin exists: {admin_exist})")  
-        return jsonify({'count': len(users), 'admin_exists': admin_exist})
-    return jsonify({'message': 'Error fetching users'}), 500
 
 # for getting all users
 @app.route('/api/users', methods=['GET'])

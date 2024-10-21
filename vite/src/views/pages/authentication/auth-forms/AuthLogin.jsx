@@ -55,24 +55,24 @@ const AuthLogin = () => {
   const handleAuthentication = async (url, data, setErrors, setStatus) => {
     try {
       const response = await axios.post(url, data);
-      console.log('Authentication response:', response); // Log the full response
+      console.log('Authentication response:', response); 
       if (response.status === 200 || response.status === 201) {
         const { payload } = response.data;
-        console.log('Payload received:', payload); // Log the payload
+        console.log('Payload received:', payload); 
         if (payload && payload.token) {
           localStorage.setItem('token', payload.token);
           setStatus({ success: true });
           navigate('/main');
         } else {
-          console.log('Invalid response format:', response.data); // Log the response if the format is invalid
+          console.log('Invalid response format:', response.data); 
           setErrors({ submit: 'Invalid response format' });
         }
       } else {
-        console.log('Authentication failed with status:', response.status); // Log the failed status
+        console.log('Authentication failed with status:', response.status); 
         setErrors({ submit: 'Authentication failed' });
       }
     } catch (error) {
-      console.error('Authentication error:', error); // Log the error itself
+      console.error('Authentication error:', error); 
       setErrors({ submit: error.response?.data?.message || 'An error occurred' });
     }
   };
@@ -80,12 +80,12 @@ const AuthLogin = () => {
   const handleLogin = async (values, { setErrors, setStatus }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
-      console.log('Generated hash:', hashB64); // Log the generated hash
+      console.log('Generated hash:', hashB64); 
       const loginData = { username: values.username, password: hashB64 };
-      console.log('Login data:', loginData); // Log the login data before sending
+      console.log('Login data:', loginData); 
       await handleAuthentication('https://localhost/login', loginData, setErrors, setStatus);
     } catch (error) {
-      console.error('Login error:', error); // Log any login error
+      console.error('Login error:', error); 
       setErrors({ submit: 'An error occurred during login' });
     }
   };
@@ -93,21 +93,21 @@ const AuthLogin = () => {
   const handleInitAdmin = async (values, { setErrors, setStatus }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
-      console.log('Generated hash for admin init:', hashB64); // Log the generated hash for admin init
+      console.log('Generated hash for admin init:', hashB64); 
       const url = `https://localhost/api/user/initadmin?hash=${hashB64}`;
-      console.log('Admin init URL:', url); // Log the URL used for admin initialization
+      console.log('Admin init URL:', url);
       const response = await axios.post(url, {});
-      console.log('Admin initialization response:', response); // Log the response for admin initialization
+      console.log('Admin initialization response:', response); 
       if (response.status === 200 || response.status === 201) {
         setUsersExist(true);
         setStatus({ success: true });
         navigate('/main');
       } else {
-        console.log('Admin creation failed with status:', response.status); // Log the failed status
+        console.log('Admin creation failed with status:', response.status); 
         setErrors({ submit: 'Admin creation failed' });
       }
     } catch (error) {
-      console.error('Admin init error:', error); // Log the error
+      console.error('Admin init error:', error);
       setErrors({ submit: error.response?.data?.message || 'An error occurred' });
     }
   };  
