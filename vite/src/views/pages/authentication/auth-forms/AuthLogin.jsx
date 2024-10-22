@@ -20,6 +20,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 const generateHashB64 = async (username, password) => {
   const encoder = new TextEncoder();
   const data = encoder.encode(`${username};${password}`);
+
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashString = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -37,7 +38,6 @@ const AuthLogin = () => {
     const fetchUserCount = async () => {
       try {
         const response = await axios.get('https://localhost/api/users/count');
-        console.log('User count response:', response.data);
         setUsersExist(response.data.payload.count > 0);
       } catch (error) {
         console.error('Error fetching user count:', error);
@@ -49,65 +49,56 @@ const AuthLogin = () => {
     fetchUserCount();
   }, []);
 
-  const handleClickShowPassword = () => { setShowPassword(prev => !prev);};
+  const handleClickShowPassword = () => { setShowPassword(prev => !prev); };
   const handleMouseDownPassword = (event) => { event.preventDefault(); };
 
   const handleAuthentication = async (url, data, setErrors, setStatus) => {
     try {
       const response = await axios.post(url, data);
-      console.log('Authentication response:', response); 
       if (response.status === 200 || response.status === 201) {
         const { payload } = response.data;
-        console.log('Payload received:', payload); 
         if (payload && payload.token) {
           localStorage.setItem('token', payload.token);
           setStatus({ success: true });
           navigate('/main');
         } else {
-          console.log('Invalid response format:', response.data); 
           setErrors({ submit: 'Invalid response format' });
         }
       } else {
-        console.log('Authentication failed with status:', response.status); 
         setErrors({ submit: 'Authentication failed' });
       }
     } catch (error) {
-      console.error('Authentication error:', error); 
       setErrors({ submit: error.response?.data?.message || 'An error occurred' });
     }
   };
-  
+
   const handleLogin = async (values, { setErrors, setStatus }) => {
     try {
+      console.log('Login form values:', values);
       const hashB64 = await generateHashB64(values.username, values.password);
-      console.log('Generated hash:', hashB64); 
-      const loginData = { username: values.username, password: hashB64 };
-      console.log('Login data:', loginData); 
+      console.log('Generated hash:', hashB64);
+
+      const loginData = { username: values.username, password: values.password }; 
       await handleAuthentication('https://localhost/login', loginData, setErrors, setStatus);
     } catch (error) {
-      console.error('Login error:', error); 
+      console.error('Login error:', error);
       setErrors({ submit: 'An error occurred during login' });
     }
   };
-  
+
   const handleInitAdmin = async (values, { setErrors, setStatus }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
-      console.log('Generated hash for admin init:', hashB64); 
       const url = `https://localhost/api/user/initadmin?hash=${hashB64}`;
-      console.log('Admin init URL:', url);
       const response = await axios.post(url, {});
-      console.log('Admin initialization response:', response); 
       if (response.status === 200 || response.status === 201) {
         setUsersExist(true);
         setStatus({ success: true });
         navigate('/main');
       } else {
-        console.log('Admin creation failed with status:', response.status); 
         setErrors({ submit: 'Admin creation failed' });
       }
     } catch (error) {
-      console.error('Admin init error:', error);
       setErrors({ submit: error.response?.data?.message || 'An error occurred' });
     }
   };  
