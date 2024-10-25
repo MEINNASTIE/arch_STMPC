@@ -1,3 +1,4 @@
+import os 
 import hashlib
 import base64
 import jwt
@@ -84,6 +85,23 @@ def login():
             }
         }
     }), 200
+
+# testing route for web config # testing route for web config 
+@app.route('/config', methods=['GET'])
+def get_config():
+    try:
+        json_file_path = os.path.join(os.path.dirname(__file__), 'RuntimeConfigDesc_en.json')
+
+        if not os.path.exists(json_file_path):
+            return jsonify({"error": "File not found"}), 404
+        with open(json_file_path) as json_file:
+            data = json.load(json_file)
+            return jsonify(data)
+
+    except json.JSONDecodeError:
+        return jsonify({"error": "Error decoding JSON"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

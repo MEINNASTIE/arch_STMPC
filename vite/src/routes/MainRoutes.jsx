@@ -19,6 +19,9 @@ const SystemStatus = Loadable(lazy(() => import('views/system/system_status')));
 // system info page
 const SystemInfo = Loadable(lazy(() => import('views/system/system_info')));
 
+//system memory page
+const SystemMemory = Loadable(lazy(() => import('views/system/system_memory')));
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -49,6 +52,10 @@ const MainRoutes = {
     {
       path: 'system-info',
           element: <SystemInfo />
+    },
+    {
+      path: 'system-memory',
+          element: <SystemMemory />
     }
   ]
 };
