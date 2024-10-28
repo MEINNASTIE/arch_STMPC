@@ -181,9 +181,6 @@ sudo certbot --nginx -d yourdomain.com
 
 mono storageApi.exe - to run local web config 
 
-### what must be addressed
+example for permitting rights to the nginx conf: sudo chmod 666 /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/*.sock
 
-- to change the logic of the authentication
-- to add logic for config dynamic page generation 
 
-I cannot seem to find a good way to authenticate this. I need the /login and /logout... I must make them. 

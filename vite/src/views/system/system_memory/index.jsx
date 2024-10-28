@@ -14,7 +14,7 @@ const SystemMemory = () => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch('file:///home/meinna/mpcapp/_cfg/_patch/RuntimeConfigDesc_en.json')
+    fetch('https://localhost/config')
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');

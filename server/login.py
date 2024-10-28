@@ -1,9 +1,10 @@
-import os 
+import os
 import hashlib
 import base64
 import jwt
 import datetime
 import json
+import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
@@ -15,13 +16,7 @@ CORS(app)
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-USER_DB_PATH = '/_cfg/user-db.json'  
-
-def generate_hash(password):
-    """Generate a hash from the password."""
-    password_bytes = password.encode('utf-8')
-    password_hash = hashlib.sha256(password_bytes).hexdigest()
-    return password_hash
+API_URL = 'https://localhost/api/users/count'
 
 def encode_token(user_data):
     """Generate a JWT token for a user, including additional user data."""
@@ -31,30 +26,38 @@ def encode_token(user_data):
         'sub': user_data['userId'],
         'username': user_data['username'],
         'rolename': user_data['rolename'],
-        'rights': user_data['rights']
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
-def load_users_from_file():
-    """Load user data from a JSON file."""
-    with open(USER_DB_PATH, 'r') as file:
-        return json.load(file)
+def fetch_users_from_api():
+    """Fetch users from the external API."""
+    try:
+        response = requests.get(API_URL, verify=False) 
+        response.raise_for_status() 
+        return response.json()
+    except requests.RequestException as e:
+        logger.error('Error fetching users from API: %s', e)
+        return None
 
 @app.route('/login', methods=['POST'])
 def login():
     """Handle user login."""
     data = request.json
     username = data.get('username')
-    password = data.get('password')
 
-    logger.debug('Login attempt: username=%s', username)  
+    logger.debug('Login attempt: username=%s', username)
 
-    if not username or not password:
-        logger.warning('Username or password not provided')
-        return jsonify({'message': 'Username and password are required'}), 400
+    if not username:
+        logger.warning('Username not provided')
+        return jsonify({'message': 'Username is required'}), 400
 
-    users = load_users_from_file()
-    logger.debug('Loaded users from file: %s', users) 
+    api_response = fetch_users_from_api()
+    if api_response is None or 'payload' not in api_response:
+        logger.warning('Failed to retrieve users from the API')
+        return jsonify({'message': 'Unable to authenticate at this time'}), 500
+
+    users = api_response['payload']
+    logger.debug('Loaded users from API: %s', users)
 
     user = next((u for u in users if u['username'] == username), None)
 
@@ -62,15 +65,8 @@ def login():
         logger.warning('User not found: %s', username)
         return jsonify({'message': 'User not found'}), 404
 
-    input_password_hash = generate_hash(password)
-    logger.debug('Generated hash for input password: %s', input_password_hash)  
-
-    if input_password_hash != user['hashB64']:
-        logger.warning('Invalid password for user: %s', username)
-        return jsonify({'message': 'Invalid username or password'}), 401
-
     token = encode_token(user)
-    logger.debug('Generated token for user: %s', user['username']) 
+    logger.debug('Generated token for user: %s', user['username'])
 
     return jsonify({
         'data': {
@@ -80,28 +76,11 @@ def login():
                 'userId': user['userId'],
                 'username': user['username'],
                 'rolename': user['rolename'],
-                'rights': user['rights'],
                 'expDate': user['expDate']
             }
         }
     }), 200
 
-# testing route for web config # testing route for web config 
-@app.route('/config', methods=['GET'])
-def get_config():
-    try:
-        json_file_path = os.path.join(os.path.dirname(__file__), 'RuntimeConfigDesc_en.json')
-
-        if not os.path.exists(json_file_path):
-            return jsonify({"error": "File not found"}), 404
-        with open(json_file_path) as json_file:
-            data = json.load(json_file)
-            return jsonify(data)
-
-    except json.JSONDecodeError:
-        return jsonify({"error": "Error decoding JSON"}), 500
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

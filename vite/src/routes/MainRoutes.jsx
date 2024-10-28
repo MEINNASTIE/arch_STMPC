@@ -50,11 +50,11 @@ const MainRoutes = {
           element: <SystemStatus />
     },
     {
-      path: 'system-info',
+      path: '/system-info',
           element: <SystemInfo />
     },
     {
-      path: 'system-memory',
+      path: '/system-memory',
           element: <SystemMemory />
     }
   ]
