@@ -183,4 +183,11 @@ mono storageApi.exe - to run local web config
 
 example for permitting rights to the nginx conf: sudo chmod 666 /home/meinna/VCS_Projects/arch_linux_authelia-nginx-authentication-app/server/*.sock
 
+tasks:
+
+- migrate dist and server to the mono folder
+- add jwt tokenization to the login 
+- start working on webconfig 
+- create a template for all components idea 
+- set up config.json to actually be taken from where is it supposed to be taken as 
 

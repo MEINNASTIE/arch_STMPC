@@ -51,25 +51,32 @@ const AuthLogin = () => {
   const handleClickShowPassword = () => setShowPassword(prev => !prev);
   const handleMouseDownPassword = (event) => event.preventDefault();
 
-  const handleLogin = async (values, { setStatus, setSubmitting, setErrors }) => {
+  const handleLogin = async (values, { setErrors, setSubmitting }) => {
     try {
-      const hashB64 = await generateHashB64(values.username, values.password);
-      const response = await axios.get(`https://localhost/api/user/hash/${hashB64}`);
-      console.log('API Response:', response);
-  
-      if (response.data && response.data.payload && response.data.payload.userId) {
-        navigate('/main');
-      } else {
-        console.error('Response structure does not contain userId:', response.data);
-        setErrors({ submit: 'Login failed: User data not found' });
-      }
+        const hashB64 = await generateHashB64(values.username, values.password);
+        const response = await axios.get(`https://localhost/api/user/hash/${hashB64}`);
+       
+        const userData = response.data?.payload;
+        
+        if (userData && userData.userId) {
+            const token = await encodeToken(userData);  
+            if (token) {
+                localStorage.setItem('token', token);
+            }
+            localStorage.setItem('user', JSON.stringify(userData));
+            navigate('/main');
+        } else {
+            console.error('Login failed: User data not found in payload');
+            setErrors({ submit: 'Login failed: User data not found' });
+        }
     } catch (error) {
-      console.error('Login error:', error);
-      setErrors({ submit: 'Invalid username or password' });
+        console.error('Login error:', error);
+        setErrors({ submit: 'Invalid username or password' });
     } finally {
-      setSubmitting(false);
+        setSubmitting(false);
     }
-  };
+};
+
 
   const handleInitAdmin = async (values, { setStatus, setSubmitting, setErrors }) => {
     try {
@@ -77,7 +84,6 @@ const AuthLogin = () => {
       const response = await axios.post(`https://localhost/api/user/initadmin?hash=${hashB64}`);
   
       if (response.status === 201) {
-        // Directly navigate to main without token
         navigate('/main');
       }
     } catch (error) {
