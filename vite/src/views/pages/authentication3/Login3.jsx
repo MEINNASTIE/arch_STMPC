@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-
 // material-ui
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
@@ -8,14 +6,12 @@ import Typography from '@mui/material/Typography';
 // project imports
 import AuthWrapper1 from '../AuthWrapper1';
 import AuthCardWrapper from '../AuthCardWrapper';
-import AuthLogin from '../authentication/auth-forms/AuthLogin';
-import Logo from 'ui-component/Logo';
 import AuthFooter from 'ui-component/cards/AuthFooter';
+import AuthLogin from '../authentication/auth-forms/AuthLogin';
 
 // ================================|| AUTH - LOGIN ||================================ //
 
 const Login = () => {
-
   return (
     <AuthWrapper1>
       <Grid container direction="column" justifyContent="flex-end" sx={{ minHeight: '100vh' }}>

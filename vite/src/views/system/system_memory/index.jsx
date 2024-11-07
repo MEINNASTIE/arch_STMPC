@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Box, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from '@mui/material';
+import { Typography, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
 
 const SystemMemory = () => {
@@ -24,76 +24,80 @@ const SystemMemory = () => {
   const { payload } = data;
   const { common, groups } = payload;
 
-  return (
-    <MainCard title="Another Sample Page" style={{ textAlign: 'center' }}>
-      <Typography variant="h4" gutterBottom>
-        Main Header
-      </Typography>
-      
-      <Typography variant="h6">Common Conditions:</Typography>
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Condition</TableCell>
-              <TableCell>Value</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell>Measurement Type Condition</TableCell>
-              <TableCell>{JSON.stringify(common.conditions.measTypeCondition)}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>Option Lists</TableCell>
-              <TableCell>{JSON.stringify(common.optionLists)}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
+  const handleFieldChange = (groupIndex, pageIndex, fieldIndex, newValue) => {
+    setData(prevData => {
+      const updatedData = { ...prevData };
+      updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex].val.new = newValue;
+      return updatedData;
+    });
+  };
 
-      <Grid container justifyContent="center" spacing={3}>
-        {groups.map((group, groupIndex) => (
-          <Grid item xs={12} md={6} key={groupIndex}>
-            <Typography variant="h6">{group.label}</Typography>
-            {group.pages.map((page, pageIndex) => (
-              <div key={pageIndex}>
-                <Typography variant="subtitle1">{page.label}</Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Field</TableCell>
-                        <TableCell>Default</TableCell>
-                        <TableCell>Description</TableCell>
-                        <TableCell>Value</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {page.fields.map((field, fieldIndex) => (
-                        <TableRow key={fieldIndex}>
-                          <TableCell>{field.label}</TableCell>
-                          <TableCell>{field.default}</TableCell>
-                          <TableCell>{field.description}</TableCell>
-                          <TableCell>
-                            <TextField
-                              variant="outlined"
-                              size="small"
-                              value={field.val ? JSON.stringify(field.val) : ''}
-                              onChange={(e) => {
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
+  const settingsGroup = groups.find(group => group.label === 'Settings');
+
+  if (!settingsGroup) {
+    return <Typography variant="h6">No settings group found.</Typography>;
+  }
+
+  return (
+    <MainCard title="Dynamic Configuration" style={{ textAlign: 'center' }}>
+      <Typography variant="h4" gutterBottom>
+        {settingsGroup.label}
+      </Typography>
+
+      {settingsGroup.pages.map((page, pageIndex) => (
+        <div key={pageIndex} style={{ marginBottom: '20px' }}>
+          <Typography variant="h6">{page.label}</Typography>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {page.fields.map((field, fieldIndex) => (
+              <div key={fieldIndex} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Typography style={{ minWidth: '150px' }}>{field.label}:</Typography>
+                {field.type === 'select' ? (
+                  <FormControl fullWidth size="small">
+                    <InputLabel>{field.label}</InputLabel>
+                    <Select
+                      value={field.val?.new || ''}
+                      onChange={(e) =>
+                        handleFieldChange(groups.indexOf(settingsGroup), pageIndex, fieldIndex, e.target.value)
+                      }
+                    >
+                      {(() => {
+                        if (Array.isArray(field.options)) {
+                          return field.options;
+                        }
+                        if (typeof field.options === 'string' && field.options.startsWith('$ref:')) {
+                          const refKey = field.options.split(':')[1];
+                          const resolvedOptions = common.optionLists[refKey];
+                          if (Array.isArray(resolvedOptions)) {
+                            return resolvedOptions;
+                          } else {
+                            console.error(`Invalid or missing reference: ${refKey}`);
+                            return [];
+                          }
+                        }
+                        console.error(`Invalid options format for field: ${field.label}`);
+                        return [];
+                      })().map((option, optIndex) => (
+                        <MenuItem key={optIndex} value={option.value}>
+                          {option.label}
+                        </MenuItem>
                       ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                    </Select>
+                  </FormControl>
+                ) : (
+                  <TextField
+                    variant="outlined"
+                    size="small"
+                    value={field.val ? JSON.stringify(field.val.new) : ''}
+                    onChange={(e) =>
+                      handleFieldChange(groups.indexOf(settingsGroup), pageIndex, fieldIndex, e.target.value)
+                    }
+                  />
+                )}
               </div>
             ))}
-          </Grid>
-        ))}
-      </Grid>
+          </div>
+        </div>
+      ))}
     </MainCard>
   );
 };

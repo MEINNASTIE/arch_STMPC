@@ -48,25 +48,23 @@ const AuthLogin = () => {
     fetchUserCount();
   }, []);
 
-  const handleClickShowPassword = () => setShowPassword(prev => !prev);
   const handleMouseDownPassword = (event) => event.preventDefault();
+  const [userId, setUserId] = useState(null);
 
-  const handleLogin = async (values, { setErrors, setSubmitting }) => {
+  const handleLogin = async (values, { setSubmitting, setErrors }) => {
     try {
         const hashB64 = await generateHashB64(values.username, values.password);
-        const response = await axios.get(`https://localhost/api/user/hash/${hashB64}`);
-       
-        const userData = response.data?.payload;
-        
-        if (userData && userData.userId) {
-            const token = await encodeToken(userData);  
-            if (token) {
-                localStorage.setItem('token', token);
-            }
-            localStorage.setItem('user', JSON.stringify(userData));
-            navigate('/main');
+        const response = await axios.get(`https://localhost/api/user/hash/${hashB64}`, { withCredentials: true });
+        console.log('Full response data:', response.data);
+
+        if (response.data && response.data.payload) {
+            const userId = response.data.payload.userId;
+            console.log('User ID:', userId);
+
+            setUserId(userId);
+            navigate('/main'); 
         } else {
-            console.error('Login failed: User data not found in payload');
+            console.error('Response structure does not contain user data:', response.data);
             setErrors({ submit: 'Login failed: User data not found' });
         }
     } catch (error) {
@@ -75,10 +73,9 @@ const AuthLogin = () => {
     } finally {
         setSubmitting(false);
     }
-};
+  }; 
 
-
-  const handleInitAdmin = async (values, { setStatus, setSubmitting, setErrors }) => {
+  const handleInitAdmin = async (values, { setSubmitting, setErrors }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
       const response = await axios.post(`https://localhost/api/user/initadmin?hash=${hashB64}`);
@@ -139,7 +136,7 @@ const AuthLogin = () => {
                 <InputAdornment position="end">
                   <IconButton
                     aria-label="toggle password visibility"
-                    onClick={handleClickShowPassword}
+                    onClick={ () => setShowPassword(!showPassword) }
                     onMouseDown={handleMouseDownPassword}
                     edge="end"
                   >
@@ -190,6 +187,7 @@ const AuthLogin = () => {
       ) : (
         <Form isAdminInit={true} />
       )}
+      {userId && <Typography variant="h6">Logged in as User ID: {userId}</Typography>}
     </Box>
   );
 };

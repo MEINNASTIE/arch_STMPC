@@ -1,11 +1,8 @@
 import { lazy } from 'react';
 
 // project imports
-import MainLayout from 'layout/MainLayout';
 import Loadable from 'ui-component/Loadable';
-
-// dashboard routing
-const DashboardDefault = Loadable(lazy(() => import('views/dashboard')));
+import SemiLayout from 'layout/SemiLayout';
 
 // measurement page
 const MeasurementPage = Loadable(lazy(() => import('views/meas/meas_status')));
@@ -26,20 +23,11 @@ const SystemMemory = Loadable(lazy(() => import('views/system/system_memory')));
 
 const MainRoutes = {
   path: '/',
-  element: <MainLayout />,
+  element: <SemiLayout />,
   children: [
     {
       path: '/main',
       element: <MeasurementPage />
-    },
-    {
-      path: 'dashboard',
-      children: [
-        {
-          path: 'default',
-          element: <DashboardDefault />
-        }
-      ]
     },
     {
       path: 'ftp',

@@ -47,7 +47,6 @@ def get_user_count():
     
     return jsonify({'message': 'Error fetching users'}), 500
 
-
 # to generate hash password for the user
 def generate_hash(username, password):
     """Generate a base64-encoded hash from the username and password."""

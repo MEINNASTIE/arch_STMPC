@@ -22,9 +22,9 @@ const App = () => {
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={themes(customization)}>
         <CssBaseline />
-        <NavigationScroll>
-          <RouterProvider router={router} />
-        </NavigationScroll>
+          <NavigationScroll>
+            <RouterProvider router={router} />
+          </NavigationScroll>
       </ThemeProvider>
     </StyledEngineProvider>
   );
