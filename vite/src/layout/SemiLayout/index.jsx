@@ -1,12 +1,12 @@
 import { Outlet } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 // material-ui
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import { useTheme } from '@mui/material';
-import Header from 'layout/MainLayout/Header';
+import HeaderMain from 'layout/MainLayout/HeaderMain';
 
 // ==============================|| SEMI LAYOUT ||============================== //
 
@@ -14,10 +14,6 @@ const SemiLayout = () => {
   const theme = useTheme();
 
   const leftDrawerOpened = useSelector((state) => state.customization.opened);
-  const dispatch = useDispatch();
-  const handleLeftDrawerToggle = () => {
-    dispatch({ type: SET_MENU, opened: !leftDrawerOpened });
-  };
 
   return (
   <>
@@ -34,7 +30,7 @@ const SemiLayout = () => {
         }}
       >
         <Toolbar>
-          <Header handleLeftDrawerToggle={handleLeftDrawerToggle} />
+          <HeaderMain />
         </Toolbar>
         </AppBar>
       <Outlet />

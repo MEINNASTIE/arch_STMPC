@@ -186,7 +186,7 @@ const Header = ({ handleLeftDrawerToggle }) => {
                   'aria-labelledby': 'basic-button',
                   onMouseLeave: handleMenuClose, 
                 }}
-                PaperProps={{
+                slotProps={{
                   elevation: 1, 
                   sx: {
                     boxShadow: theme.shadows[2],
