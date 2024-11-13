@@ -8,8 +8,6 @@ import CardHeader from '@mui/material/CardHeader';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 
-// project-import
-
 // constant
 const headerSX = {
   '& .MuiCardHeader-action': { mr: 0 }

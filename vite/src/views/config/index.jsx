@@ -1,16 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, FormControl, Select, MenuItem, TextField, Button, Box, Card, CardContent, Drawer, List, ListItem, ListItemText, Chip, Checkbox, Tooltip} from '@mui/material';
+import { Typography, FormControl, Select, MenuItem, TextField, Button, Box, Card, CardContent, Chip, Checkbox, Tooltip} from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
-import { useTheme } from '@mui/system';
-import { IconClockHour5 } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import RightDrawer from './drawers/RightDrawer';
+import LeftDrawer from './drawers/LeftDrawer';
 
 const ConfigMain = () => {
   const [data, setData] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const theme = useTheme();
-  // const navigate = useNavigate(); 
-  // check for later
 
   useEffect(() => {
     fetch('https://localhost/config')
@@ -75,119 +71,7 @@ const ConfigMain = () => {
         }}
       >
       <div style={{ display: 'flex', height: '100%' }}>
-        <Drawer
-          variant="permanent"
-          anchor="left"
-          sx={{
-            width: 80,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: 360,
-              boxSizing: 'border-box',
-              borderRight: '2px solid rgb(15, 29, 232)',
-              height: '100vh',
-              marginTop: '82px',
-            },
-          }}
-        >
-          <List style={{ marginTop: 'px', marginLeft: '45px' }}>
-          <Box sx={{ 
-            mt: 2, 
-            pl: 2,
-            cursor: 'pointer',
-            width: '80%',
-            borderRadius: `${theme.customization?.borderRadius || 8}px`,
-            border: '2px solid transparent',
-            backgroundColor: '#87ceeb',
-            transition: 'background-color 0.4s ease', 
-            '&:hover': {
-              backgroundColor: '#3e4aec',
-            }, 
-          }}>
-          <Typography
-            variant="caption"
-            sx={{ ...theme.typography.menuCaption, color: 'white', }}
-            display="block"
-            gutterBottom
-          >
-            Restart
-          </Typography>
-          </Box>
-         
-            {groups.map((group, index) => (
-              <ListItem
-                button
-                key={index}
-                onClick={() => handleGroupSelect(group)}
-                sx={{
-                  borderRadius: '10px',
-                  mb: '8px',
-                  mt: 2,
-                  width: '80%',
-                  borderRadius: `${theme.customization?.borderRadius || 8}px`,
-                  border: '2px solid transparent',
-                  transition: 'background-color 0.4s ease', 
-                  '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                },
-                }}
-              >
-                <ListItemText primary={group.label} />
-              </ListItem>
-            ))}
-           
-            <Box sx={{ 
-            mt: 2, 
-            pl: 2,
-            width: '80%',
-            cursor: 'pointer',
-            borderRadius: `${theme.customization?.borderRadius || 8}px`,
-            border: '2px solid transparent',
-            backgroundColor: '#87ceeb',
-            transition: 'background-color 0.4s ease', 
-            '&:hover': {
-              backgroundColor: '#3e4aec',
-            }, 
-          }}>
-            <Typography
-            variant="caption"
-            sx={{ ...theme.typography.menuCaption, color: 'white', }}
-            display="block"
-            gutterBottom
-          >
-            Change Password
-          </Typography>
-          </Box>
-          <Box sx={{ 
-            mt: 2, 
-            pl: 2,
-            width: '80%',
-            cursor: 'pointer',
-            borderRadius: `${theme.customization?.borderRadius || 8}px`,
-            border: '2px solid transparent',
-            backgroundColor: '#87ceeb',
-            transition: 'background-color 0.4s ease', 
-            '&:hover': {
-              backgroundColor: '#3e4aec',
-            },  
-          }}>
-            <Typography
-            variant="caption"
-            sx={{ ...theme.typography.menuCaption,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: 'white',
-             }}
-            display="block"
-            gutterBottom
-          >
-            <IconClockHour5 stroke={1.5} size="1.9rem" />
-            <p style={{margin: 0}}>Set Time</p>
-          </Typography>
-          </Box>
-          </List>
-        </Drawer>
+        <LeftDrawer groups={groups} onGroupSelect={handleGroupSelect} />
         <div style={{ width: '100%', overflowY: 'auto', marginTop: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingLeft: '430px' }}>
           {selectedGroup && (
             <>
@@ -221,9 +105,11 @@ const ConfigMain = () => {
                           gap: '20px',
                         }}
                       >
+                        {/* label section */}
                         <Typography variant="body1" style={{ marginBottom: '5px', flex: 5, textAlign: 'right' }}>
                           {field.label}:
                         </Typography>
+                        {/* checkbox */}
                         <Checkbox
                           checked={field.isSelected || false}
                           onChange={(e) =>
@@ -232,6 +118,7 @@ const ConfigMain = () => {
                           inputProps={{ 'aria-label': `Select ${field.label}` }}
                           style={{ flex: 1 }}
                         />
+                        {/* first input editable */}
                         {field.type === 'select' ? (
                           <FormControl fullWidth size="small" style={{ flex: 6 }}>
                             <Select
@@ -303,13 +190,13 @@ const ConfigMain = () => {
                                 size="small"
                                 value={field.val.rt[0].val || ''}
                                 fullWidth
-                                style={{ flex: 6, opacity: 0.6 }}
+                                style={{ flex: 6 }}
                                 disabled
                               />
                             )}
                           </>
                         )}
-
+                        {/* second input active */} 
                         {field.type === 'select' && field.options.length > 0 && (
                           <TextField
                             variant="outlined"
@@ -320,12 +207,11 @@ const ConfigMain = () => {
                                 .find((rtVal) => rtVal) || '' 
                             }
                             fullWidth
-                            style={{ flex: 6, opacity: 0.6 }}
+                            style={{ flex: 6 }}
                             disabled
-                            label="Newest RT Value"
                           />
                         )}
-
+                        {/* chip status  */}
                         <div style={{ flex: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                           <Chip
                             label={
@@ -339,7 +225,7 @@ const ConfigMain = () => {
                             }
                             color={
                               field.val?.state === 'R'
-                                ? 'default'
+                                ? 'error'
                                 : field.val?.state === 'A'
                                 ? 'success'
                                 : field.val?.state === 'P'
@@ -365,62 +251,7 @@ const ConfigMain = () => {
         </div>
       </div>
       <div style={{ display: 'flex', height: '100%' }}>
-        <Drawer
-          variant="permanent"
-          anchor="right"
-          sx={{
-            width: 80,
-            flexShrink: 0,
-            zIndex: 0,
-            '& .MuiDrawer-paper': {
-              width: 360,
-              boxSizing: 'border-box',
-              borderLeft: '2px solid rgb(15, 29, 232)',
-              height: '100vh',
-              marginTop: '82px',
-              display: 'flex',  
-              flexDirection: 'column',
-              justifyContent: 'center',
-              zIndex: -1,
-            },
-          }}
-        >
-        <button
-          style={{
-            position: 'absolute',
-            top: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1, 
-            color: 'white',
-            padding: '10px',
-            width: '40%',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            fontSize: '1rem',
-            borderRadius: `${theme.customization?.borderRadius || 8}px`,
-            border: '2px solid transparent',
-            backgroundColor: '#87ceeb',
-            transition: 'background-color 0.4s ease', 
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#3e4aec'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = '#87ceeb'}
-        >
-          Apply
-        </button>
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '100px'}}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginBottom: '80px',
-            }}
-          >
-            Some content
-          </Box>
-        </div>
-        </Drawer>
+        <RightDrawer />
       </div>
     </MainCard>
   );

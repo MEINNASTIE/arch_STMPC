@@ -12,6 +12,7 @@ import MenuItem from '@mui/material/MenuItem';
 // assets
 import { IconPresentation, IconSettings, IconCpu, IconWorld, IconPrinter, IconRefresh } from '@tabler/icons-react';
 import usePrint from 'hooks/usePrint';
+import { Button } from '@mui/material';
 
 const HeaderMain = () => {
   const theme = useTheme();
@@ -199,8 +200,24 @@ const HeaderMain = () => {
         {username && rolename && (
           <Typography variant="body2" sx={{ color: 'white', paddingRight: '60px', fontWeight: 'bold' }}>
           {username} ({rolename})
-        </Typography>
+          </Typography>
         )}
+        <Button
+          style={{
+            color: 'white',
+            padding: '5px',
+            marginRight: '55px',
+            width: '20%',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '0.8rem',
+            borderRadius: `${theme.customization?.borderRadius || 8}px`,
+            border: '2px solid white', 
+          }}
+          onClick={handleLogout}  
+        >
+          Log Out
+        </Button>
       </Box>
     </Box>
   );

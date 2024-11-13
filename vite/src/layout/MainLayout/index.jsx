@@ -27,7 +27,6 @@ const MainLayout = () => {
     <Box sx={{ display: 'flex', margin: '1px',
       borderRadius: '10px' }}>
       <CssBaseline />
-      {/* header */}
       <AppBar
         enableColorOnDark
         position="fixed"
@@ -42,8 +41,6 @@ const MainLayout = () => {
           <Header handleLeftDrawerToggle={handleLeftDrawerToggle} />
         </Toolbar>
       </AppBar>
-
-      {/* drawer */}
       <Sidebar drawerOpen={!matchDownMd ? leftDrawerOpened : !leftDrawerOpened} drawerToggle={handleLeftDrawerToggle} />
     </Box>
   );
