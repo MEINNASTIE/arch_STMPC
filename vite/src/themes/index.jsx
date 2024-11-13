@@ -19,8 +19,8 @@ export const theme = (customization) => {
   const themeOption = {
     colors: color,
     heading: color.grey900,
-    paper: color.paper,
-    backgroundDefault: color.paper,
+    paper: 'white',
+    backgroundDefault: 'white',
     background: color.primaryLight,
     darkTextPrimary: color.grey700,
     darkTextSecondary: color.grey500,
@@ -37,7 +37,7 @@ export const theme = (customization) => {
     mixins: {
       toolbar: {
         minHeight: '48px',
-        padding: '16px',
+        paddingTop: '16px',
         '@media (min-width: 600px)': {
           minHeight: '48px'
         }

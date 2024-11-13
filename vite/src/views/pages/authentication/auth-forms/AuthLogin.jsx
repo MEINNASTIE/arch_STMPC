@@ -60,9 +60,11 @@ const AuthLogin = () => {
         if (response.data && response.data.payload) {
             const userId = response.data.payload.userId;
             console.log('User ID:', userId);
+            localStorage.setItem('username', response.data.payload.username);
+            localStorage.setItem('rolename', response.data.payload.rolename);
 
             setUserId(userId);
-            navigate('/main'); 
+            navigate('/measurement-status'); 
         } else {
             console.error('Response structure does not contain user data:', response.data);
             setErrors({ submit: 'Login failed: User data not found' });

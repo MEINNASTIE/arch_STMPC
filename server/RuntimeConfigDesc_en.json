@@ -1,157 +1,309 @@
 {
-    "returnCode": 0,
-    "duration": 28,
-    "errorText": "",
-    "errorTextDetails": "",
-    "payload": {
-      "common": {
-        "optionLists": {
-          "st_rn_units": [
-            {
-              "value": "1",
-              "label": "Bq/m³"
-            },
-            {
-              "value": "2",
-              "label": "Bq/m³ air"
-            },
-            {
-              "value": "3",
-              "label": "Bq/L"
-            },
-            {
-              "value": "4",
-              "label": "Bq"
-            },
-            {
-              "value": "5",
-              "label": "Bq/m³ aerosol"
-            },
-            {
-              "value": "6",
-              "label": "Bq/g water"
-            }
-          ]
-        },
-        "conditions": {
-          "measTypeCondition": {
-            "st.meastype": {
-              "equals": "air",
-              "valid_options": [
-                {
-                  "value": "co123_air",
-                  "label": "CO123 Air"
-                },
-                {
-                  "value": "cs234_air",
-                  "label": "CS234 Air"
-                }
-              ]
-            }
+  "duration": 28,
+  "errorText": "",
+  "errorTextDetails": "",
+  "payload": {
+    "common": {
+      "conditions": {
+        "measTypeCondition": {
+          "st.meastype": {
+            "equals": "air",
+            "valid_options": [
+              {
+                "label": "CO123 Air",
+                "value": "co123_air"
+              },
+              {
+                "label": "CS234 Air",
+                "value": "cs234_air"
+              }
+            ]
           }
         }
       },
-      "groups": [
-        {
-          "id": "st",
-          "label": "Settings",
-          "pages": [
-            {
-              "id": "st_general",
-              "label": "General Settings",
-              "fields": [
-                {
-                  "gk": "st.meastype",
-                  "type": "select",
-                  "label": "Measurement Type",
-                  "options": [
-                    {
-                      "value": "aqua",
-                      "label": "Aqua"
-                    },
-                    {
-                      "value": "air",
-                      "label": "Air"
-                    }
-                  ],
-                  "default": "aqua"
-                }
-              ]
-            },
-            {
-                "id": "st_general",
-                "label": "General Settings",
-                "fields": [
+      "optionLists": {
+        "st_rn_units": [
+          {
+            "label": "Bq/m³",
+            "value": "1"
+          },
+          {
+            "label": "Bq/m³ air",
+            "value": "2"
+          },
+          {
+            "label": "Bq/L",
+            "value": "3"
+          },
+          {
+            "label": "Bq",
+            "value": "4"
+          },
+          {
+            "label": "Bq/m³ aerosol",
+            "value": "5"
+          },
+          {
+            "label": "Bq/g water",
+            "value": "6"
+          }
+        ]
+      }
+    },
+    "groups": [
+      {
+        "id": "st",
+        "label": "Settings",
+        "pages": [
+          {
+            "fields": [
+              {
+                "default": "aqua",
+                "gk": "st.meastype",
+                "label": "Measurement Type",
+                "options": [
                   {
-                    "gk": "st.meastype",
-                    "type": "select",
-                    "label": "Service mode",
-                    "options": [
-                      {
-                        "value": "something",
-                        "label": "1"
-                      },
-                      {
-                        "value": "something2",
-                        "label": "2"
-                      }
-                    ],
-                    "default": "aqua"
+                    "label": "Aqua",
+                    "val": { "new": "aqua", "rt": [{ "val": "water", "ts": "2024-10-24T12:00:00Z" }], "state": "A" }
+                  },
+                  {
+                    "label": "Air",
+                    "val": { "new": "air", "rt": [{ "val": "air", "ts": "2024-10-24T12:00:00Z" }], "state": "A" }
                   }
+                ],
+                "type": "select"
+              },
+              {
+                "default": "Enabled",
+                "gk": "st.dhcpEnable",
+                "label": "DHCP Enable",
+                "options": [
+                  {
+                    "label": "Enabled",
+                    "val": { "new": "Enabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  },
+                  {
+                    "label": "Disabled",
+                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  }
+                ],
+                "type": "select"
+              },
+              {
+                "default": "192.168.163.156",
+                "gk": "st.ipAddressOne",
+                "label": "IP Address 1",
+                "type": "text",
+                "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" }
+              },
+              {
+                "default": "255.255.255.0",
+                "gk": "st.subNetMaskOne",
+                "label": "Subnet Mask 1",
+                "type": "text",
+                "val": { "new": "255.255.255.0", "rt": [{ "val": "255.255.255.128", "ts": "2024-10-24T11:00:00Z" }], "state": "A"  }
+              },
+              {
+                "default": "192.168.10.222",
+                "gk": "st.ipAddressTwo",
+                "label": "IP Address 2",
+                "type": "text",
+                "val": { "new": "192.168.10.222", "rt": [{ "val": "192.168.10.11", "ts": "2024-10-24T09:30:00Z" }], "state": "A"  }
+              },
+              {
+                "default": "255.255.255.0",
+                "gk": "st.subNetMaskTwo",
+                "label": "Subnet Mask 2",
+                "type": "text",
+                "val": { "new": "255.255.255.0", "rt": [{ "val": "255.255.255.192", "ts": "2024-10-24T13:00:00Z" }], "state": "A"  }
+              },
+              {
+                "default": "192.168.10.241",
+                "gk": "st.gateway",
+                "label": "Gateway",
+                "type": "text",
+                "val": { "new": "192.168.10.241", "rt": [{ "val": "192.168.1.1", "ts": "2024-10-24T08:45:00Z" }], "state": "P"  }
+              },
+              {
+                "default": "0.0.0.0",
+                "gk": "st.dnsServer",
+                "label": "DNS Server",
+                "type": "text",
+                "val": { "new": "0.0.0.0", "rt": [{ "val": "8.8.8.8", "ts": "2024-10-24T15:00:00Z" }], "state": "A"  }
+              }
+            ],
+            "id": "st_general",
+            "label": "General Settings"
+          }
+        ]
+      },
+      {
+        "id": "sr",
+        "label": "Sensor",
+        "pages": [
+          {
+            "fields": [
+              {
+                "default": "1",
+                "description": "Select the measurement units for RN1",
+                "gk": "st.rn01_unit",
+                "label": "Sensor Type 1",
+                "options": [
+                  {
+                    "label": "Bq/m³",
+                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  },
+                  {
+                    "label": "Bq/L",
+                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  },
+                  {
+                    "label": "Bq",
+                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  }
+                ],
+                "type": "select"
+              },
+              {
+                "default": "1",
+                "description": "Select the measurement units for RN2",
+                "gk": "sr.rn2_type",
+                "label": "Sensor Type 2",
+                "options": [
+                  {
+                    "label": "Bq/m³",
+                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  },
+                  {
+                    "label": "Bq/L",
+                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  },
+                  {
+                    "label": "Bq",
+                   "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  }
+                ],
+                "type": "select"
+              }
+            ],
+            "id": "sr_config",
+            "label": "Sensor Configuration"
+          }
+        ]
+      },
+      {
+        "id": "network",
+        "label": "Network Configuration",
+        "pages": [
+          {
+            "fields": [
+              {
+                "default": "proxy.example.com",
+                "gk": "network.proxyServer",
+                "label": "Proxy Server",
+                "type": "text"
+              },
+              {
+                "default": 8080,
+                "gk": "network.port",
+                "label": "Port",
+                "type": "number"
+              },
+              {
+                "default": "http",
+                "gk": "network.protocol",
+                "label": "Network Protocol",
+                "type": "select",
+                "options": [
+                  { "label": "HTTP", "value": "http" },
+                  { "label": "HTTPS", "value": "https" },
+                  { "label": "FTP", "value": "ftp" }
                 ]
               }
-          ]
-        },
-        {
-          "id": "sr",
-          "label": "Sensor",
-          "pages": [
-            {
-              "id": "sr_config",
-              "label": "Sensor Configuration",
-              "fields": [
-                {
-                  "gk": "st.rn01_unit",
-                  "val": {
-                    "new": null,
-                    "rt": [
-                      {
-                        "val": 3,
-                        "app_id": "stcomserv"
-                      }
-                    ],
-                    "state": "A"
-                  },
-                  "type": "select",
-                  "label": "Sensor Type 1",
-                  "description": "Select the measurement units for RN1",
-                  "options": "$ref:common.optionLists.st_rn_units",
-                  "default": "1"
-                },
-                {
-                  "gk": "sr.rn2_type",
-                  "val": {
-                    "new": "1d",
-                    "rt": [
-                      {
-                        "val": 4,
-                        "app_id": "stcomserv"
-                      }
-                    ],
-                    "state": "R"
-                  },
-                  "type": "select",
-                  "label": "Sensor Type 2",
-                  "description": "Select the measurement units for RN2",
-                  "options": "$ref:common.optionLists.st_rn_units",
-                  "default": "1"
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      "nowUTC": "2024-10-25 08:45:10+00:00"
-    }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "security",
+        "label": "Security",
+        "pages": [
+          {
+            "fields": [
+              {
+                "default": "enabled",
+                "gk": "security.firewallStatus",
+                "label": "Firewall Status",
+                "type": "select",
+                "options": [
+                  { "label": "Enabled", "value": "enabled" },
+                  { "label": "Disabled", "value": "disabled" }
+                ]
+              },
+              {
+                "default": "vpn.example.com",
+                "gk": "security.vpnConnection",
+                "label": "VPN Connection",
+                "type": "text"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "advanced",
+        "label": "Advanced Settings",
+        "pages": [
+          {
+            "fields": [
+              {
+                "default": "/usr/local/bin/script.sh",
+                "gk": "advanced.scriptPath",
+                "label": "Custom Script Path",
+                "type": "text"
+              },
+              {
+                "default": "no",
+                "gk": "advanced.enableLogging",
+                "label": "Enable Custom Logging",
+                "type": "select",
+                "options": [
+                  { "label": "Yes", "value": "yes" },
+                  { "label": "No", "value": "no" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "sr_extended",
+        "label": "Advanced Sensor Configuration",
+        "pages": [
+          {
+            "fields": [
+              {
+                "default": "auto",
+                "gk": "sr.calibrationMode",
+                "label": "Calibration Mode",
+                "type": "select",
+                "options": [
+                  { "label": "Auto", "value": "auto" },
+                  { "label": "Manual", "value": "manual" }
+                ]
+              },
+              {
+                "default": 5,
+                "gk": "sr.sensitivity",
+                "label": "Sensor Sensitivity",
+                "type": "number"
+              }
+            ]
+          }
+        ]
+      }  
+    ],
+    "nowUTC": "2024-10-25 08:45:10+00:00",
+    "returnCode": 0
   }
-  
+}

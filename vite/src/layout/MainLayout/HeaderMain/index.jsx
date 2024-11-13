@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,6 +22,9 @@ const HeaderMain = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [hoveredIcon, setHoveredIcon] = useState(null);
 
+  const username = localStorage.getItem('username');
+  const rolename = localStorage.getItem('rolename');
+
   const handleMenuOpen = (event, index) => {
     setAnchorEl(event.currentTarget);
     setHoveredIcon(index);
@@ -37,18 +39,23 @@ const HeaderMain = () => {
     window.location.reload();
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/');
+  };
+
   const iconMenuOptions = [
     {
       icon: <IconPresentation stroke={1.5} size="1.9rem" />,
       label: 'Measurement status',
-      path: '/config/main', // Correct path for Measurement status
+      path: '/measurement-status'
     },
     {
       icon: <IconSettings stroke={1.5} size="1.9rem" />,
       label: 'Configuration',
       options: [
-        { label: 'Instrument configuration', path: '/config/dashboard/default' },
-        { label: 'Summary of changes', path: '/config/dashboard/default' }, // You can change this to the actual path
+        { label: 'Instrument configuration', path: '/config-main' },
+        { label: 'Summary of changes', path: '/dashboard' }
       ]
     },
     {
@@ -87,29 +94,39 @@ const HeaderMain = () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        [theme.breakpoints.down('md')]: {
-          flexDirection: 'row',
-          justifyContent: 'space-between'
-        }
-      }}
-    >
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          ml: 'auto',
-          backgroundColor: theme.palette.primary.main,
+          justifyContent: 'space-between',
+          width: '100%',
+          border: '2px solid rgb(15, 29, 232)',
+          backgroundColor: '#3e4aec',
+          borderRadius: '10px',
+          [theme.breakpoints.down('md')]: {
+            flexDirection: 'row',
+            justifyContent: 'space-between'
+          }
+        }}
+      >
+      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+        <Typography variant="h2" sx={{ flex: 1, color: 'white', paddingLeft: '60px' }}>
+          SpectroTRACER STNBD123
+        </Typography>
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',  
           borderRadius: '8px',
           padding: '8px 16px',
+          borderLeft: '2px solid white',
+          borderRight: '2px solid white',
           [theme.breakpoints.down('md')]: {
             padding: '4px 8px',
-          }
+          },
+          flex: 2,
         }}
       >
         {iconMenuOptions.map(({ icon, label, options, onClick, path }, index) => (
@@ -177,6 +194,13 @@ const HeaderMain = () => {
             )}
           </Box>
         ))}
+      </Box>
+      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+        {username && rolename && (
+          <Typography variant="body2" sx={{ color: 'white', paddingRight: '60px', fontWeight: 'bold' }}>
+          {username} ({rolename})
+        </Typography>
+        )}
       </Box>
     </Box>
   );

@@ -38,9 +38,9 @@ const Sidebar = ({ drawerOpen, drawerToggle, window }) => {
           <MenuList />
 
           {/* Logo Image */}
-          <Stack direction="row" justifyContent="left" sx={{ mt: 8, mb: 2 }}>
+          {/* <Stack direction="row" justifyContent="left" sx={{ mt: 8, mb: 2 }}>
             <Logo />
-          </Stack>
+          </Stack> */}
           
         </PerfectScrollbar>
       </BrowserView>
@@ -70,7 +70,7 @@ const Sidebar = ({ drawerOpen, drawerToggle, window }) => {
         sx={{
           '& .MuiDrawer-paper': {
             width: drawerWidth,
-            background: theme.palette.background.default,
+            background: 'white',
             color: theme.palette.text.primary,
             borderRight: 'none',
             [theme.breakpoints.up('md')]: {

@@ -189,7 +189,7 @@ const Header = ({ handleLeftDrawerToggle }) => {
                 slotProps={{
                   elevation: 1, 
                   sx: {
-                    boxShadow: theme.shadows[2],
+                    boxShadow: theme.shadows[1],
                     [theme.breakpoints.down('md')]: {
                       width: '100%', 
                     },

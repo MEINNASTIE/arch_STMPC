@@ -62,8 +62,7 @@ const MenuList = () => {
         </Box>
 
         <Divider sx={{ mt: 1.25, mb: 1.25 }} />
-        
-        {navItems}
+        {/* Where the List is supposed to go */}
         <Box
           sx={{
             mt: 2,

@@ -14,8 +14,22 @@ import { MENU_OPEN } from 'store/actions';
 const LogoSection = () => {
   const defaultId = useSelector((state) => state.customization.defaultId);
   const dispatch = useDispatch();
+
   return (
-    <ButtonBase disableRipple onClick={() => dispatch({ type: MENU_OPEN, id: defaultId })} component={Link} to={config.defaultPath}>
+    <ButtonBase
+      disableRipple
+      onClick={() => dispatch({ type: MENU_OPEN, id: defaultId })}
+      component={Link}
+      to={config.defaultPath}
+      style={{
+        position: 'fixed', 
+        bottom: 25,
+        right: 25,
+        zIndex: 1000, 
+        backgroundColor: 'transparent',
+        padding: '10px',
+      }}
+    >
       <Logo />
     </ButtonBase>
   );

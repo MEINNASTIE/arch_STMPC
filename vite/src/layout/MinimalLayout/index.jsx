@@ -1,3 +1,4 @@
+import LogoSection from 'layout/MainLayout/LogoSection';
 import { Outlet } from 'react-router-dom';
 
 // ==============================|| MINIMAL LAYOUT ||============================== //
@@ -5,6 +6,7 @@ import { Outlet } from 'react-router-dom';
 const MinimalLayout = () => (
   <>
     <Outlet />
+    <LogoSection />
   </>
 );
 

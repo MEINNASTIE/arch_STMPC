@@ -1,46 +1,71 @@
 import { Grid, Typography, Box } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
-import Plot from 'react-plotly.js'; 
+import Plot from 'react-plotly.js';
 
 const MeasurementPage = () => {
   return (
-    <MainCard title="Dashboard">
+    <MainCard title="Measurement Status SpectroTRACER">
       <Grid container spacing={2}>
-        {/* Sidebar */}
         <Grid item xs={3}>
           <Box>
-            <Typography variant="h6">Sidebar</Typography>
+            <Typography variant="h6">Sidebar where more info and table will go</Typography>
             <Typography variant="body2">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam quis ligula ac urna feugiat aliquam.
             </Typography>
           </Box>
         </Grid>
 
-        {/* Main Content */}
         <Grid item xs={9}>
           <Box>
-            {/* Plotly Chart */}
-            <Typography variant="h6">Plotly Chart</Typography>
             <Plot
               data={[
                 {
-                  x: [1, 2, 3, 4],
-                  y: [10, 15, 13, 17],
+                  x: ['CT1-CalibNet', 'CT2-CalibNet', 'CT3-CalibNet', 'CT24-CalibNet'],
+                  y: [20, 35, 25, 40],
                   type: 'scatter',
                   mode: 'lines+markers',
-                  marker: { color: 'red' }
+                  marker: { color: 'blue' },
+                  name: 'Spectrum A'
+                },
+                {
+                  x: ['CT1-CalibNet', 'CT2-CalibNet', 'CT3-CalibNet', 'CT24-CalibNet'],
+                  y: [15, 30, 22, 37],
+                  type: 'scatter',
+                  mode: 'lines+markers',
+                  marker: { color: 'green' },
+                  name: 'Spectrum B'
+                },
+                {
+                  x: ['CT1-CalibNet', 'CT2-CalibNet', 'CT3-CalibNet', 'CT24-CalibNet'],
+                  y: [25, 40, 30, 45],
+                  type: 'scatter',
+                  mode: 'lines+markers',
+                  marker: { color: 'red' },
+                  name: 'Spectrum C'
                 }
               ]}
-              layout={{ title: 'Sample Chart' }}
+              layout={{
+                title: 'Spectra Analysis at 11/11/2024 13:40:00',
+                xaxis: {
+                  title: 'Calibration Type',
+                  tickangle: -45
+                },
+                yaxis: {
+                  title: 'Intensity (a.u.)',
+                  range: [0, 50]
+                },
+                legend: {
+                  x: 1,
+                  y: 1
+                }
+              }}
             />
           </Box>
 
-          {/* Section Below */}
           <Box mt={2}>
             <Typography variant="h6">Information Section</Typography>
             <Typography variant="body2">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus euismod, orci ac interdum elementum, enim justo cursus
-              odio, sed pulvinar lorem metus sit amet felis.
+              Detailed information about the measurement process, equipment calibration, and interpretation of the results goes here.
             </Typography>
           </Box>
         </Grid>
