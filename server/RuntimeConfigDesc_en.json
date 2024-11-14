@@ -56,6 +56,9 @@
         "label": "Settings",
         "pages": [
           {
+            "id": "st_general",
+            "label": "General Settings",
+            "description": "Basic configuration for network and system settings",
             "fields": [
               {
                 "default": "aqua",
@@ -101,207 +104,134 @@
                 "gk": "st.subNetMaskOne",
                 "label": "Subnet Mask 1",
                 "type": "text",
-                "val": { "new": "255.255.255.0", "rt": [{ "val": "255.255.255.128", "ts": "2024-10-24T11:00:00Z" }], "state": "A"  }
+                "val": { "new": "255.255.255.0", "rt": [{ "val": "255.255.255.128", "ts": "2024-10-24T11:00:00Z" }], "state": "A" }
               },
               {
                 "default": "192.168.10.222",
                 "gk": "st.ipAddressTwo",
                 "label": "IP Address 2",
                 "type": "text",
-                "val": { "new": "192.168.10.222", "rt": [{ "val": "192.168.10.11", "ts": "2024-10-24T09:30:00Z" }], "state": "A"  }
+                "val": { "new": "192.168.10.222", "rt": [{ "val": "192.168.10.11", "ts": "2024-10-24T09:30:00Z" }], "state": "A" }
               },
               {
                 "default": "255.255.255.0",
                 "gk": "st.subNetMaskTwo",
                 "label": "Subnet Mask 2",
                 "type": "text",
-                "val": { "new": "255.255.255.0", "rt": [{ "val": "255.255.255.192", "ts": "2024-10-24T13:00:00Z" }], "state": "A"  }
+                "val": { "new": "255.255.255.0", "rt": [{ "val": "255.255.255.192", "ts": "2024-10-24T13:00:00Z" }], "state": "A" }
               },
               {
                 "default": "192.168.10.241",
                 "gk": "st.gateway",
                 "label": "Gateway",
                 "type": "text",
-                "val": { "new": "192.168.10.241", "rt": [{ "val": "192.168.1.1", "ts": "2024-10-24T08:45:00Z" }], "state": "P"  }
+                "val": { "new": "192.168.10.241", "rt": [{ "val": "192.168.1.1", "ts": "2024-10-24T08:45:00Z" }], "state": "P" }
               },
               {
                 "default": "0.0.0.0",
                 "gk": "st.dnsServer",
                 "label": "DNS Server",
                 "type": "text",
-                "val": { "new": "0.0.0.0", "rt": [{ "val": "8.8.8.8", "ts": "2024-10-24T15:00:00Z" }], "state": "A"  }
+                "val": { "new": "0.0.0.0", "rt": [{ "val": "8.8.8.8", "ts": "2024-10-24T15:00:00Z" }], "state": "A" }
               }
-            ],
-            "id": "st_general",
-            "label": "General Settings"
+            ]
           }
         ]
       },
       {
-        "id": "sr",
-        "label": "Sensor",
+        "id": "nt",
+        "label": "Network Settings",
         "pages": [
           {
+            "id": "nt_general",
+            "label": "Network General",
+            "description": "Configure general network settings",
             "fields": [
               {
-                "default": "1",
-                "description": "Select the measurement units for RN1",
-                "gk": "st.rn01_unit",
-                "label": "Sensor Type 1",
+                "default": "8.8.8.8",
+                "gk": "nt.dnsPrimary",
+                "label": "Primary DNS",
+                "type": "text",
+                "val": {
+                  "new": "8.8.8.8",
+                  "rt": [
+                    {
+                      "val": "1.1.1.1",
+                      "ts": "2024-11-01T10:30:00Z"
+                    }
+                  ],
+                  "state": "A"
+                }
+              },
+              {
+                "default": "8.8.4.4",
+                "gk": "nt.dnsSecondary",
+                "label": "Secondary DNS",
+                "type": "text",
+                "val": {
+                  "new": "8.8.4.4",
+                  "rt": [
+                    {
+                      "val": "1.0.0.1",
+                      "ts": "2024-11-01T11:00:00Z"
+                    }
+                  ],
+                  "state": "P"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "sec",
+        "label": "Security Settings",
+        "pages": [
+          {
+            "id": "sec_auth",
+            "label": "Authentication Settings",
+            "description": "Manage authentication and user access",
+            "fields": [
+              {
+                "default": "true",
+                "gk": "sec.enable2FA",
+                "label": "Enable Two-Factor Authentication",
+                "type": "select",
                 "options": [
                   {
-                    "label": "Bq/m³",
-                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                    "label": "Enabled",
+                    "val": { "new": "true", "state": "A" }
                   },
                   {
-                    "label": "Bq/L",
-                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
-                  },
-                  {
-                    "label": "Bq",
-                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                    "label": "Disabled",
+                    "val": { "new": "false", "state": "R" }
                   }
-                ],
-                "type": "select"
+                ]
               },
               {
-                "default": "1",
-                "description": "Select the measurement units for RN2",
-                "gk": "sr.rn2_type",
-                "label": "Sensor Type 2",
+                "default": "medium",
+                "gk": "sec.passwordStrength",
+                "label": "Password Strength",
+                "type": "select",
                 "options": [
                   {
-                    "label": "Bq/m³",
-                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                    "label": "Low",
+                    "val": { "new": "low", "state": "A" }
                   },
                   {
-                    "label": "Bq/L",
-                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                    "label": "Medium",
+                    "val": { "new": "medium", "state": "A" }
                   },
                   {
-                    "label": "Bq",
-                   "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                    "label": "High",
+                    "val": { "new": "high", "state": "P" }
                   }
-                ],
-                "type": "select"
-              }
-            ],
-            "id": "sr_config",
-            "label": "Sensor Configuration"
-          }
-        ]
-      },
-      {
-        "id": "network",
-        "label": "Network Configuration",
-        "pages": [
-          {
-            "fields": [
-              {
-                "default": "proxy.example.com",
-                "gk": "network.proxyServer",
-                "label": "Proxy Server",
-                "type": "text"
-              },
-              {
-                "default": "8080",
-                "gk": "network.port",
-                "label": "Port",
-                "type": "number"
-              },
-              {
-                "default": "http",
-                "gk": "network.protocol",
-                "label": "Network Protocol",
-                "type": "select",
-                "options": [
-                  { "label": "HTTP", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } },
-                  { "label": "HTTPS", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } },
-                  { "label": "FTP", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } }
                 ]
               }
             ]
           }
         ]
-      },
-      {
-        "id": "security",
-        "label": "Security",
-        "pages": [
-          {
-            "fields": [
-              {
-                "default": "enabled",
-                "gk": "security.firewallStatus",
-                "label": "Firewall Status",
-                "type": "select",
-                "options": [
-                  { "label": "Enabled", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } },
-                  { "label": "Disabled", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } }
-                ]
-              },
-              {
-                "default": "vpn.example.com",
-                "gk": "security.vpnConnection",
-                "label": "VPN Connection",
-                "type": "text"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "advanced",
-        "label": "Advanced Settings",
-        "pages": [
-          {
-            "fields": [
-              {
-                "default": "/usr/local/bin/script.sh",
-                "gk": "advanced.scriptPath",
-                "label": "Custom Script Path",
-                "type": "text"
-              },
-              {
-                "default": "no",
-                "gk": "advanced.enableLogging",
-                "label": "Enable Custom Logging",
-                "type": "select",
-                "options": [
-                  { "label": "Yes", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } },
-                  { "label": "No", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "sr_extended",
-        "label": "Advanced Sensor Configuration",
-        "pages": [
-          {
-            "fields": [
-              {
-                "default": "auto",
-                "gk": "sr.calibrationMode",
-                "label": "Calibration Mode",
-                "type": "select",
-                "options": [
-                  { "label": "Auto", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } },
-                  { "label": "Manual", "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" } }
-                ]
-              },
-              {
-                "default": "5",
-                "gk": "sr.sensitivity",
-                "label": "Sensor Sensitivity",
-                "type": "number"
-              }
-            ]
-          }
-        ]
-      }  
+      }
     ],
     "nowUTC": "2024-10-25 08:45:10+00:00",
     "returnCode": 0

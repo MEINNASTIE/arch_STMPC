@@ -26,6 +26,28 @@ const ConfigMain = () => {
     }
   }, [data]);
 
+  const loadCheckboxState = () => {
+    const updatedData = { ...data };
+    updatedData.payload.groups.forEach(group => {
+      group.pages.forEach(page => {
+        page.fields.forEach(field => {
+          const storedField = localStorage.getItem(field.label);
+          if (storedField) {
+            const fieldData = JSON.parse(storedField);
+            field.isSelected = fieldData.isSelected || false;
+          }
+        });
+      });
+    });
+    return updatedData;
+  };
+
+  useEffect(() => {
+    if (data) {
+      setData(loadCheckboxState());
+    }
+  }, [data]);
+
   if (!data) {
     return <Typography variant="h6">Loading...</Typography>;
   }
@@ -41,7 +63,7 @@ const ConfigMain = () => {
         ...field.val,
         new: newValue
       };
-  
+      localStorage.setItem(field.label, JSON.stringify({ ...field.val, isSelected: field.isSelected }));
       return updatedData;
     });
   };
@@ -59,6 +81,35 @@ const ConfigMain = () => {
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
   };
+
+  const handleCheckboxChange = (groupIndex, pageIndex, fieldIndex, isChecked) => {
+    setData(prevData => {
+      const updatedData = { ...prevData };
+      const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
+      
+      field.isSelected = isChecked;
+
+      const { isSelected, ...fieldWithoutIsSelected } = field;
+      localStorage.setItem(field.label, JSON.stringify(fieldWithoutIsSelected));
+  
+      return updatedData;
+    });
+  };
+
+  // fetching for server later 
+  const gatherAllValues = () => {
+    const values = [];
+    data.payload.groups.forEach(group => {
+      group.pages.forEach(page => {
+        page.fields.forEach(field => {
+          const { isSelected, ...fieldWithoutIsSelected } = field;
+          values.push(fieldWithoutIsSelected);
+        });
+      });
+    });
+  
+    return values;
+  };  
 
   return (
       <MainCard
@@ -126,12 +177,14 @@ const ConfigMain = () => {
                               onChange={(e) => {
                                 const selectedValue = e.target.value;
                                 handleFieldChange(groups.indexOf(selectedGroup), pageIndex, fieldIndex, selectedValue);
+                                const selectedOption = field.options.find(option => option.val.new === selectedValue || option.label === selectedValue);
+                                if (selectedOption) {
+                                  field.val.state = selectedOption.val.state;
+                                }
                               }}
                             >
                               {Array.isArray(field.options) ? (
                                 field.options.map((option, optIndex) => {
-                                  const rtVal = option.val?.rt?.[0]?.val; 
-                                  const rtTimestamp = option.val?.rt?.[0]?.ts;
                                   return (
                                     <MenuItem key={optIndex} value={option.val.new || option.label}>
                                       <div>
