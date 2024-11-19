@@ -3,11 +3,10 @@ import { styled } from '@mui/material/styles';
 
 // ==============================|| AUTHENTICATION 1 WRAPPER ||============================== //
 
-const AuthWrapper1 = styled('div')(({ theme }) => ({
-  backgroundColor: theme.palette.grey[100],
+const AuthWrapper1 = styled('div')(() => ({
   minHeight: '100vh',
-  margin: '15px',
-  borderRadius: '10px',
+  boxShadow: '0 18px 18px rgba(0, 0, 0, 1)', 
+  borderRadius: '8px', 
 }));
 
 export default AuthWrapper1;

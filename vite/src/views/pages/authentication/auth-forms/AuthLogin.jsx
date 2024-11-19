@@ -15,7 +15,7 @@ import * as Yup from 'yup';
 import { Formik } from 'formik';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff'; 
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 const generateHashB64 = async (username, password) => {
   const encoder = new TextEncoder();
@@ -53,30 +53,40 @@ const AuthLogin = () => {
 
   const handleLogin = async (values, { setSubmitting, setErrors }) => {
     try {
-        const hashB64 = await generateHashB64(values.username, values.password);
-        const response = await axios.get(`https://localhost/api/user/hash/${hashB64}`, { withCredentials: true });
-        console.log('Full response data:', response.data);
-
-        if (response.data && response.data.payload) {
-            const userId = response.data.payload.userId;
-            console.log('User ID:', userId);
-            localStorage.setItem('username', response.data.payload.username);
-            localStorage.setItem('rolename', response.data.payload.rolename);
-
-            setUserId(userId);
-            navigate('/measurement-status'); 
+      const hashB64 = await generateHashB64(values.username, values.password);
+      
+      const response = await axios.get(`https://localhost/api/user/hash/${hashB64}`, { withCredentials: true });
+      console.log('Full response data:', response.data);
+  
+      if (response.data && response.data.payload) {
+        const userId = response.data.payload.userId;
+        console.log('User ID from payload:', userId);  
+  
+        localStorage.setItem('username', response.data.payload.username);
+        localStorage.setItem('rolename', response.data.payload.rolename);
+        
+        const tokenResponse = await axios.post('https://localhost/token', { userId: userId });
+  
+        if (tokenResponse.data.token) {
+          localStorage.setItem('token', tokenResponse.data.token);
         } else {
-            console.error('Response structure does not contain user data:', response.data);
-            setErrors({ submit: 'Login failed: User data not found' });
+          console.error('Token not found in response');
         }
+  
+        setUserId(userId);
+        navigate('/measurement-status');
+      } else {
+        console.error('Response structure does not contain user data:', response.data);
+        setErrors({ submit: 'Login failed: User data not found' });
+      }
     } catch (error) {
-        console.error('Login error:', error);
-        setErrors({ submit: 'Invalid username or password' });
+      console.error('Login error:', error);
+      setErrors({ submit: 'Invalid username or password' });
     } finally {
-        setSubmitting(false);
+      setSubmitting(false);
     }
-  }; 
-
+  };
+  
   const handleInitAdmin = async (values, { setSubmitting, setErrors }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);

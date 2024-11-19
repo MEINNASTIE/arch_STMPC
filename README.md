@@ -191,3 +191,11 @@ tasks:
 - create a template for all components idea 
 - set up config.json to actually be taken from where is it supposed to be taken as 
 
+
+why do I suck as much
+
+how do I motivate myself better? 
+
+why is it all so hard to grasp?
+
+I get paid for this... That makes me feel even more anxious. This whole system that I pretend I can handle Always and always...and always...and always...pretending I can do this. Putting up a front that I can handle people daily. 
