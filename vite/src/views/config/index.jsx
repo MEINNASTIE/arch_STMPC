@@ -9,22 +9,34 @@ const ConfigMain = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
 
   useEffect(() => {
-    fetch('https://localhost/config')
-      .then(response => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('https://localhost/config');
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        return response.json();
-      })
-      .then(jsonData => setData(jsonData))
-      .catch(error => console.error('Error fetching the data:', error));
-  }, []);
-
-  useEffect(() => {
-    if (data && data.payload.groups.length > 0) {
-      setSelectedGroup(data.payload.groups[0]);
-    }
-  }, [data]);
+        const jsonData = await response.json();
+  
+        jsonData.payload.groups.forEach(group => {
+          group.pages.forEach(page => {
+            page.fields.forEach(field => {
+              const storedField = localStorage.getItem(field.label);
+              if (storedField) {
+                const fieldData = JSON.parse(storedField);
+                field.isSelected = fieldData.isSelected || false;
+              }
+            });
+          });
+        });
+  
+        setData(jsonData);
+      } catch (error) {
+        console.error('Error fetching the data:', error);
+      }
+    };
+  
+    fetchData();
+  }, []);  
 
   const loadCheckboxState = () => {
     const updatedData = { ...data };
@@ -84,17 +96,15 @@ const ConfigMain = () => {
 
   const handleCheckboxChange = (groupIndex, pageIndex, fieldIndex, isChecked) => {
     setData(prevData => {
-      const updatedData = { ...prevData };
+      const updatedData = JSON.parse(JSON.stringify(prevData)); // Avoid mutation
       const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
-      
       field.isSelected = isChecked;
-
-      const { isSelected, ...fieldWithoutIsSelected } = field;
-      localStorage.setItem(field.label, JSON.stringify(fieldWithoutIsSelected));
+  
+      localStorage.setItem(field.label, JSON.stringify({ ...field.val, isSelected: field.isSelected }));
   
       return updatedData;
     });
-  };
+  };  
 
   // fetching for server later 
   const gatherAllValues = () => {
@@ -162,12 +172,10 @@ const ConfigMain = () => {
                         </Typography>
                         {/* checkbox */}
                         <Checkbox
-                          checked={field.isSelected || false}
+                          checked={!!field.isSelected} 
                           onChange={(e) =>
                             handleCheckboxChange(groups.indexOf(selectedGroup), pageIndex, fieldIndex, e.target.checked)
                           }
-                          inputProps={{ 'aria-label': `Select ${field.label}` }}
-                          style={{ flex: 1 }}
                         />
                         {/* first input editable */}
                         {field.type === 'select' ? (
