@@ -8,7 +8,7 @@ const SystemStatus = Loadable(lazy(() => import('views/system/system_status')));
 const SystemInfo = Loadable(lazy(() => import('views/system/system_info')));
 const SystemMemory = Loadable(lazy(() => import('views/system/system_memory')));
 const MeasurementPage = Loadable(lazy(() => import('views/meas/meas_status')));
-const Dashboard= Loadable(lazy(() => import('views/config')));
+const ConfigMain = Loadable(lazy(() => import('views/config')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -29,12 +29,12 @@ const MainRoutes = {
       element: <SystemInfo />
     },
     {
-      path: 'system-memory/*',
+      path: 'system-memory',
       element: <SystemMemory />
     },
     {
-      path: 'config-main',
-      element: <Dashboard />
+      path: 'conf',
+      element: <ConfigMain />
     },
     {
       path: 'measurement-status',

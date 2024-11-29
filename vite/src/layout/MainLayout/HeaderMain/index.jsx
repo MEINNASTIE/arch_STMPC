@@ -42,6 +42,8 @@ const HeaderMain = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('rolename');
     navigate('/');
   };
 
@@ -55,7 +57,7 @@ const HeaderMain = () => {
       icon: <IconSettings stroke={1.5} size="1.9rem" />,
       label: 'Configuration',
       options: [
-        { label: 'Instrument configuration', path: '/config-main' },
+        { label: 'Instrument configuration', path: '/conf' },
         { label: 'Summary of changes', path: '/dashboard' }
       ]
     },
@@ -196,7 +198,7 @@ const HeaderMain = () => {
           </Box>
         ))}
       </Box>
-      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         {username && rolename && (
           <Typography variant="body2" sx={{ color: 'white', paddingRight: '60px', fontWeight: 'bold' }}>
           {username} ({rolename})

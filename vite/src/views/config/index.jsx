@@ -1,125 +1,133 @@
-import React, { useEffect, useState } from 'react';
-import { Typography, FormControl, Select, MenuItem, TextField, Button, Box, Card, CardContent, Chip, Checkbox, Tooltip} from '@mui/material';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import {
+  Typography,
+  FormControl,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Checkbox
+} from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
 import RightDrawer from './drawers/RightDrawer';
 import LeftDrawer from './drawers/LeftDrawer';
+import { debounce, throttle } from 'lodash';
 
 const ConfigMain = () => {
   const [data, setData] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedFields, setSelectedFields] = useState([]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await fetch('https://localhost/api/config/runtime-desc');
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const jsonData = await response.json();
+      const groups = jsonData.payload?.payload?.groups || [];
+
+      if (!Array.isArray(groups) || groups.length === 0) {
+        throw new Error('Invalid or empty groups array');
+      }
+
+      const updatedGroups = groups.map(group => ({
+        ...group,
+        pages: group.pages.map(page => ({
+          ...page,
+          fields: page.fields.map(field => {
+            const storedField = localStorage.getItem(field.label);
+            let storedData = {};
+            try {
+              storedData = storedField ? JSON.parse(storedField) : {};
+            } catch (error) {
+              console.error(`Error parsing localStorage for ${field.label}:`, error);
+            }
+            return { ...field, val: storedData.val || field.val };
+          })
+        }))
+      }));
+
+      setData({ ...jsonData, payload: { ...jsonData.payload, groups: updatedGroups } });
+      setSelectedGroup(updatedGroups[0]);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('https://localhost/config');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const jsonData = await response.json();
-  
-        jsonData.payload.groups.forEach(group => {
-          group.pages.forEach(page => {
-            page.fields.forEach(field => {
-              const storedField = localStorage.getItem(field.label);
-              if (storedField) {
-                const fieldData = JSON.parse(storedField);
-                field.isSelected = fieldData.isSelected || false;
-              }
-            });
-          });
-        });
-  
-        setData(jsonData);
-      } catch (error) {
-        console.error('Error fetching the data:', error);
-      }
-    };
-  
     fetchData();
-  }, []);  
-
-  const loadCheckboxState = () => {
-    const updatedData = { ...data };
-    updatedData.payload.groups.forEach(group => {
-      group.pages.forEach(page => {
-        page.fields.forEach(field => {
-          const storedField = localStorage.getItem(field.label);
-          if (storedField) {
-            const fieldData = JSON.parse(storedField);
-            field.isSelected = fieldData.isSelected || false;
-          }
-        });
-      });
-    });
-    return updatedData;
-  };
+  }, [fetchData]);
 
   useEffect(() => {
     if (data) {
-      setData(loadCheckboxState());
+      const savedFields = JSON.parse(localStorage.getItem('selectedFields')) || [];
+      setSelectedFields(savedFields);
     }
   }, [data]);
 
-  if (!data) {
-    return <Typography variant="h6">Loading...</Typography>;
-  }
-
-  const { payload } = data;
-  const { common, groups } = payload;
-
-  const handleFieldChange = (groupIndex, pageIndex, fieldIndex, newValue) => {
+  const handleFieldChange = useMemo(() => debounce((groupIndex, pageIndex, fieldIndex, newValue) => {
     setData(prevData => {
       const updatedData = { ...prevData };
       const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
-      field.val = {
-        ...field.val,
-        new: newValue
-      };
-      localStorage.setItem(field.label, JSON.stringify({ ...field.val, isSelected: field.isSelected }));
+      field.val = { ...field.val, new: newValue };
+
+      if (!selectedFields.includes(field.label)) {
+        const newSelectedFields = [...selectedFields, field.label];
+        setSelectedFields(newSelectedFields);
+        localStorage.setItem('selectedFields', JSON.stringify(newSelectedFields));
+      }
+
+      localStorage.setItem(field.label, JSON.stringify({ ...field.val }));
       return updatedData;
     });
-  };
+  }, 500), [selectedFields]);
 
-  const handleSave = () => {
-    console.log('Save button clicked');
-  };
+  const handleSave = useCallback(() => {
+    const selectedFieldValues = selectedFields.map(label => {
+      const field = findFieldByLabel(label);
+      return { label, value: field?.val };
+    });
+    localStorage.setItem('savedValues', JSON.stringify(selectedFieldValues));
+  }, [selectedFields]);
 
-  const settingsGroup = groups.find(group => group.label === 'Settings');
+  const handleGroupSelect = useMemo(() => throttle(setSelectedGroup, 1000), []);
 
-  if (!settingsGroup) {
-    return <Typography variant="h6">No settings group found.</Typography>;
-  }
-
-  const handleGroupSelect = (group) => {
-    setSelectedGroup(group);
-  };
-
-  const handleCheckboxChange = (groupIndex, pageIndex, fieldIndex, isChecked) => {
+  const handleCheckboxChange = useCallback((groupIndex, pageIndex, fieldIndex, isChecked) => {
     setData(prevData => {
-      const updatedData = JSON.parse(JSON.stringify(prevData)); // Avoid mutation
+      const updatedData = { ...prevData };
       const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
-      field.isSelected = isChecked;
-  
-      localStorage.setItem(field.label, JSON.stringify({ ...field.val, isSelected: field.isSelected }));
-  
+
+      const updatedSelectedFields = isChecked
+        ? [...selectedFields, field.label]
+        : selectedFields.filter(label => label !== field.label);
+
+      setSelectedFields(updatedSelectedFields);
+      localStorage.setItem('selectedFields', JSON.stringify(updatedSelectedFields));
       return updatedData;
     });
-  };  
+  }, [selectedFields]);
 
-  // fetching for server later 
-  const gatherAllValues = () => {
+  // for later use
+  const gatherAllValues = useCallback(() => {
     const values = [];
-    data.payload.groups.forEach(group => {
+    data?.payload.groups.forEach(group => {
       group.pages.forEach(page => {
         page.fields.forEach(field => {
-          const { isSelected, ...fieldWithoutIsSelected } = field;
-          values.push(fieldWithoutIsSelected);
+          const { val, ...fieldWithoutVal } = field;
+          values.push(fieldWithoutVal);
         });
       });
     });
-  
     return values;
-  };  
+  }, [data]);
+
+  if (!data) return <Typography variant="h6">Loading...</Typography>;
+  const { payload } = data;
+  const { groups } = payload;
 
   return (
       <MainCard
@@ -134,7 +142,9 @@ const ConfigMain = () => {
       <div style={{ display: 'flex', height: '100%' }}>
         <LeftDrawer groups={groups} onGroupSelect={handleGroupSelect} />
         <div style={{ width: '100%', overflowY: 'auto', marginTop: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingLeft: '430px' }}>
-          {selectedGroup && (
+        {!selectedGroup || !Array.isArray(selectedGroup.pages) ? (
+        <Typography variant="h6">No pages available for the selected group.</Typography>
+        ) : (
             <>
               <Box
                 sx={{
@@ -152,6 +162,7 @@ const ConfigMain = () => {
                   Active in system
                 </Typography>
               </Box>
+              
               {selectedGroup.pages.map((page, pageIndex) => (
               <Card key={pageIndex}>
                 <CardContent>
@@ -172,10 +183,8 @@ const ConfigMain = () => {
                         </Typography>
                         {/* checkbox */}
                         <Checkbox
-                          checked={!!field.isSelected} 
-                          onChange={(e) =>
-                            handleCheckboxChange(groups.indexOf(selectedGroup), pageIndex, fieldIndex, e.target.checked)
-                          }
+                          checked={selectedFields.includes(field.label)}
+                          onChange={(e) => handleCheckboxChange(groups.indexOf(selectedGroup), pageIndex, fieldIndex, e.target.checked)}
                         />
                         {/* first input editable */}
                         {field.type === 'select' ? (
@@ -191,38 +200,26 @@ const ConfigMain = () => {
                                 }
                               }}
                             >
-                              {Array.isArray(field.options) ? (
-                                field.options.map((option, optIndex) => {
-                                  return (
-                                    <MenuItem key={optIndex} value={option.val.new || option.label}>
-                                      <div>
-                                        <span>{option.label}</span>
-                                      </div>
-                                    </MenuItem>
-                                  );
-                                })
-                              ) : field.options.startsWith('$ref:') ? (
+                            {Array.isArray(field.options) ? (
+                                field.options.map((option, optIndex) => (
+                                  <MenuItem key={optIndex} value={option.val.new || option.label}>
+                                    <div>
+                                      <span>{option.label}</span>
+                                    </div>
+                                  </MenuItem>
+                                ))
+                              ) : field.options?.startsWith('$ref:') ? (
                                 (() => {
                                   const refKey = field.options.split(':')[1];
-                                  const resolvedOptions = common.optionLists[refKey];
+                                  const resolvedOptions = common.optionLists?.[refKey];
                                   if (Array.isArray(resolvedOptions)) {
-                                    return resolvedOptions.map((option, optIndex) => {
-                                      const rtVal = option.val?.rt?.[0]?.val;
-                                      const rtTimestamp = option.val?.rt?.[0]?.ts;
-
-                                      return (
-                                        <MenuItem key={optIndex} value={option.val.new || option.label}>
-                                          <div>
-                                            <span>{option.label}</span>
-                                            {rtVal && (
-                                              <Tooltip title={`Last updated at: ${new Date(rtTimestamp).toLocaleString()}`} arrow>
-                                                <Chip label={`RT: ${rtVal}`} size="small" style={{ marginLeft: '8px' }} />
-                                              </Tooltip>
-                                            )}
-                                          </div>
-                                        </MenuItem>
-                                      );
-                                    });
+                                    return resolvedOptions.map((option, optIndex) => (
+                                      <MenuItem key={optIndex} value={option.val.new || option.label}>
+                                        <div>
+                                          <span>{option.label}</span>
+                                        </div>
+                                      </MenuItem>
+                                    ));
                                   } else {
                                     console.error(`Invalid or missing reference: ${refKey}`);
                                     return [];
@@ -319,3 +316,4 @@ const ConfigMain = () => {
 };
 
 export default ConfigMain;
+

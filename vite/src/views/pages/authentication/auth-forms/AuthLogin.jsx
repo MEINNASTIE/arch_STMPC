@@ -16,6 +16,9 @@ import { Formik } from 'formik';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import CryptoJS from 'crypto-js';
+
+const secretKey = "9rqD*1:fzOi4<</mj2Hk%*6\Yd!:£'";
 
 const generateHashB64 = async (username, password) => {
   const encoder = new TextEncoder();
@@ -68,7 +71,8 @@ const AuthLogin = () => {
         const tokenResponse = await axios.post('https://localhost/token', { userId: userId });
   
         if (tokenResponse.data.token) {
-          localStorage.setItem('token', tokenResponse.data.token);
+          const encryptedToken = CryptoJS.AES.encrypt(tokenResponse.data.token, secretKey).toString();
+          localStorage.setItem('token', encryptedToken);
         } else {
           console.error('Token not found in response');
         }
@@ -205,3 +209,37 @@ const AuthLogin = () => {
 };
 
 export default AuthLogin;
+
+// for sending headers to server later
+
+// const getDecryptedToken = () => {
+//   const encryptedToken = localStorage.getItem('token');
+//   if (encryptedToken) {
+//     const bytes = CryptoJS.AES.decrypt(encryptedToken, secretKey);
+//     return bytes.toString(CryptoJS.enc.Utf8); // Convert back to the original token
+//   }
+//   return null;
+// };
+
+// const sendRequest = async () => {
+//   const token = getDecryptedToken();
+//   if (token) {
+//     try {
+//       const response = await axios.post(
+//         'https://localhost/protected-route',
+//         {},
+//         {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//           },
+//         }
+//       );
+//       console.log('Response:', response.data);
+//     } catch (error) {
+//       console.error('Request failed:', error);
+//     }
+//   } else {
+//     console.error('No token found');
+//   }
+// };
+
