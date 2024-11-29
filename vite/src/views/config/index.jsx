@@ -1,17 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  Typography,
-  FormControl,
-  Select,
-  MenuItem,
-  TextField,
-  Button,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  Checkbox
-} from '@mui/material';
+import { Typography, FormControl, Select, MenuItem, TextField, Button, Box, Card, CardContent, Chip, Checkbox } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
 import RightDrawer from './drawers/RightDrawer';
 import LeftDrawer from './drawers/LeftDrawer';
@@ -81,7 +69,9 @@ const ConfigMain = () => {
         localStorage.setItem('selectedFields', JSON.stringify(newSelectedFields));
       }
 
-      localStorage.setItem(field.label, JSON.stringify({ ...field.val }));
+      if (selectedFields.includes(field.label)) {
+        localStorage.setItem(field.label, JSON.stringify({ ...field.val }));
+      }
       return updatedData;
     });
   }, 500), [selectedFields]);
@@ -99,15 +89,20 @@ const ConfigMain = () => {
   const handleCheckboxChange = useCallback((groupIndex, pageIndex, fieldIndex, isChecked) => {
     setData(prevData => {
       const updatedData = { ...prevData };
-      const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
-
-      const updatedSelectedFields = isChecked
-        ? [...selectedFields, field.label]
-        : selectedFields.filter(label => label !== field.label);
-
-      setSelectedFields(updatedSelectedFields);
-      localStorage.setItem('selectedFields', JSON.stringify(updatedSelectedFields));
-      return updatedData;
+        const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
+  
+        let updatedSelectedFields;
+  
+        if (isChecked) {
+          updatedSelectedFields = [...selectedFields, field.label];
+        } else {
+          updatedSelectedFields = selectedFields.filter(label => label !== field.label)
+          localStorage.removeItem(field.label);
+        }
+  
+        setSelectedFields(updatedSelectedFields);
+        localStorage.setItem('selectedFields', JSON.stringify(updatedSelectedFields));
+        return updatedData;
     });
   }, [selectedFields]);
 
