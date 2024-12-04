@@ -2,7 +2,6 @@ import React from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { TextField, Button, FormControlLabel, Checkbox, Typography, Grid, Paper } from '@mui/material';
-import axios from 'axios';
 
 const validationSchema = Yup.object({
   username: Yup.string().required('Username is required'),
@@ -29,19 +28,27 @@ const SystemInfo = () => {
           password: values.password,
           rolename: values.rolename,
           expDate: values.expDate,
-          enabled: values.enabled === true, 
+          enabled: values.enabled === true,
         };
 
-        const response = await axios.post('https://localhost/api/user', createUserData);
+        const response = await fetch('/api/user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(createUserData),
+        });
+
         if (response.status === 201) {
+          const responseData = await response.json();
           setStatus({ success: true });
-          console.log('User created successfully:', response.data);
+          console.log('User created successfully:', responseData);
           formik.resetForm();
         } else {
           setErrors({ submit: 'Failed to create user' });
         }
       } catch (error) {
-        setErrors({ submit: error.response?.data?.message || 'An error occurred' });
+        setErrors({ submit: error.message || 'An error occurred' });
       }
     },
   });

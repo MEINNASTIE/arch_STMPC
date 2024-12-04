@@ -4,6 +4,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import RightDrawer from './drawers/RightDrawer';
 import LeftDrawer from './drawers/LeftDrawer';
 import { debounce, throttle } from 'lodash';
+import { FixedSizeList as List } from 'react-window';
 
 const ConfigMain = () => {
   const [data, setData] = useState(null);
@@ -12,7 +13,7 @@ const ConfigMain = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch('https://localhost/api/config/runtime-desc');
+      const response = await fetch('/api/config/runtime-desc');
       if (!response.ok) throw new Error('Network response was not ok');
 
       const jsonData = await response.json();
@@ -57,24 +58,39 @@ const ConfigMain = () => {
     }
   }, [data]);
 
-  const handleFieldChange = useMemo(() => debounce((groupIndex, pageIndex, fieldIndex, newValue) => {
-    setData(prevData => {
-      const updatedData = { ...prevData };
-      const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
-      field.val = { ...field.val, new: newValue };
+  const handleFieldChange = (groupIndex, pageIndex, fieldIndex, newValue) => {
+    setData((prevData) => {
+    const updatedData = { ...prevData };
+    const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
+    field.val_new = newValue; 
+    setSelectedFields((prevSelected) => {
+      const updatedSelected = [...prevSelected];
+      const fieldIndexInSelected = updatedSelected.findIndex((item) => item.label === field.label);
 
-      if (!selectedFields.includes(field.label)) {
-        const newSelectedFields = [...selectedFields, field.label];
-        setSelectedFields(newSelectedFields);
-        localStorage.setItem('selectedFields', JSON.stringify(newSelectedFields));
+      if (fieldIndexInSelected !== -1) {
+        updatedSelected[fieldIndexInSelected].value = newValue;
+      } else {
+        updatedSelected.push({ label: field.label, value: newValue });
       }
 
-      if (selectedFields.includes(field.label)) {
-        localStorage.setItem(field.label, JSON.stringify({ ...field.val }));
-      }
-      return updatedData;
+      localStorage.setItem('selectedFields', JSON.stringify(updatedSelected));
+      return updatedSelected;
     });
-  }, 500), [selectedFields]);
+
+    return updatedData;
+    });
+  
+    saveDebounced(groupIndex, pageIndex, fieldIndex, newValue);
+  };
+  
+  const saveDebounced = useMemo(
+    () =>
+      debounce((groupIndex, pageIndex, fieldIndex, newValue) => {
+        const field = data.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
+        localStorage.setItem(field.label, JSON.stringify({ ...field.val, new: newValue }));
+      }, 500),
+    []
+  );  
 
   const handleSave = useCallback(() => {
     const selectedFieldValues = selectedFields.map(label => {
@@ -87,43 +103,46 @@ const ConfigMain = () => {
   const handleGroupSelect = useMemo(() => throttle(setSelectedGroup, 1000), []);
 
   const handleCheckboxChange = useCallback((groupIndex, pageIndex, fieldIndex, isChecked) => {
-    setData(prevData => {
+    setData((prevData) => {
       const updatedData = { ...prevData };
-        const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
+      const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
   
-        let updatedSelectedFields;
-  
+      setSelectedFields((prevSelected) => {
+        let updatedSelected;
         if (isChecked) {
-          updatedSelectedFields = [...selectedFields, field.label];
+          updatedSelected = [...prevSelected, { label: field.label, value: field.val }];
         } else {
-          updatedSelectedFields = selectedFields.filter(label => label !== field.label)
-          localStorage.removeItem(field.label);
+          updatedSelected = prevSelected.filter((item) => item.label !== field.label);
         }
   
-        setSelectedFields(updatedSelectedFields);
-        localStorage.setItem('selectedFields', JSON.stringify(updatedSelectedFields));
-        return updatedData;
+        localStorage.setItem('selectedFields', JSON.stringify(updatedSelected));
+        return updatedSelected;
+      });
+  
+      return updatedData;
     });
-  }, [selectedFields]);
+  }, []);
 
   // for later use
-  const gatherAllValues = useCallback(() => {
-    const values = [];
-    data?.payload.groups.forEach(group => {
-      group.pages.forEach(page => {
-        page.fields.forEach(field => {
-          const { val, ...fieldWithoutVal } = field;
-          values.push(fieldWithoutVal);
-        });
-      });
-    });
-    return values;
-  }, [data]);
+  // const gatherAllValues = useCallback(() => {
+  //   const values = [];
+  //   data?.payload.groups.forEach(group => {
+  //     group.pages.forEach(page => {
+  //       page.fields.forEach(field => {
+  //         const { val, ...fieldWithoutVal } = field;
+  //         values.push(fieldWithoutVal);
+  //       });
+  //     });
+  //   });
+  //   return values;
+  // }, [data]);
 
   if (!data) return <Typography variant="h6">Loading...</Typography>;
   const { payload } = data;
   const { groups } = payload;
 
+  const ROW_HEIGHT = 100;
+  
   return (
       <MainCard
         style={{
@@ -157,7 +176,12 @@ const ConfigMain = () => {
                   Active in system
                 </Typography>
               </Box>
-              
+              <List
+                height={window.innerHeight - 200} 
+                itemCount={selectedGroup.pages.length}
+                itemSize={ROW_HEIGHT}
+                width="100%"
+              >
               {selectedGroup.pages.map((page, pageIndex) => (
               <Card key={pageIndex}>
                 <CardContent>
@@ -294,6 +318,7 @@ const ConfigMain = () => {
                 </CardContent>
               </Card>
               ))}   
+              </List>
               <Box sx={{ position: 'fixed', bottom: '65px', left: '260px', zIndex: 1000 }}>
                 <Button color="primary" variant="contained" onClick={handleSave}>
                   Save

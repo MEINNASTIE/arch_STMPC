@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -39,8 +38,9 @@ const AuthLogin = () => {
   useEffect(() => {
     const fetchUserCount = async () => {
       try {
-        const response = await axios.get('https://localhost/api/users/count');
-        setUsersExist(response.data.payload.count > 0);
+        const response = await fetch('/api/users/count');
+        const data = await response.json();
+        setUsersExist(data.payload.count > 0);
       } catch (error) {
         console.error('Error fetching user count:', error);
       } finally {
@@ -58,20 +58,36 @@ const AuthLogin = () => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
       
-      const response = await axios.get(`https://localhost/api/user/hash/${hashB64}`, { withCredentials: true });
-      console.log('Full response data:', response.data);
+      const response = await fetch(`/api/user/hash/${hashB64}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      const responseData = await response.json();
   
-      if (response.data && response.data.payload) {
-        const userId = response.data.payload.userId;
+      console.log('Full response data:', responseData);
+  
+      if (responseData && responseData.payload) {
+        const userId = responseData.payload.userId;
         console.log('User ID from payload:', userId);  
   
-        localStorage.setItem('username', response.data.payload.username);
-        localStorage.setItem('rolename', response.data.payload.rolename);
+        localStorage.setItem('username', responseData.payload.username);
+        localStorage.setItem('rolename', responseData.payload.rolename);
         
-        const tokenResponse = await axios.post('https://localhost/token', { userId: userId });
-  
-        if (tokenResponse.data.token) {
-          const encryptedToken = CryptoJS.AES.encrypt(tokenResponse.data.token, secretKey).toString();
+        const tokenResponse = await fetch('/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: userId }),
+        });
+
+        const tokenData = await tokenResponse.json();
+
+        if (tokenData.token) {
+          const encryptedToken = CryptoJS.AES.encrypt(tokenData.token, secretKey).toString();
           localStorage.setItem('token', encryptedToken);
         } else {
           console.error('Token not found in response');
@@ -80,7 +96,7 @@ const AuthLogin = () => {
         setUserId(userId);
         navigate('/measurement-status');
       } else {
-        console.error('Response structure does not contain user data:', response.data);
+        console.error('Response structure does not contain user data:', responseData);
         setErrors({ submit: 'Login failed: User data not found' });
       }
     } catch (error) {
@@ -94,7 +110,12 @@ const AuthLogin = () => {
   const handleInitAdmin = async (values, { setSubmitting, setErrors }) => {
     try {
       const hashB64 = await generateHashB64(values.username, values.password);
-      const response = await axios.post(`https://localhost/api/user/initadmin?hash=${hashB64}`);
+      const response = await fetch(`/api/user/initadmin?hash=${hashB64}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
   
       if (response.status === 201) {
         navigate('/main');
