@@ -19,6 +19,12 @@ import CryptoJS from 'crypto-js';
 
 const secretKey = "9rqD*1:fzOi4<</mj2Hk%*6\Yd!:£'";
 
+// const generateHashB64 = (username, password) => {
+//   const data = `${username};${password}`;
+//   const hash = CryptoJS.SHA256(data); 
+//   return hash.toString(CryptoJS.enc.Base64); 
+// };
+
 const generateHashB64 = async (username, password) => {
   const encoder = new TextEncoder();
   const data = encoder.encode(`${username};${password}`);
@@ -26,6 +32,16 @@ const generateHashB64 = async (username, password) => {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashString = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   return btoa(hashString); 
+};
+
+const apiRequest = async (url, options = {}) => {
+  const token = localStorage.getItem('token');
+  const headers = {
+      ...options.headers,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+  };
+  return fetch(url, { ...options, headers });
 };
 
 const AuthLogin = () => {
@@ -38,7 +54,7 @@ const AuthLogin = () => {
   useEffect(() => {
     const fetchUserCount = async () => {
       try {
-        const response = await fetch('/api/users/count');
+        const response = await apiRequest('/api/users/count');
         const data = await response.json();
         setUsersExist(data.payload.count > 0);
       } catch (error) {
