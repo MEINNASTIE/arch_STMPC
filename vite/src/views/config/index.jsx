@@ -1,17 +1,18 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Typography, FormControl, Select, MenuItem, TextField, Button, Box, Card, CardContent, Chip, Checkbox } from '@mui/material';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Typography } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
 import RightDrawer from './drawers/RightDrawer';
 import LeftDrawer from './drawers/LeftDrawer';
-import { debounce } from 'lodash';
+import ConfigCard from './card/configCard';
 
-const ITEMS_PER_PAGE = 50;
+const ITEMS_PER_PAGE = 10;
 
 const ConfigMain = () => {
   const [data, setData] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [selectedFields, setSelectedFields] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0); 
+  const [selectedPage, setSelectedPage] = useState(null);
+  const [selectedField, setSelectedField] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);  
 
   const fetchData = useCallback(async () => {
     try {
@@ -19,45 +20,49 @@ const ConfigMain = () => {
       if (!response.ok) throw new Error('Network response was not ok');
   
       const jsonData = await response.json();
-      console.log(jsonData);
       const groups = jsonData.payload?.groups || [];
-      const optionLists = jsonData.payload?.common?.optionLists || {};
+      const optionLists = jsonData.payload?.common?.optionLists || [];
   
       if (!Array.isArray(groups) || groups.length === 0) {
         throw new Error('Invalid or empty groups array');
       }
-  
-      const updatedGroups = groups.map(group => ({
-        ...group,
-        pages: group.pages.map(page => ({
-          ...page,
-          fields: page.fields.map(field => {
-            let resolvedOptions = field.options;
-            if (typeof resolvedOptions === 'string' && resolvedOptions.startsWith('$ref:')) {
-              const refKey = resolvedOptions.replace('$ref:', '').trim();
-              resolvedOptions = optionLists[refKey] || [];
+
+      const resolveOptions = (options) => {
+        if (typeof options === 'string' && options.startsWith('$ref:')) {
+          const refKey = options.replace('$ref:', '').trim();  
+          const keys = refKey.split('.');  
+      
+          let refData = jsonData.payload; 
+          for (let key of keys) {
+            refData = refData[key];
+            if (!refData) {
+              return optionLists[keys[0]] || [];  
             }
-  
-            const storedField = localStorage.getItem(field.gk || field.label);
-            let storedData = {};
-            if (storedField) {
-              try {
-                storedData = JSON.parse(storedField);
-              } catch (error) {
-                console.error(`Error parsing localStorage for ${field.gk || field.label}:`, error);
-              }
-            }
-  
-            const valNew = storedData?.new ?? field.val?.new ?? field.default;
-  
+          }
+          return refData || [];
+        }
+        return options || [];
+      };
+      
+      const updatedGroups = groups.map((group) => {
+        return {
+          ...group,
+          pages: group.pages.map((page) => {
             return {
-              ...field,
-              options: resolvedOptions,
-              val: { ...field.val, new: valNew }, 
+              ...page,
+              fields: page.fields.map((field) => {
+                const valNew = field.val?.new ?? field.default;
+
+                return {
+                  ...field,
+                  options: resolveOptions(field.options),  
+                  val: { ...field.val, new: valNew },
+                };
+              }),
             };
           }),
-        })),
-      }));
+        };
+      });
   
       setData({
         ...jsonData,
@@ -69,228 +74,81 @@ const ConfigMain = () => {
   
       if (updatedGroups.length > 0) {
         setSelectedGroup(updatedGroups[0]);
-      } else {
-        console.warn('No groups available to select');
+        setSelectedPage(updatedGroups[0].pages[0]);
+        setSelectedField(updatedGroups[0].pages[0].fields[0]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   }, []);
+
+  const confirmChanges = useCallback(async () => {
+    const inputValues = JSON.parse(localStorage.getItem('inputValues') || '{}');
+    const changesToConfirm = Object.values(inputValues).map(item => ({
+    gk: item.gk,
+    val_rt: item.val_new,
+    }));
   
+    try {
+      const response = await fetch('/api/config/runtime/new', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(changesToConfirm),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        console.log('Changes confirmed:', result);
+      } else {
+        console.error('Error confirming changes:', result);
+      }
+    } catch (error) {
+      console.error('Error during API call:', error);
+    }
+  }, [data]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    if (data) {
-      const savedFields = JSON.parse(localStorage.getItem('selectedFields')) || [];
-      setSelectedFields(savedFields);
-    }
-  }, [data]);
-
-  const handleFieldChange = (groupIndex, pageIndex, fieldIndex, newValue) => {
-    setData((prevData) => {
-      const updatedData = { ...prevData };
-      const group = updatedData.payload.groups[groupIndex];
-      const page = group?.pages[pageIndex];
-      const field = page?.fields[fieldIndex];
-  
-      if (!field) {
-        console.warn(`Field not found for indices: ${groupIndex}, ${pageIndex}, ${fieldIndex}`);
-        return prevData;
-      }
-  
-      field.val_new = newValue;
-  
-      setSelectedFields((prevSelected) => {
-        const updatedSelected = [...prevSelected];
-        const fieldIndexInSelected = updatedSelected.findIndex((item) => item.label === field.label);
-  
-        if (fieldIndexInSelected !== -1) {
-          updatedSelected[fieldIndexInSelected].value = newValue;
-        } else {
-          updatedSelected.push({ label: field.label, value: newValue });
-        }
-  
-        localStorage.setItem('selectedFields', JSON.stringify(updatedSelected));
-        return updatedSelected;
-      });
-  
-      return updatedData;
-    });
-  
-    saveDebounced(groupIndex, pageIndex, fieldIndex, newValue);
-  };  
-  
-  const saveDebounced = useMemo(
-    () =>
-      debounce((groupIndex, pageIndex, fieldIndex, newValue) => {
-        const field = data.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
-        localStorage.setItem(field.label, JSON.stringify({ ...field.val, new: newValue }));
-      }, 500),
-    []
-  );  
-
-  const findFieldByLabel = (label) => {
-    for (const group of data?.payload.groups || []) {
-      for (const page of group.pages || []) {
-        const field = page.fields.find((field) => field.label === label);
-        if (field) return field;
-      }
-    }
-    return null;
-  };  
-
-  const handleSave = useCallback(() => {
-    const selectedFieldValues = selectedFields.map(label => {
-      const field = findFieldByLabel(label);
-      return { label, value: field?.val };
-    });
-    localStorage.setItem('savedValues', JSON.stringify(selectedFieldValues));
-  }, [selectedFields]);
-
-  const handleGroupSelect = useCallback((group) => {
-    setSelectedGroup(group);
-    setCurrentPage(0); 
-  }, []);
-
-  const paginatedFields = useMemo(() => {
-    if (!selectedGroup || !Array.isArray(selectedGroup.pages)) return [];
-    const allFields = selectedGroup.pages.flatMap((page) => page.fields || []);
-    const start = currentPage * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-  
-    return allFields.slice(start, end);
-  }, [selectedGroup, currentPage]);
-  
-
-  const handleCheckboxChange = useCallback((groupIndex, pageIndex, fieldIndex, isChecked) => {
-    setData((prevData) => {
-      const updatedData = { ...prevData };
-      const field = updatedData.payload.groups[groupIndex].pages[pageIndex].fields[fieldIndex];
-  
-      setSelectedFields((prevSelected) => {
-        let updatedSelected;
-        if (isChecked) {
-          updatedSelected = [...prevSelected, { label: field.label, value: field.val }];
-        } else {
-          updatedSelected = prevSelected.filter((item) => item.label !== field.label);
-        }
-  
-        localStorage.setItem('selectedFields', JSON.stringify(updatedSelected));
-        return updatedSelected;
-      });
-  
-      return updatedData;
-    });
-  }, []);
-
   if (!data) return <Typography variant="h6">Loading...</Typography>;
+
   const { payload } = data;
   const { groups } = payload;
   
   return (
-      <MainCard style={{ width: '100%', display: 'flex', minHeight: '100vh', padding: '10px', position: 'relative', }}>
+    <MainCard style={{ width: '100%', display: 'flex', minHeight: '100vh', padding: '10px', position: 'relative' }}>
       <div style={{ display: 'flex', height: '100%' }}>
-        <LeftDrawer groups={groups} onGroupSelect={handleGroupSelect} />
+        <LeftDrawer 
+          groups={groups} 
+          onGroupSelect={(group) => { 
+            setSelectedGroup(group); 
+            setSelectedPage(group.pages[0]);
+            setCurrentPage(0);
+          }} 
+          onPageSelect={(page) => setSelectedPage(page)} 
+        />
+        
         <div style={{ width: '100%', overflowY: 'auto', marginTop: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingLeft: '430px' }}>
-        { !selectedGroup || !Array.isArray(selectedGroup.pages) ? (
-            <Typography variant="h6">No pages available for the selected group.</Typography>
+          {selectedGroup && selectedPage ? (
+            <ConfigCard
+              selectedPage={selectedPage}
+              selectedGroup={selectedGroup}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              ITEMS_PER_PAGE={ITEMS_PER_PAGE}
+              confirmChanges={confirmChanges}
+              groups={groups}
+            />
           ) : (
-            <>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', gap: '80px', paddingLeft: '100px',
-                }} >
-                <Typography variant="h4" style={{ fontWeight: 'bold', color: '#212121' }}>
-                  Editable values
-                </Typography>
-                <Typography variant="h4" style={{ fontWeight: 'bold', color: '#212121' }}>
-                  Active in system
-                </Typography>
-              </Box>
-              {selectedGroup.pages.map((pageIndex) => (
-                <Card key={pageIndex}>
-                  <CardContent>
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      {paginatedFields.map((field, fieldIndex) => {
-                        const resolvedOptions =
-                          Array.isArray(field.options) ? field.options :
-                          field.options?.startsWith('$ref:') ? common.optionLists?.[field.options.split(':')[1]] : [];
-
-                        return (
-                          <div key={fieldIndex} style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '20px',}}>
-                            {/* Label */}
-                            <Typography variant="body1" style={{ marginBottom: '5px', flex: 5, textAlign: 'right' }}>
-                              {field.label}:
-                            </Typography>
-                            {/* Checkbox */}
-                            <Checkbox checked={selectedFields.some((f) => f.label === field.label)} onChange={(e) => handleCheckboxChange(groups.indexOf(selectedGroup), pageIndex, fieldIndex, e.target.checked)}/>
-                            {/* Editable Input */}
-                            {field.type === 'select' ? (
-                              <FormControl fullWidth size="small" style={{ flex: 6 }}>
-                                <Select value={field.val?.new || field.default || ''} onChange={(e) => handleFieldChange(groups.indexOf(selectedGroup), pageIndex, fieldIndex, e.target.value)}>
-                                  {resolvedOptions?.map((option, optIndex) => (
-                                    <MenuItem key={optIndex} value={option.value}>
-                                      {option.label}
-                                    </MenuItem>
-                                  ))}
-                                </Select>
-                              </FormControl>
-                            ) : (
-                              <TextField variant="outlined" size="small" value={field.val?.new || field.default || ''} onChange={(e) => handleFieldChange(groups.indexOf(selectedGroup), pageIndex, fieldIndex, e.target.value)} fullWidth style={{ flex: 6 }}/>)}
-                            {/* Active System Value */}
-                            <TextField variant="outlined" size="small" value={field.val?.rt?.[0]?.val || ''} fullWidth style={{ flex: 6 }} disabled />
-                            {/* State Chip */}
-                            <Chip
-                              label={
-                                field.val?.state === 'R'
-                                  ? 'Rejected'
-                                  : field.val?.state === 'A'
-                                  ? 'Applied'
-                                  : field.val?.state === 'P'
-                                  ? 'Pending'
-                                  : 'Unknown'
-                              }
-                              color={
-                                field.val?.state === 'R'
-                                  ? 'error'
-                                  : field.val?.state === 'A'
-                                  ? 'success'
-                                  : field.val?.state === 'P'
-                                  ? 'warning'
-                                  : 'default'
-                              }
-                              size="small"
-                              style={{ flex: 2 }}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {/* Pagination Controls */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '10px' }}>
-                <Button variant="contained" disabled={currentPage === 0} onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}>
-                  Previous
-                </Button>
-                <Button variant="contained" disabled={paginatedFields.length < ITEMS_PER_PAGE} onClick={() => setCurrentPage((prev) => prev + 1)}>
-                  Next
-                </Button>
-              </Box>
-              <Box sx={{ position: 'fixed', bottom: '65px', left: '260px', zIndex: 1000 }}>
-                <Button color="primary" variant="contained" onClick={handleSave}>
-                  Save
-                </Button>
-              </Box>
-            </>
-          )
-        }
+            <Typography variant="h6">No pages available for the selected group.</Typography>
+          )}
         </div>
       </div>
+      
       <div style={{ display: 'flex', height: '100%', marginTop: '60px' }}>
-        <RightDrawer />
+        <RightDrawer confirmChanges={confirmChanges}/>
       </div>
     </MainCard>
   );

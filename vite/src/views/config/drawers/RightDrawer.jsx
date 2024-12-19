@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Drawer, Box, Typography, Button } from '@mui/material';
 import { useTheme } from '@mui/system';
 
-const RightDrawer = () => {
+const RightDrawer = ({confirmChanges}) => {
   const theme = useTheme();
   const [savedValues, setSavedValues] = useState([]);
   const scrollRef = useRef(null); 
@@ -29,6 +29,10 @@ const RightDrawer = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [savedValues]);
+
+  const handleApply = () => {
+    confirmChanges();
+  };
 
   return (
     <Drawer
@@ -77,6 +81,7 @@ const RightDrawer = () => {
           }}
           onMouseEnter={(e) => (e.target.style.backgroundColor = '#3e4aec')}
           onMouseLeave={(e) => (e.target.style.backgroundColor = '#87ceeb')}
+          onClick={handleApply}
         >
           Apply
         </Button>
