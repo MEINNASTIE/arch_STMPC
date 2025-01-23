@@ -54,7 +54,7 @@ const AuthLogin = () => {
   useEffect(() => {
     const fetchUserCount = async () => {
       try {
-        const response = await apiRequest('/api/users/count');
+        const response = await fetch('/api/users/count');
         const data = await response.json();
         setUsersExist(data.payload.count > 0);
       } catch (error) {

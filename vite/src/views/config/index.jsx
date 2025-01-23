@@ -1,157 +1,131 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Typography } from '@mui/material';
-import MainCard from 'ui-component/cards/MainCard';
-import RightDrawer from './drawers/RightDrawer';
-import LeftDrawer from './drawers/LeftDrawer';
-import ConfigCard from './card/configCard';
+import React, { useState, useEffect } from 'react';
+import { Box, Tabs } from "@mui/material";
+import runtimeDescData from './RuntimeConfigDesc_en.json';
+import TreeView from './components/TreeView';
+import ParameterTable from './components/ParameterTable';
+import DataTable from 'datatables.net-react';
+import DT from 'datatables.net-dt';
 
-const ITEMS_PER_PAGE = 10;
+DataTable.use(DT);
 
-const ConfigMain = () => {
-  const [data, setData] = useState(null);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [selectedPage, setSelectedPage] = useState(null);
-  const [selectedField, setSelectedField] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);  
-
-  const fetchData = useCallback(async () => {
-    try {
-      const response = await fetch('/api/config/runtime-desc');
-      if (!response.ok) throw new Error('Network response was not ok');
-  
-      const jsonData = await response.json();
-      const groups = jsonData.payload?.groups || [];
-      const optionLists = jsonData.payload?.common?.optionLists || [];
-  
-      if (!Array.isArray(groups) || groups.length === 0) {
-        throw new Error('Invalid or empty groups array');
-      }
-
-      const resolveOptions = (options) => {
-        if (typeof options === 'string' && options.startsWith('$ref:')) {
-          const refKey = options.replace('$ref:', '').trim();  
-          const keys = refKey.split('.');  
-      
-          let refData = jsonData.payload; 
-          for (let key of keys) {
-            refData = refData[key];
-            if (!refData) {
-              return optionLists[keys[0]] || [];  
-            }
-          }
-          return refData || [];
-        }
-        return options || [];
-      };
-      
-      const updatedGroups = groups.map((group) => {
-        return {
-          ...group,
-          pages: group.pages.map((page) => {
-            return {
-              ...page,
-              fields: page.fields.map((field) => {
-                const valNew = field.val?.new ?? field.default;
-
-                return {
-                  ...field,
-                  options: resolveOptions(field.options),  
-                  val: { ...field.val, new: valNew },
-                };
-              }),
-            };
-          }),
-        };
-      });
-  
-      setData({
-        ...jsonData,
-        payload: {
-          ...jsonData.payload,
-          groups: updatedGroups,
-        },
-      });
-  
-      if (updatedGroups.length > 0) {
-        setSelectedGroup(updatedGroups[0]);
-        setSelectedPage(updatedGroups[0].pages[0]);
-        setSelectedField(updatedGroups[0].pages[0].fields[0]);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  }, []);
-
-  const confirmChanges = useCallback(async () => {
-    const inputValues = JSON.parse(localStorage.getItem('inputValues') || '{}');
-    const changesToConfirm = Object.values(inputValues).map(item => ({
-    gk: item.gk,
-    val_rt: item.val_new,
-    }));
-  
-    try {
-      const response = await fetch('/api/config/runtime/new', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(changesToConfirm),
-      });
-      const result = await response.json();
-      if (response.ok) {
-        console.log('Changes confirmed:', result);
-      } else {
-        console.error('Error confirming changes:', result);
-      }
-    } catch (error) {
-      console.error('Error during API call:', error);
-    }
-  }, [data]);
+function ConfigMain() {
+  const [runtimeDesc, setRuntimeDesc] = useState('');
+  const [tableData, setTableData] = useState([]);
+  const [treeData, setTreeData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const data = runtimeDescData;
+    setRuntimeDesc(JSON.stringify(data, null, 2));
+    resolveRefs(data.payload);
+    populateTree(data.payload.groups);
+    populateTable(data.payload);
+  }, []);
 
-  if (!data) return <Typography variant="h6">Loading...</Typography>;
+  const resolveRefs = (payload) => {
+    const resolve = (root, path) => {
+      const pathList = path.split('.');
+      let current = root;
+      pathList.forEach((p) => (current = current[p]));
+      return current;
+    };
 
-  const { payload } = data;
-  const { groups } = payload;
-  
+    function traverse(root, obj) {
+      for (const key in obj) {
+        if (typeof obj[key] === 'string' && obj[key].startsWith('$ref:')) {
+          const path = obj[key].replace('$ref:', '');
+          obj[key] = resolve(root, path);
+        } else if (typeof obj[key] === 'object') {
+          traverse(root, obj[key]);
+        }
+      }
+    }
+
+    traverse(payload, payload);
+  };
+
+  const populateTree = (groups) => {
+    const allItem = {
+      label: 'All',
+      isCollapsible: true,
+      pages: [
+        { label: 'All', onClick: () => handleTreeItemClick('all') },
+        { label: 'Selected to Change', onClick: () => handleTreeItemClick('selected') },
+        { label: 'Not yet Applied', onClick: () => handleTreeItemClick('noapplied') },
+      ],
+    };
+
+    const groupItems = groups.map((group) => ({
+      label: group.label,
+      pages: group.pages.map((page) => ({
+        label: page.label,
+        onClick: () => handlePageItemClick(group.id, page.id),
+      })),
+    }));
+
+    setTreeData([allItem, ...groupItems]);
+  };
+
+  const populateTable = (payload) => {
+    const rows = [];
+    payload.groups.forEach((group) => {
+      group.pages.forEach((page) => {
+        page.fields.forEach((field, fieldIndex) => {
+          rows.push({
+            index: fieldIndex + 1,
+            label: field.label,
+            gk: field.gk,
+            val_new: '',
+            val_rt: field.val?.rt === null ? [] : field.val?.rt,
+            state: field.val?.state || 'U',
+            groupPage: `${group.id}.${page.id}`,
+            val_new_last: field.val?.new === null ? '' : field.val?.new,
+          });
+        });
+      });
+    });
+    setTableData(rows);
+    setFilteredData(rows); 
+  };
+
+  const handleTreeItemClick = (type) => {
+    console.log(`Tree item clicked: ${type}`);
+    if (type === 'all') {
+      setFilteredData(tableData);
+    }
+  };
+
+  const handlePageItemClick = (groupId, pageId) => {
+    console.log(`Page item clicked: Group ID - ${groupId}, Page ID - ${pageId}`);
+    const filtered = tableData.filter(
+      (row) => row.groupPage === `${groupId}.${pageId}`
+    );
+    console.log('Filtered Data:', filtered);
+    setFilteredData(filtered);
+  };
+
+  const handleApply = () => {
+    console.log("Apply clicked");
+  };
+
   return (
-    <MainCard style={{ width: '100%', display: 'flex', minHeight: '100vh', padding: '10px', position: 'relative' }}>
-      <div style={{ display: 'flex', height: '100%' }}>
-        <LeftDrawer 
-          groups={groups} 
-          onGroupSelect={(group) => { 
-            setSelectedGroup(group); 
-            setSelectedPage(group.pages[0]);
-            setCurrentPage(0);
-          }} 
-          onPageSelect={(page) => setSelectedPage(page)} 
-        />
-        
-        <div style={{ width: '100%', overflowY: 'auto', marginTop: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingLeft: '430px' }}>
-          {selectedGroup && selectedPage ? (
-            <ConfigCard
-              selectedPage={selectedPage}
-              selectedGroup={selectedGroup}
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              ITEMS_PER_PAGE={ITEMS_PER_PAGE}
-              confirmChanges={confirmChanges}
-              groups={groups}
-            />
-          ) : (
-            <Typography variant="h6">No pages available for the selected group.</Typography>
-          )}
-        </div>
-      </div>
-      
-      <div style={{ display: 'flex', height: '100%', marginTop: '60px' }}>
-        <RightDrawer confirmChanges={confirmChanges}/>
-      </div>
-    </MainCard>
+    <Box
+      sx={{
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        margin: '30px 10px',
+      }}
+    >
+      <Tabs value={0} centered></Tabs>
+      <Box display="flex" flexGrow={1} gap={2} p={2}>
+        <TreeView treeData={treeData} />
+        <ParameterTable tableData={filteredData} handleApply={handleApply} />
+      </Box>
+    </Box>
   );
-};
+}
 
 export default ConfigMain;
