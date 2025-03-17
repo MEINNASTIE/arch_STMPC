@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 // material-ui
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
 // project imports
@@ -24,8 +23,7 @@ const MainLayout = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', margin: '1px',
-      borderRadius: '10px' }}>
+    <Box>
       <CssBaseline />
       <AppBar
         enableColorOnDark
@@ -37,9 +35,9 @@ const MainLayout = () => {
           transition: leftDrawerOpened ? theme.transitions.create('width') : 'none'
         }}
       >
-        <Toolbar>
+       
           <Header handleLeftDrawerToggle={handleLeftDrawerToggle} />
-        </Toolbar>
+    
       </AppBar>
       <Sidebar drawerOpen={!matchDownMd ? leftDrawerOpened : !leftDrawerOpened} drawerToggle={handleLeftDrawerToggle} />
     </Box>

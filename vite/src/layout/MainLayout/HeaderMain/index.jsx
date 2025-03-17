@@ -103,9 +103,8 @@ const HeaderMain = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           width: '100%',
-          border: '2px solid rgb(15, 29, 232)',
           backgroundColor: '#3e4aec',
-          borderRadius: '10px',
+          borderRadius: '8px',
           [theme.breakpoints.down('md')]: {
             flexDirection: 'row',
             justifyContent: 'space-between'
