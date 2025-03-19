@@ -52,10 +52,10 @@ function ConfigMain() {
     console.log("Populating tree with groups:", groups);
 
     const allItem = {
-      label: "All",
+      label: "Change",
       isCollapsible: true,
       pages: [
-        { label: "All", onClick: () => setFilterType("all") },
+        
         { label: "Selected to Change", onClick: () => setFilterType("selected") },
         { label: "Not yet Applied", onClick: () => setFilterType("notApplied") },
       ],
@@ -101,15 +101,19 @@ function ConfigMain() {
   
 
   const getFilteredData = () => {
+
+    if (filterType === "all") return tableData;
+    
     switch (filterType) {
       case "selected":
         return tableData.filter((row) => row.selected);
       case "notApplied":
         return tableData.filter((row) => row.state !== "A");
       default:
-        return tableData.filter((row) => row.pageId === filterType || filterType === "all");
+        return tableData.filter((row) => row.pageId === filterType);
     }
   };
+  
 
   const handleRowSelect = (rowIndex) => {
     setTableData((prev) =>
@@ -122,10 +126,16 @@ function ConfigMain() {
   const handleInputChange = (rowIndex, value) => {
     setTableData((prev) =>
       prev.map((row) =>
-        row.index === rowIndex ? { ...row, val_new: value } : row
+        row.index === rowIndex
+          ? { ...row, val_new: value, selected: true } 
+          : row
       )
     );
   };
+
+  const handleFilterChange = (filter) => {
+    setFilterType(filter);
+  };  
 
   const handleApply = async () => {
     const selectedData = tableData
@@ -149,6 +159,12 @@ function ConfigMain() {
 
       if (!response.ok) throw new Error("Failed to apply changes");
 
+      setTableData((prev) =>
+        prev.map((row) =>
+          row.selected ? { ...row, selected: false, state: "A" } : row
+        )
+      );
+
       alert("Changes successfully applied!");
     } catch (error) {
       console.error("Error applying changes:", error);
@@ -170,7 +186,7 @@ function ConfigMain() {
       <Tabs value={0} centered></Tabs>
       <Box display="flex" flexGrow={1} gap={2} p={2}>
         <TreeView treeData={treeData} />
-        <ParameterTable tableData={getFilteredData()} handleApply={handleApply} handleRowSelect={handleRowSelect} handleInputChange={handleInputChange}  />
+        <ParameterTable tableData={getFilteredData()} handleApply={handleApply} handleRowSelect={handleRowSelect} handleInputChange={handleInputChange} filterType={filterType} handleFilterChange={handleFilterChange}/>
       </Box>
     </Box>
   );

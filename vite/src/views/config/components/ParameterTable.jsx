@@ -3,7 +3,7 @@ import { TableContainer, Paper, Button, TextField, Select, MenuItem } from "@mui
 import DataTable from "react-data-table-component";
 import { Box } from "@mui/system";
 
-function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange }) {
+function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredData = tableData.filter((row) => {
@@ -33,7 +33,7 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
       width: "50px",
     },
     { name: "Index", selector: (row) => row.index, width: "80px" },
-    { name: "Label", selector: (row) => row.label, width: "150px" },
+    { name: "Label", selector: (row) => row.label, width: "290px" },
     {
       name: "New Value",
       cell: (row) =>
@@ -96,7 +96,7 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
         };
         return statusMap[row.state] || "";
       },
-      width: "250px",
+      width: "150px",
     },
     { name: "GK", selector: (row) => row.gk, width: "350px" },
   ];
@@ -112,15 +112,24 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
         `}
       </style>
       <Box sx={{ display: "flex", flexDirection: 'column', flexBasis: "80%" }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
         <TextField
           label="Search"
           variant="outlined"
-          fullWidth
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ marginBottom: 2, width: '20%' }}
+          sx={{ width: "20%" }}
         />
-        
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          sx={{ width: "100px", marginRight: "20px" }}
+          onClick={() => handleFilterChange("selected")}
+        >
+          Selected
+        </Button>
+      </Box>
         <TableContainer component={Paper} sx={{ flexBasis: "72.5%", maxHeight: "calc(90vh - 150px)", overflow: "auto" }}>
           <DataTable
             columns={columns}
@@ -130,16 +139,17 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
             highlightOnHover
           />
         </TableContainer>
-        
+        {filterType === "selected" && (
         <Button
-          variant="contained" 
-          color="primary" 
-          onClick={handleApply} 
-          size="large" 
-          sx={{ marginTop: 4, width: '100px', alignSelf: 'left' }}
+          variant="contained"
+          color="primary"
+          onClick={handleApply}
+          size="large"
+          sx={{ marginTop: 4, width: "100px", alignSelf: "left" }}
         >
           Apply
         </Button>
+      )}
       </Box>
     </>
   );
