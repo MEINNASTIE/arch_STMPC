@@ -7,6 +7,7 @@ function ConfigMain() {
   const [tableData, setTableData] = useState([]);
   const [treeData, setTreeData] = useState([]);
   const [filterType, setFilterType] = useState("all"); 
+  const [refs, setRefs] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,6 +21,7 @@ function ConfigMain() {
         resolveRefs(data.payload);
         populateTree(data.payload.groups);
         populateTable(data.payload.groups);
+        setRefs(data.payload.refs);
       } catch (error) {
         console.error("Failed to fetch runtime description:", error);
       }
@@ -185,8 +187,8 @@ function ConfigMain() {
     >
       <Tabs value={0} centered></Tabs>
       <Box display="flex" flexGrow={1} gap={2} p={2}>
-        <TreeView treeData={treeData} />
-        <ParameterTable tableData={getFilteredData()} handleApply={handleApply} handleRowSelect={handleRowSelect} handleInputChange={handleInputChange} filterType={filterType} handleFilterChange={handleFilterChange}/>
+        <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
+        <ParameterTable tableData={getFilteredData()} handleApply={handleApply} handleRowSelect={handleRowSelect} handleInputChange={handleInputChange} filterType={filterType} handleFilterChange={handleFilterChange}  refs={refs} />
       </Box>
     </Box>
   );

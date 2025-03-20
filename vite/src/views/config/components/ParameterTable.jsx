@@ -3,8 +3,11 @@ import { TableContainer, Paper, Button, TextField, Select, MenuItem } from "@mui
 import DataTable from "react-data-table-component";
 import { Box } from "@mui/system";
 
-function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange }) {
+function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showWaitingHint, setShowWaitingHint] = useState(
+    JSON.parse(localStorage.getItem("showWaitingHint")) ?? true
+  );  
 
   const filteredData = tableData.filter((row) => {
     return (
@@ -21,6 +24,20 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
     return "-unknown-";
   };
 
+  const resolveList = (row, refs) => {
+    if (typeof row.list === "string" && row.list.startsWith("$ref:")) {
+      const refKey = row.list.replace("$ref:", "").trim();
+      return refs?.[refKey] || [];
+    }
+    return row.list || [];
+  };
+
+  const toggleWaitingHint = () => {
+    const newValue = !showWaitingHint;
+    setShowWaitingHint(newValue);
+    localStorage.setItem("showWaitingHint", JSON.stringify(newValue));
+  };  
+
   const columns = [
     {
       cell: (row) => (
@@ -36,8 +53,9 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
     { name: "Label", selector: (row) => row.label, width: "290px" },
     {
       name: "New Value",
-      cell: (row) =>
-        row.type === "list" ? (
+      cell: (row) => {
+        const listOptions = resolveList(row, refs);
+        return row.type === "list" ? (
           <Select
             value={row.val_new}
             onChange={(e) => handleInputChange(row.index, e.target.value)}
@@ -52,7 +70,7 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
               },
             }}
           >
-            {row.list.map((option) => (
+            {listOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
@@ -68,13 +86,13 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
               height: "40px",
               fontSize: "14px",
               margin: "8px 0px",
-          
               "& input": {
                 padding: "10px",
               },
             }}
           />
-        ),
+        );
+      },
       width: "250px",
     },
     { name: "Used in System", cell: (row) => renderUsedInSystem(row.val_rt), width: "200px" },
@@ -92,12 +110,16 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
           A: <div className="status-A">Applied</div>,
           P: <div className="status-P">Applying {row.val_new_last}</div>,
           R: <div className="status-R">Rejected {row.val_new_last}</div>,
-          U: <div className="status-U">Waiting {row.val_new_last || ""}</div>,
+          U: (
+            <div className="status-U">
+              Waiting {showWaitingHint ? row.val_new_last || "" : ""}
+            </div>
+          ),
         };
         return statusMap[row.state] || "";
       },
       width: "150px",
-    },
+    },    
     { name: "GK", selector: (row) => row.gk, width: "350px" },
   ];
 
@@ -120,6 +142,15 @@ function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputCh
           onChange={(e) => setSearchTerm(e.target.value)}
           sx={{ width: "20%" }}
         />
+        <label>
+          {/* This input will go into the advanced settings later / testing for now */}
+          <input
+            type="checkbox"
+            checked={showWaitingHint}
+            onChange={toggleWaitingHint}
+          />
+          Show Waiting Last Value
+        </label>
         <Button
           variant="contained"
           color="primary"
