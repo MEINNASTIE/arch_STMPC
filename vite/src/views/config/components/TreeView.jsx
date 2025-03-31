@@ -53,7 +53,7 @@ function TreeView({ treeData, handleFilterChange }) {
       
       <ListItem button onClick={() => handleFilterChange("advanced")}>
           <ListItemText
-            primary="Advanced"
+            primary="Advanced User Settings"
             primaryTypographyProps={{ fontWeight: "bold", color: "#00796b"}}
           />
       </ListItem>

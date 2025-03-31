@@ -105,6 +105,7 @@ const HeaderMain = () => {
           width: '100%',
           backgroundColor: '#3e4aec',
           borderRadius: '8px',
+          marginTop: '1px',
           [theme.breakpoints.down('md')]: {
             flexDirection: 'row',
             justifyContent: 'space-between'
@@ -122,7 +123,7 @@ const HeaderMain = () => {
           alignItems: 'center',
           justifyContent: 'center',  
           borderRadius: '8px',
-          padding: '8px 16px',
+          padding: '4px 16px',
           borderLeft: '2px solid white',
           borderRight: '2px solid white',
           [theme.breakpoints.down('md')]: {

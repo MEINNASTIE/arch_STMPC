@@ -3,12 +3,18 @@ import { Box, Tabs } from "@mui/material";
 import TreeView from "./components/TreeView";
 import ParameterTable from "./components/ParameterTable";
 
+// only for testing at home purposes
+import runtimeDescData from './RuntimeConfigDesc_en.json'; 
+
 function ConfigMain() {
   const [tableData, setTableData] = useState([]);
   const [treeData, setTreeData] = useState([]);
   const [filterType, setFilterType] = useState("all"); 
   const [refs, setRefs] = useState({});
 
+  const [showAdvanced, setShowAdvanced] = useState(false); 
+
+  // never forget for dist production to erase the address only leave after /api
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -29,6 +35,17 @@ function ConfigMain() {
 
     fetchData();
   }, []);
+
+// useEffect(() => {
+//   const data = runtimeDescData;
+//   console.log("Loaded runtimeDescData:", data);
+
+//   resolveRefs(data.payload);
+//   populateTree(data.payload.groups);
+//   populateTable(data.payload.groups);
+//   setRefs(data.payload.refs);
+// }, []);
+
 
   const resolveRefs = (payload) => {
     console.log("Resolving references in payload:", payload);
@@ -56,8 +73,7 @@ function ConfigMain() {
     const allItem = {
       label: "Change",
       isCollapsible: true,
-      pages: [
-        
+      pages: [     
         { label: "Selected to Change", onClick: () => setFilterType("selected") },
         { label: "Not yet Applied", onClick: () => setFilterType("notApplied") },
       ],

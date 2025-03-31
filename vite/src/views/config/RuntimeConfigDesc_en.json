@@ -4,6 +4,30 @@
   "errorText": "",
   "errorTextDetails": "",
   "payload": {
+    "refs": {
+      "listRNquantity": [
+        {
+          "value": "1",
+          "label": "Bq/m2"
+        },
+        {
+          "value": "2",
+          "label": "Bq/m3_air"
+        },
+        {
+          "value": "3",
+          "label": "Bq/L"
+        },
+        {
+          "value": "4",
+          "label": "Bq"
+        },
+        {
+          "value": "5",
+          "label": "Bq/m3_aerosol"
+        }
+      ]
+    },
     "groups": [
       {
         "id": null,

@@ -1,5 +1,15 @@
+## Repo information 
+
+- /dist - serving application /
+- /vite - contains project source code without the bundle
+- /docu - additional sources for developer
+
+## Additional information for developer meinna
+
 ### file serving a gunicorn via nginx for authentication
 this environment has been specifically set up for arch linux to run on systemd as a service, the config is set based on distro
+
+current /dist is not entirely optimised // current development going on 
 
 #### nginx example config
 
