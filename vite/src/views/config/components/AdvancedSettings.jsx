@@ -1,7 +1,18 @@
 import React from "react";
 import { Box, FormControlLabel, Checkbox, Typography } from "@mui/material";
 
-function AdvancedSettings({ showWaitingHint, showAppId, showAllRTValues, toggleWaitingHint, toggleAppId, toggleAllRTValues }) {
+function AdvancedSettings({ 
+  showWaitingHint, 
+  showAppId, 
+  showAllRTValues, 
+  showWaiting,
+  showGK,
+  toggleWaitingHint, 
+  toggleAppId, 
+  toggleAllRTValues, 
+  toggleShowWaiting,
+  toggleGK 
+}) {
   return (
     <>
     <Box>
@@ -19,6 +30,14 @@ function AdvancedSettings({ showWaitingHint, showAppId, showAllRTValues, toggleW
       <FormControlLabel
         control={<Checkbox checked={showAllRTValues} onChange={toggleAllRTValues} />}
         label="Show All RT Values"
+      />
+      <FormControlLabel
+        control={<Checkbox checked={showWaiting} onChange={toggleShowWaiting} />}
+        label="Show Waiting"
+      />
+      <FormControlLabel
+        control={<Checkbox checked={showGK} onChange={toggleGK} />}
+        label="Show GK"
       />
     </Box>
     </>

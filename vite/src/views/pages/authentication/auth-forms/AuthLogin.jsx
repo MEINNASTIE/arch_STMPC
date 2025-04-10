@@ -47,9 +47,9 @@ const apiRequest = async (url, options = {}) => {
 const AuthLogin = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [usersExist, setUsersExist] = useState(true);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const fetchUserCount = async () => {
@@ -66,9 +66,6 @@ const AuthLogin = () => {
 
     fetchUserCount();
   }, []);
-
-  const handleMouseDownPassword = (event) => event.preventDefault();
-  const [userId, setUserId] = useState(null);
 
   const handleLogin = async (values, { setSubmitting, setErrors }) => {
     try {
@@ -144,90 +141,95 @@ const AuthLogin = () => {
     }
   };
 
-  const Form = ({ isAdminInit }) => (
-    <Formik
-      initialValues={{ username: '', password: '', submit: null }}
-      validationSchema={Yup.object().shape({
-        username: Yup.string().max(255).required('Username is required'),
-        password: Yup.string().max(255).required('Password is required')
-      })}
-      onSubmit={isAdminInit ? handleInitAdmin : handleLogin}
-    >
-      {({ errors, handleBlur, handleChange, handleSubmit, touched, values, isSubmitting }) => (
-        <form noValidate onSubmit={handleSubmit}>
-          <Typography variant="h4" align="center">
-            {isAdminInit ? 'Admin Initialization' : 'User Login'}
-          </Typography>
-          <FormControl fullWidth error={Boolean(touched.username && errors.username)} sx={{ ...theme.typography.customInput }}>
-            <InputLabel htmlFor="outlined-adornment-username">Username</InputLabel>
-            <OutlinedInput
-              id="outlined-adornment-username"
-              type="text"
-              value={values.username}
-              name="username"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              label="Username"
-            />
-            {touched.username && errors.username && (
-              <FormHelperText error id="standard-weight-helper-text-username">
-                {errors.username}
+  const Form = ({ isAdminInit }) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const handleMouseDownPassword = (event) => event.preventDefault();
+
+    return (
+      <Formik
+        initialValues={{ username: '', password: '', submit: null }}
+        validationSchema={Yup.object().shape({
+          username: Yup.string().max(255).required('Username is required'),
+          password: Yup.string().max(255).required('Password is required')
+        })}
+        onSubmit={isAdminInit ? handleInitAdmin : handleLogin}
+      >
+        {({ errors, handleBlur, handleChange, handleSubmit, touched, values, isSubmitting }) => (
+          <form noValidate onSubmit={handleSubmit}>
+            <Typography variant="h4" align="center">
+              {isAdminInit ? 'Admin Initialization' : 'User Login'}
+            </Typography>
+            <FormControl fullWidth error={Boolean(touched.username && errors.username)} sx={{ ...theme.typography.customInput }}>
+              <InputLabel htmlFor="outlined-adornment-username">Username</InputLabel>
+              <OutlinedInput
+                id="outlined-adornment-username"
+                type="text"
+                value={values.username}
+                name="username"
+                onBlur={handleBlur}
+                onChange={handleChange}
+                label="Username"
+              />
+              {touched.username && errors.username && (
+                <FormHelperText error id="standard-weight-helper-text-username">
+                  {errors.username}
+                </FormHelperText>
+              )}
+            </FormControl>
+
+            <FormControl fullWidth error={Boolean(touched.password && errors.password)} sx={{ ...theme.typography.customInput }}>
+              <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+              <OutlinedInput
+                id="outlined-adornment-password"
+                type={showPassword ? 'text' : 'password'}
+                value={values.password}
+                name="password"
+                onBlur={handleBlur}
+                onChange={handleChange}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      onMouseDown={handleMouseDownPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                label="Password"
+              />
+              {touched.password && errors.password && (
+                <FormHelperText error id="standard-weight-helper-text-password">
+                  {errors.password}
+                </FormHelperText>
+              )}
+            </FormControl>
+
+            <AnimateButton>
+              <Button
+                disableElevation
+                fullWidth
+                size="large"
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={isSubmitting}
+              >
+                {isAdminInit ? 'Initialize Admin' : 'Login'}
+              </Button>
+            </AnimateButton>
+            {errors.submit && (
+              <FormHelperText error>
+                {errors.submit}
               </FormHelperText>
             )}
-          </FormControl>
-
-          <FormControl fullWidth error={Boolean(touched.password && errors.password)} sx={{ ...theme.typography.customInput }}>
-            <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
-            <OutlinedInput
-              id="outlined-adornment-password"
-              type={showPassword ? 'text' : 'password'}
-              value={values.password}
-              name="password"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              endAdornment={
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={ () => setShowPassword(!showPassword) }
-                    onMouseDown={handleMouseDownPassword}
-                    edge="end"
-                  >
-                    {showPassword ? <Visibility /> : <VisibilityOff />}
-                  </IconButton>
-                </InputAdornment>
-              }
-              label="Password"
-            />
-            {touched.password && errors.password && (
-              <FormHelperText error id="standard-weight-helper-text-password">
-                {errors.password}
-              </FormHelperText>
-            )}
-          </FormControl>
-
-          <AnimateButton>
-            <Button
-              disableElevation
-              fullWidth
-              size="large"
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={isSubmitting}
-            >
-              {isAdminInit ? 'Initialize Admin' : 'Login'}
-            </Button>
-          </AnimateButton>
-          {errors.submit && (
-            <FormHelperText error>
-              {errors.submit}
-            </FormHelperText>
-          )}
-        </form>
-      )}
-    </Formik>
-  );
+          </form>
+        )}
+      </Formik>
+    );
+  };
 
   if (loading) {
     return <Typography>Loading...</Typography>;

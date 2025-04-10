@@ -12,6 +12,7 @@ import themes from 'themes';
 
 // project imports
 import NavigationScroll from 'layout/NavigationScroll';
+import { SerialNumberProvider } from 'context/SerialNumberContext';
 
 // ==============================|| APP ||============================== //
 
@@ -19,6 +20,7 @@ const App = () => {
   const customization = useSelector((state) => state.customization);
 
   return (
+    <SerialNumberProvider>
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={themes(customization)}>
         <CssBaseline />
@@ -27,6 +29,7 @@ const App = () => {
           </NavigationScroll>
       </ThemeProvider>
     </StyledEngineProvider>
+    </SerialNumberProvider>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // material-ui
@@ -13,6 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import { IconPresentation, IconSettings, IconCpu, IconWorld, IconPrinter, IconRefresh } from '@tabler/icons-react';
 import usePrint from 'hooks/usePrint';
 import { Button } from '@mui/material';
+import useSerialNumber from 'context/SerialNumberContext';
 
 const HeaderMain = () => {
   const theme = useTheme();
@@ -96,6 +97,24 @@ const HeaderMain = () => {
     }
   };
 
+  const { serialNumber, setSerialNumber } = useSerialNumber();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/config/runtime-desc");
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const data = await response.json();
+        setSerialNumber(data.mpcSN);  
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    };
+
+    fetchData();
+  }, [setSerialNumber]);
+
   return (
       <Box
         sx={{
@@ -114,7 +133,7 @@ const HeaderMain = () => {
       >
       <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
         <Typography variant="h2" sx={{ flex: 1, color: 'white', paddingLeft: '60px' }}>
-          SpectroTRACER STNBD123
+            SpectroTRACER {serialNumber || ''}
         </Typography>
       </Box>
       <Box

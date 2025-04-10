@@ -2,11 +2,6 @@
   "name": "berry-free-material-react",
   "version": "3.5.0",
   "private": true,
-  "author": {
-    "name": "CodedThemes",
-    "email": "CodedThemes@gmail.com",
-    "url": "https://codedthemes.com/"
-  },
   "homepage": ".",
   "scripts": {
     "start": "env-cmd -f .env vite",
@@ -28,14 +23,13 @@
     "@mui/material": "^5.16.14",
     "@mui/system": "^5.15.9",
     "@mui/utils": "^5.15.11",
-    "@mui/x-data-grid": "^7.24.0",
+    "@mui/x-date-pickers": "^7.28.3",
     "@reduxjs/toolkit": "^2.2.1",
     "@tabler/icons-react": "^2.47.0",
     "@vitejs/plugin-react": "^4.2.1",
     "apexcharts": "^3.46.2",
     "crypto-js": "^4.2.0",
-    "datatables.net-dt": "^2.2.1",
-    "datatables.net-react": "^1.0.0",
+    "date-fns": "^2.30.0",
     "env-cmd": "^10.1.0",
     "formik": "^2.4.5",
     "framer-motion": "^11.0.6",

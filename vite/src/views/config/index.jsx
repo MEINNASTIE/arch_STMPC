@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, Tabs } from "@mui/material";
+import { Box, Tabs, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from "@mui/material";
 import TreeView from "./components/TreeView";
 import ParameterTable from "./components/ParameterTable";
 
@@ -11,8 +11,12 @@ function ConfigMain() {
   const [treeData, setTreeData] = useState([]);
   const [filterType, setFilterType] = useState("all"); 
   const [refs, setRefs] = useState({});
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedPage, setSelectedPage] = useState(null);
 
-  const [showAdvanced, setShowAdvanced] = useState(false); 
+  // State for dialog
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
 
   // never forget for dist production to erase the address only leave after /api
   useEffect(() => {
@@ -46,7 +50,6 @@ function ConfigMain() {
 //   setRefs(data.payload.refs);
 // }, []);
 
-
   const resolveRefs = (payload) => {
     console.log("Resolving references in payload:", payload);
 
@@ -74,8 +77,16 @@ function ConfigMain() {
       label: "Change",
       isCollapsible: true,
       pages: [     
-        { label: "Selected to Change", onClick: () => setFilterType("selected") },
-        { label: "Not yet Applied", onClick: () => setFilterType("notApplied") },
+        { 
+          label: "Selected to Change", 
+          id: "selected",
+          onClick: () => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })
+        },
+        { 
+          label: "Not yet Applied", 
+          id: "notApplied",
+          onClick: () => handleFilterChange("notApplied", { label: "Change" }, { label: "Not yet Applied" })
+        },
       ],
     };
 
@@ -84,7 +95,7 @@ function ConfigMain() {
       pages: group.pages.map((page) => ({
         label: page.label || "Unnamed Page",
         id: page.id,
-        onClick: () => setFilterType(page.id),
+        onClick: () => handleFilterChange(page.id, group, page),
       })),
     }));
 
@@ -117,7 +128,6 @@ function ConfigMain() {
     setTableData(rows);
   };
   
-
   const getFilteredData = () => {
 
     if (filterType === "all") return tableData;
@@ -151,8 +161,10 @@ function ConfigMain() {
     );
   };
 
-  const handleFilterChange = (filter) => {
+  const handleFilterChange = (filter, group, page) => {
     setFilterType(filter);
+    setSelectedGroup(group);
+    setSelectedPage(page);
   };  
 
   const handleApply = async () => {
@@ -164,12 +176,13 @@ function ConfigMain() {
       }));
 
     if (selectedData.length === 0) {
-      alert("No changes selected!");
+      setDialogMessage("No changes selected!");
+      setDialogOpen(true);
       return;
     }
 
     try {
-      const response = await fetch("https://192.168.164.158/api/config/runtime", {
+      const response = await fetch("/api/config/runtime", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(selectedData),
@@ -183,10 +196,13 @@ function ConfigMain() {
         )
       );
 
-      alert("Changes successfully applied!");
+      setDialogMessage("Changes were successfully applied!");
+      setDialogOpen(true);
+      handleFilterChange("notApplied", { label: "Change" }, { label: "Not yet Applied" });
     } catch (error) {
       console.error("Error applying changes:", error);
-      alert("Failed to apply changes.");
+      setDialogMessage("Failed to apply changes.");
+      setDialogOpen(true);
     }
   };
 
@@ -204,10 +220,34 @@ function ConfigMain() {
       <Tabs value={0} centered></Tabs>
       <Box display="flex" flexGrow={1} gap={2} p={2}>
         <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
-        <ParameterTable tableData={getFilteredData()} handleApply={handleApply} handleRowSelect={handleRowSelect} handleInputChange={handleInputChange} filterType={filterType} handleFilterChange={handleFilterChange}  refs={refs} />
+        <ParameterTable 
+          tableData={getFilteredData()} 
+          handleApply={handleApply} 
+          handleRowSelect={handleRowSelect} 
+          handleInputChange={handleInputChange} 
+          filterType={filterType} 
+          handleFilterChange={handleFilterChange} 
+          refs={refs}
+          groupLabel={selectedGroup?.label}
+          pageLabel={selectedPage?.label} 
+        />
       </Box>
+
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+        <DialogTitle>Hey there,</DialogTitle>
+        <DialogContent>
+          <Typography>{dialogMessage}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
 
 export default ConfigMain;
+
+

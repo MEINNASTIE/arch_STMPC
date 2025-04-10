@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { TableContainer, Paper, Button, TextField, Select, MenuItem } from "@mui/material";
-
+import React, { useState, useCallback, useEffect } from "react";
+import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography } from "@mui/material";
 import DataTable from "react-data-table-component";
 import { Box } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
+import Clock from "./TimeConfig";
 
-export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs }) {
+export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWaitingHint, setShowWaitingHint] = useState(
     JSON.parse(localStorage.getItem("showWaitingHint")) ?? true
@@ -16,14 +16,55 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   const [showAllRTValues, setShowAllRTValues] = useState(
     JSON.parse(localStorage.getItem("showAllRTValues")) ?? true
   );
+  const [showWaiting, setShowWaiting] = useState(
+    JSON.parse(localStorage.getItem("showWaiting")) ?? true
+  );
+  const [showGK, setShowGK] = useState(
+    JSON.parse(localStorage.getItem("showGK")) ?? true
+  );
+  const [filteredData, setFilteredData] = useState(tableData);
 
-  const filteredData = tableData.filter((row) => {
-    return (
-      row.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.index.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.gk.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  const getStatusText = useCallback((state) => {
+    switch (state) {
+      case 'A': return 'applied';
+      case 'P': return 'applying';
+      case 'R': return 'rejected';
+      case 'U': return 'waiting';
+      default: return '';
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleSearch = async () => {
+      const searchTermLower = searchTerm.toLowerCase();
+      const result = tableData.filter((row) => {
+        if (!showWaiting && row.state === 'U') {
+          return false;
+        }
+        return (
+          row.label.toLowerCase().includes(searchTermLower) ||
+          row.index.toLowerCase().includes(searchTermLower) ||
+          row.gk.toLowerCase().includes(searchTermLower) ||
+          getStatusText(row.state).includes(searchTermLower)
+        );
+      });
+      setFilteredData(result);
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      handleSearch();
+    }, 300); 
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, tableData, getStatusText, showWaiting]);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSearchBlur = () => {
+    setSearchTerm("");
+  };
   
   const getLabel = (list, value) => {
     const option = list.find(item => item.value === value);
@@ -65,6 +106,18 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     const newValue = !showAllRTValues;
     setShowAllRTValues(newValue);
     localStorage.setItem("showAllRTValues", JSON.stringify(newValue));
+  };
+
+  const toggleShowWaiting = () => {
+    const newValue = !showWaiting;
+    setShowWaiting(newValue);
+    localStorage.setItem("showWaiting", JSON.stringify(newValue));
+  };
+
+  const toggleGK = () => {
+    const newValue = !showGK;
+    setShowGK(newValue);
+    localStorage.setItem("showGK", JSON.stringify(newValue));
   };
 
   const columns = [
@@ -170,19 +223,23 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         const statusMap = {
           A: <div className="status-A">Applied</div>,
           P: <div className="status-P">Applying {getLabel(row.list, row.val_new_last)}</div>,
-          R: <div className="status-R">Rejected {row.val_new_last}</div>,
-          U: (
+          R: (
+            <div className="status-R">
+              Rejected {row.type === "list" ? getLabel(row.list, row.val_new_last) : row.val_new_last}
+            </div>
+          ),
+          U: showWaiting ? (
             <div className="status-U">
               Waiting {showWaitingHint ? row.val_new_last || "" : ""}
             </div>
-          ),
+          ) : null, 
         };
         return statusMap[row.state] || "";
       },
       width: "200px",
     },    
-    { name: "GK", selector: (row) => row.gk, width: "380px" },
-  ];
+    showGK && { name: "GK", selector: (row) => row.gk, width: "390px" },
+  ].filter(Boolean);
 
   return (
     <>
@@ -198,17 +255,42 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       sx={{
         display: "flex",
         flexDirection: 'column',
-        flexBasis: filterType === "advanced" ? "0" : "80%", 
+        flexBasis: (filterType === "advanced" || filterType === "time") ? "0" : "80%",
+        maxWidth: "1500px",
+        marginLeft: "10px"
       }}
     >
+      <Typography 
+        variant="h3" 
+        sx={{ 
+          marginBottom: 1,
+          fontWeight: "bold",
+          marginTop: "10px"
+        }}
+      >
+        {groupLabel}
+      </Typography>
+      {pageLabel && (
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            marginBottom: 2,
+            color: "#666",
+            marginLeft: "2px"
+          }}
+        >
+          {pageLabel}
+        </Typography>
+      )}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-        {filterType !== "advanced" && (
+        {filterType !== "advanced" && filterType !== "time" &&(
           <>
             <TextField
               label="Search"
               variant="outlined"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
+              onBlur={handleSearchBlur}
               sx={{ width: "20%" }}
             />
             <Button
@@ -216,14 +298,14 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
               color="primary"
               size="large"
               sx={{ width: "160px", marginRight: "20px" }}
-              onClick={() => handleFilterChange("selected")}
+              onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
             >
               Show Selected
             </Button>
           </>
         )}
       </Box>
-      {filterType !== "advanced" && (
+      {filterType !== "advanced" && filterType !== "time" && (
         <TableContainer
           component={Paper}
           sx={{ flexBasis: "70%", maxHeight: "calc(90vh - 150px)", overflow: "auto" }}
@@ -256,7 +338,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           color="primary"
           onClick={handleApply}
           size="large"
-          sx={{ marginTop: 4, width: "100px", alignSelf: "left" }}
+          sx={{ width: "100px", alignSelf: "left", marginTop: "-10px"}}
         >
           Apply
         </Button>
@@ -269,10 +351,20 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           showWaitingHint={showWaitingHint}
           showAppId={showAppId}
           showAllRTValues={showAllRTValues}
+          showWaiting={showWaiting}
+          showGK={showGK}
           toggleWaitingHint={toggleWaitingHint}
           toggleAppId={toggleAppId}
           toggleAllRTValues={toggleAllRTValues}
+          toggleShowWaiting={toggleShowWaiting}
+          toggleGK={toggleGK}
         />
+      </Box>
+      
+    )}
+    {filterType === "time" && (
+      <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px", width: "80%"}}>
+          <Clock />
       </Box>
     )}
   </>
