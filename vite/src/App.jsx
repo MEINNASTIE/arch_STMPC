@@ -13,6 +13,7 @@ import themes from 'themes';
 // project imports
 import NavigationScroll from 'layout/NavigationScroll';
 import { SerialNumberProvider } from 'context/SerialNumberContext';
+import { AuthProvider } from 'contexts/AuthContext';
 
 // ==============================|| APP ||============================== //
 
@@ -20,16 +21,18 @@ const App = () => {
   const customization = useSelector((state) => state.customization);
 
   return (
-    <SerialNumberProvider>
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={themes(customization)}>
-        <CssBaseline />
-          <NavigationScroll>
-            <RouterProvider router={router} />
-          </NavigationScroll>
-      </ThemeProvider>
-    </StyledEngineProvider>
-    </SerialNumberProvider>
+    <AuthProvider>
+      <SerialNumberProvider>
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={themes(customization)}>
+            <CssBaseline />
+            <NavigationScroll>
+              <RouterProvider router={router} />
+            </NavigationScroll>
+          </ThemeProvider>
+        </StyledEngineProvider>
+      </SerialNumberProvider>
+    </AuthProvider>
   );
 };
 

@@ -59,6 +59,7 @@ const HeaderMain = () => {
       label: 'Configuration',
       options: [
         { label: 'Instrument configuration', path: '/conf' },
+        { label: 'Factory configuration', path: '/conf-factory' },
         { label: 'Summary of changes', path: '/dashboard' }
       ]
     },
@@ -199,16 +200,21 @@ const HeaderMain = () => {
                   'aria-labelledby': 'basic-button',
                   onMouseLeave: handleMenuClose,
                 }}
+                sx={{ cursor: 'pointer' }}
               >
                 {options.map((option, i) => (
-                  <MenuItem key={i} onClick={() => {
-                    if (option.path) {
-                      handleNavigation(option.path); 
-                    } else {
-                      console.log('Change language to', option.label);  
-                      handleMenuClose();
-                    }
-                  }}>
+                  <MenuItem 
+                    key={i} 
+                    onClick={() => {
+                      if (option.path) {
+                        handleNavigation(option.path); 
+                      } else {
+                        console.log('Change language to', option.label);  
+                        handleMenuClose();
+                      }
+                    }}
+                    sx={{ cursor: 'pointer' }}
+                  >
                     {option.label}
                   </MenuItem>
                 ))}

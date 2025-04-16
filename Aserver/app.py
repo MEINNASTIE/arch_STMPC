@@ -1,162 +1,123 @@
 import os
-import json
-import pyotp
-import requests
-import jwt
-import datetime
 import base64
 import hashlib
-from flask import Flask, request, jsonify, make_response, send_from_directory
-from flask_cors import CORS
-from datetime import timedelta
+import datetime
+import secrets
+import requests
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from jose import JWTError, jwt
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', '1234')
-CORS(app, supports_credentials=True)
+MIN_SECRET_KEY_LENGTH = 32
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    SECRET_KEY = secrets.token_urlsafe(32)
+    print("WARNING: No SECRET_KEY provided in environment. Generated a temporary key.")
+    print("WARNING: For production use, please set SECRET_KEY in your environment variables.")
+elif len(SECRET_KEY) < MIN_SECRET_KEY_LENGTH:
+    raise ValueError(f"SECRET_KEY must be at least {MIN_SECRET_KEY_LENGTH} characters long")
+elif SECRET_KEY == '1234':
+    raise ValueError("SECRET_KEY cannot use the default value '1234'")
 
-API_BASE_URL = "/api"  
+ALGORITHM = "HS256"
+API_BASE_URL = "/api"
+SALT_LENGTH = 64
 
-# Utility to construct the full URL
-def get_full_api_url(relative_url):
-    scheme = request.scheme  
-    host = request.host  
-    return f"{scheme}://{host}{relative_url}"
+app = FastAPI()
 
-# Utilities
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>', methods=['GET'])
-def serve_frontend_path(path):
-    if os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    return send_from_directory(app.static_folder, 'index.html')
-  
-def generate_hash(username, password):
-    hash_input = f"{username};{password}".encode('utf-8')
-    hash_digest = hashlib.sha256(hash_input).digest()
-    return base64.b64encode(hash_digest).decode('utf-8')
 
-def generate_jwt(user_id):
-    payload = {
-        'sub': user_id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
-        'iat': datetime.datetime.utcnow()
-    }
-    return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
-
-def get_user_from_api(username):
-    full_url = get_full_api_url(f"{API_BASE_URL}/user/{username}")
-    response = requests.get(full_url, verify=False)
-    if response.status_code == 200:
-        return response.json()
-    return None
-
-def update_user_totp_secret_in_api(username, secret):
-    payload = {'totp_secret': secret}
-    full_url = get_full_api_url(f"{API_BASE_URL}/user/{username}")
-    response = requests.post(full_url, json=payload, verify=False)
-    return response.status_code == 200
-
-def admin_exists():
-    full_url = get_full_api_url(f"{API_BASE_URL}/users")
-    response = requests.get(full_url, verify=False)
-    if response.status_code == 200:
-        users = response.json()
-        return any(user.get('rolename') == 'admin' for user in users)
-    return False
-
-def init_user(username, password):
-    hash_b64 = generate_hash(username, password)
-    full_url = get_full_api_url(f"{API_BASE_URL}/user/initadmin?hash={hash_b64}")
-    try:
-        response = requests.post(full_url, verify=False)
-        if response.status_code == 200:
-            return response.json()
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    return None
-
-# Routes
-
-@app.route('/api/users/count', methods=['GET'])
-def get_user_count():
-    full_url = get_full_api_url(f"{API_BASE_URL}/users")
-    response = requests.get(full_url, verify=False)
-    if response.status_code == 200:
-        users = response.json()
-        return jsonify({'count': len(users), 'admin_exists': admin_exists()})
-    return jsonify({'message': 'Error fetching users'}), 500
-
-@app.route('/api/user/hash/<username_password_hash_b64>', methods=['GET'])
-def get_user_by_hash(username_password_hash_b64):
-    full_url = get_full_api_url(f"{API_BASE_URL}/user/hash/{username_password_hash_b64}")
-    response = requests.get(full_url, verify=False)
-    if response.status_code == 200:
-        user_data = response.json()
-        user_id = user_data.get('payload', {}).get('userId')
-        if user_id:
-            user_data['token'] = generate_jwt(user_id)
-            return jsonify(user_data)
-    return jsonify({'message': 'User not found or error retrieving user data'}), 404
-
-@app.route('/api/protected', methods=['GET'])
-def protected():
-    token = request.headers.get('Authorization')
-    if not token:
-        return jsonify({'message': 'Token is missing!'}), 403
-    try:
-        payload = jwt.decode(token.split()[1], app.config['SECRET_KEY'], algorithms=['HS256'])
-        return jsonify({'message': 'Protected content', 'user': payload['sub']})
-    except jwt.ExpiredSignatureError:
-        return jsonify({'message': 'Token has expired!'}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({'message': 'Invalid token!'}), 401
-
-@app.route('/token', methods=['POST'])
-def generate_token():
-    data = request.get_json()
-    user_id = data.get('userId')
-    allow_api = data.get('allowApi', False)
-
-    if not user_id:
-        return jsonify({'message': 'Missing userId'}), 400
-
+def generate_jwt(user_id: str, allow_api=False):
     payload = {
         'sub': user_id,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1),
         'iat': datetime.datetime.utcnow(),
         'allow_api': allow_api
     }
-    token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-    return jsonify({'token': token}), 200
+def verify_token(token: str):
+    try:
+        if token.startswith('Bearer '):
+            token = token.split()[1]
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get('allow_api', False):
+            raise HTTPException(status_code=403, detail="Access denied: API access not allowed")
+        return payload
+    except JWTError as e:
+        if isinstance(e, jwt.ExpiredSignatureError):
+            raise HTTPException(status_code=401, detail="Token has expired")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
+def generate_hash(username: str, password: str) -> str:
+    salt = secrets.token_bytes(SALT_LENGTH)
 
-# to make sure that the API is only accessible to users with a valid token
-@app.before_request
-def check_api_access():
-    if not request.path.startswith('/api'):
-        return
+    combined = f"{username};{password}".encode('utf-8') + salt
     
-    public_routes = ['']
-    if request.path in public_routes:
-        return
+    hash_value = hashlib.pbkdf2_hmac(
+        'sha512',  
+        combined,
+        salt,
+        310000  
+    )
+    
+    salt_b64 = base64.b64encode(salt).decode('utf-8')
+    hash_b64 = base64.b64encode(hash_value).decode('utf-8')
+    
+    return f"{salt_b64}:{hash_b64}"
 
+def get_full_api_url(relative_url: str, request: Request):
+    scheme = request.url.scheme
+    host = request.client.host
+    port = request.url.port or 80
+    return f"{scheme}://{host}:{port}{relative_url}"
+
+@app.get("/api/users/count")
+async def get_user_count(request: Request):
+    url = get_full_api_url(f"{API_BASE_URL}/users", request)
+    response = requests.get(url, verify=False)
+    if response.status_code == 200:
+        users = response.json()
+        admin_exists = any(user.get('rolename') == 'admin' for user in users)
+        return {"count": len(users), "admin_exists": admin_exists}
+    raise HTTPException(status_code=500, detail="Error fetching users")
+
+@app.get("/api/user/hash/{username_password_hash_b64}")
+async def get_user_by_hash(username_password_hash_b64: str, request: Request):
+    url = get_full_api_url(f"{API_BASE_URL}/user/hash/{username_password_hash_b64}", request)
+    response = requests.get(url, verify=False)
+    if response.status_code == 200:
+        user_data = response.json()
+        user_id = user_data.get('payload', {}).get('userId')
+        if user_id:
+            user_data['token'] = generate_jwt(user_id)
+            return user_data
+    raise HTTPException(status_code=404, detail="User not found or error retrieving user data")
+
+@app.post("/token")
+async def generate_token(data: dict):
+    user_id = data.get('userId')
+    allow_api = data.get('allowApi', False)
+    
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
+    
+    token = generate_jwt(user_id, allow_api)
+    return JSONResponse(content={"token": token}, status_code=200)
+
+@app.get("/api/protected")
+async def protected(request: Request):
     token = request.headers.get('Authorization')
     if not token:
-        return jsonify({'message': 'Access denied: No token provided'}), 403
-
-    try:
-        token = token.split()[1] if token.startswith('Bearer ') else token
-        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-
-        if not decoded_token.get('allow_api', False):
-            return jsonify({'message': 'Access denied: API access not allowed'}), 403
-        request.user = decoded_token
-    except jwt.ExpiredSignatureError:
-        return jsonify({'message': 'Token has expired'}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({'message': 'Invalid token'}), 401
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+        raise HTTPException(status_code=403, detail="Token is missing!")
+    
+    payload = verify_token(token)
+    return {"message": "Protected content", "user": payload['sub']}

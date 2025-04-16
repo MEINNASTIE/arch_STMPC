@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import Loadable from 'ui-component/Loadable';
 import SemiLayout from 'layout/SemiLayout';
+import ConfigMainFactory from 'views/config_factory';
 
 // Page components
 const FTPPage = Loadable(lazy(() => import('views/meas/ftp')));
@@ -35,6 +36,10 @@ const MainRoutes = {
     {
       path: 'conf',
       element: <ConfigMain />
+    },
+    {
+      path: 'conf-factory',
+      element: <ConfigMainFactory />
     },
     {
       path: 'measurement-status',

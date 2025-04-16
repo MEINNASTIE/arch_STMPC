@@ -16,14 +16,9 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import CryptoJS from 'crypto-js';
+import { useAuth } from 'contexts/AuthContext';
 
 const secretKey = "9rqD*1:fzOi4<</mj2Hk%*6\Yd!:£'";
-
-// const generateHashB64 = (username, password) => {
-//   const data = `${username};${password}`;
-//   const hash = CryptoJS.SHA256(data); 
-//   return hash.toString(CryptoJS.enc.Base64); 
-// };
 
 const generateHashB64 = async (username, password) => {
   const encoder = new TextEncoder();
@@ -41,12 +36,18 @@ const apiRequest = async (url, options = {}) => {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
   };
-  return fetch(url, { ...options, headers });
+  return fetch(url, { 
+    ...options, 
+    headers,
+    credentials: 'include',
+    mode: 'cors'
+  });
 };
 
 const AuthLogin = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(true);
   const [usersExist, setUsersExist] = useState(true);
   const [userId, setUserId] = useState(null);
@@ -80,15 +81,9 @@ const AuthLogin = () => {
       });
       const responseData = await response.json();
   
-      console.log('Full response data:', responseData);
-  
       if (responseData && responseData.payload) {
         const userId = responseData.payload.userId;
-        console.log('User ID from payload:', userId);  
   
-        localStorage.setItem('username', responseData.payload.username);
-        localStorage.setItem('rolename', responseData.payload.rolename);
-        
         const tokenResponse = await fetch('/token', {
           method: 'POST',
           headers: {
@@ -101,7 +96,7 @@ const AuthLogin = () => {
 
         if (tokenData.token) {
           const encryptedToken = CryptoJS.AES.encrypt(tokenData.token, secretKey).toString();
-          localStorage.setItem('token', encryptedToken);
+          login(encryptedToken, responseData.payload.username, responseData.payload.rolename);
         } else {
           console.error('Token not found in response');
         }
