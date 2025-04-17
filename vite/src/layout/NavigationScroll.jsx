@@ -1,8 +1,6 @@
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 
-// ==============================|| NAVIGATION SCROLL TO TOP ||============================== //
-
 const NavigationScroll = ({ children }) => {
   useEffect(() => {
     window.scrollTo({

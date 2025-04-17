@@ -256,7 +256,6 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         display: "flex",
         flexDirection: 'column',
         flexBasis: (filterType === "advanced" || filterType === "time") ? "0" : "80%",
-        maxWidth: "1500px",
         marginLeft: "10px"
       }}
     >
@@ -308,7 +307,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       {filterType !== "advanced" && filterType !== "time" && (
         <TableContainer
           component={Paper}
-          sx={{ flexBasis: "70%", maxHeight: "calc(90vh - 150px)", overflow: "auto" }}
+          sx={{ flexBasis: "100%", maxHeight: "calc(90vh - 150px)", overflow: "auto" }}
         >
           <DataTable
             columns={columns}

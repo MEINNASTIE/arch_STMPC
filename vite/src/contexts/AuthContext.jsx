@@ -7,19 +7,23 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
-  const [username, setUsername] = useState(null);
-  const [rolename, setRolename] = useState(null);
+  const [username, setUsername] = useState(localStorage.getItem('username') || null);
+  const [rolename, setRolename] = useState(localStorage.getItem('rolename') || null);
 
   const login = useCallback((newToken, newUsername, newRolename) => {
     setToken(newToken);
     setUsername(newUsername);
     setRolename(newRolename);
+    localStorage.setItem('username', newUsername);
+    localStorage.setItem('rolename', newRolename);
   }, []);
 
   const logout = useCallback(() => {
     setToken(null);
     setUsername(null);
     setRolename(null);
+    localStorage.removeItem('username');
+    localStorage.removeItem('rolename');
   }, []);
 
   const getToken = useCallback(() => {

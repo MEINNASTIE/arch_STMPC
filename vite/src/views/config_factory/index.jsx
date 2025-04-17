@@ -219,18 +219,31 @@ function ConfigMainFactory() {
     >
       <Tabs value={0} centered></Tabs>
       <Box display="flex" flexGrow={1} gap={2} p={2}>
-        <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
-        <ParameterTable 
-          tableData={getFilteredData()} 
-          handleApply={handleApply} 
-          handleRowSelect={handleRowSelect} 
-          handleInputChange={handleInputChange} 
-          filterType={filterType} 
-          handleFilterChange={handleFilterChange} 
-          refs={refs}
-          groupLabel={selectedGroup?.label}
-          pageLabel={selectedPage?.label} 
-        />
+        <Box sx={{ 
+          width: { xs: '30%', sm: '25%', md: '20%' },
+          minWidth: '200px',
+          maxWidth: '300px',
+          overflow: 'auto'
+        }}>
+          <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
+        </Box>
+        <Box sx={{ 
+          flex: 1,
+          minWidth: '300px',
+          overflow: 'auto'
+        }}>
+          <ParameterTable 
+            tableData={getFilteredData()} 
+            handleApply={handleApply} 
+            handleRowSelect={handleRowSelect} 
+            handleInputChange={handleInputChange} 
+            filterType={filterType} 
+            handleFilterChange={handleFilterChange} 
+            refs={refs}
+            groupLabel={selectedGroup?.label}
+            pageLabel={selectedPage?.label} 
+          />
+        </Box>
       </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>

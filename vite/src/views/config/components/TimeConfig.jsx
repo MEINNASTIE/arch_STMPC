@@ -17,13 +17,33 @@ const TimeConfig = () => {
   const [tempTime, setTempTime] = useState(null);
 
   const timezones = [
-    'UTC',
-    'America/New_York',
-    'America/Los_Angeles',
-    'Europe/London',
-    'Europe/Paris',
-    'Asia/Tokyo',
-    'Australia/Sydney'
+    { id: 'UTC', label: 'UTC', offset: 0 },
+    { id: 'UTC-12', label: 'UTC-12:00', offset: -12 },
+    { id: 'UTC-11', label: 'UTC-11:00', offset: -11 },
+    { id: 'UTC-10', label: 'UTC-10:00', offset: -10 },
+    { id: 'UTC-9', label: 'UTC-09:00', offset: -9 },
+    { id: 'UTC-8', label: 'UTC-08:00', offset: -8 },
+    { id: 'UTC-7', label: 'UTC-07:00', offset: -7 },
+    { id: 'UTC-6', label: 'UTC-06:00', offset: -6 },
+    { id: 'UTC-5', label: 'UTC-05:00', offset: -5 },
+    { id: 'UTC-4', label: 'UTC-04:00', offset: -4 },
+    { id: 'UTC-3', label: 'UTC-03:00', offset: -3 },
+    { id: 'UTC-2', label: 'UTC-02:00', offset: -2 },
+    { id: 'UTC-1', label: 'UTC-01:00', offset: -1 },
+    { id: 'UTC+1', label: 'UTC+01:00', offset: 1 },
+    { id: 'UTC+2', label: 'UTC+02:00', offset: 2 },
+    { id: 'UTC+3', label: 'UTC+03:00', offset: 3 },
+    { id: 'UTC+4', label: 'UTC+04:00', offset: 4 },
+    { id: 'UTC+5', label: 'UTC+05:00', offset: 5 },
+    { id: 'UTC+6', label: 'UTC+06:00', offset: 6 },
+    { id: 'UTC+7', label: 'UTC+07:00', offset: 7 },
+    { id: 'UTC+8', label: 'UTC+08:00', offset: 8 },
+    { id: 'UTC+9', label: 'UTC+09:00', offset: 9 },
+    { id: 'UTC+10', label: 'UTC+10:00', offset: 10 },
+    { id: 'UTC+11', label: 'UTC+11:00', offset: 11 },
+    { id: 'UTC+12', label: 'UTC+12:00', offset: 12 },
+    { id: 'UTC+13', label: 'UTC+13:00', offset: 13 },
+    { id: 'UTC+14', label: 'UTC+14:00', offset: 14 }
   ];
 
   useEffect(() => {
@@ -42,6 +62,9 @@ const TimeConfig = () => {
 
   const handleModeChange = () => {
     setIsAuto(!isAuto);
+    if (!isAuto) {
+      setTime(new Date());
+    }
   };
 
   const handleDateChange = (newDate) => {
@@ -56,28 +79,38 @@ const TimeConfig = () => {
 
   const handleTimeConfirm = () => {
     if (tempTime) {
-      setTime(tempTime);
+      const newTime = new Date(tempTime);
+      setTime(newTime);
+      if (isAuto) {
+        setIsAuto(false);
+      }
     }
     setShowTimePicker(false);
     setTempTime(null);
   };
 
+  const getAdjustedTime = (date) => {
+    if (selectedTimezone === 'UTC') {
+      return date;
+    }
+    
+    const timezone = timezones.find(tz => tz.id === selectedTimezone);
+    if (!timezone) return date;
+    
+    const offset = timezone.offset;
+    return new Date(date.getTime() + offset * 60 * 60 * 1000);
+  };
+
   const formatTime = (date) => {
-    return date.toLocaleTimeString('en-US', {
-      timeZone: selectedTimezone,
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+    const adjustedDate = getAdjustedTime(date);
+    return format(adjustedDate, 'HH:mm:ss');
   };
 
   return (
     <Box sx={{ mb: 4 }}>
       <Paper elevation={3} sx={{ p: 3, mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          
-          <AnalogClock time={time} />
+          <AnalogClock time={getAdjustedTime(time)} />
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
@@ -96,7 +129,7 @@ const TimeConfig = () => {
             onClick={() => setShowTimePicker(true)}
             fullWidth
           >
-            {format(time, 'HH:mm:ss')}
+            {formatTime(time)}
           </Button>
         </Box>
 
@@ -108,8 +141,8 @@ const TimeConfig = () => {
             label="Timezone"
           >
             {timezones.map((tz) => (
-              <MenuItem key={tz} value={tz}>
-                {tz}
+              <MenuItem key={tz.id} value={tz.id}>
+                {tz.label}
               </MenuItem>
             ))}
           </Select>
@@ -120,6 +153,7 @@ const TimeConfig = () => {
           onClick={handleModeChange}
           sx={{ mb: 2 }}
           fullWidth
+          color={isAuto ? 'primary' : 'secondary'}
         >
           {isAuto ? 'Switch to Manual' : 'Switch to Auto'}
         </Button>
@@ -154,11 +188,9 @@ const TimeConfig = () => {
                 ampm={true}
                 orientation="portrait"
                 views={['hours', 'minutes']}
+                onAccept={handleTimeConfirm}
+                onClose={handleTimeDialogClose}
                 sx={{
-                  '& .MuiPickersToolbar-root': {
-                    color: 'primary.main',
-                    bgcolor: 'background.paper',
-                  },
                   '& .MuiClock-pin': {
                     bgcolor: 'primary.main',
                   },
@@ -172,10 +204,6 @@ const TimeConfig = () => {
                 }}
               />
             </DialogContent>
-            <DialogActions>
-              <Button onClick={handleTimeDialogClose}>Cancel</Button>
-              <Button onClick={handleTimeConfirm} color="primary">OK</Button>
-            </DialogActions>
           </Dialog>
         </LocalizationProvider>
       </Paper>

@@ -1,8 +1,3 @@
-/**
- * Typography used in theme
- * @param {JsonObject} theme theme customization object
- */
-
 export default function themeTypography(theme) {
   return {
     fontFamily: theme?.customization?.fontFamily,

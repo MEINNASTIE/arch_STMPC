@@ -281,7 +281,6 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         display: "flex",
         flexDirection: 'column',
         flexBasis: (filterType === "advanced" || filterType === "time") ? "0" : "80%",
-        maxWidth: "1500px",
         marginLeft: "10px"
       }}
     >

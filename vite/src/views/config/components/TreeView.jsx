@@ -35,11 +35,12 @@ function TreeView({ treeData, handleFilterChange }) {
   return (
     <Box
       sx={{
-        flexBasis: "15%",
+        flexBasis: "35%",
         maxHeight: "calc(100vh - 150px)",
         overflow: "auto",
         border: "1px solid #ddd",
         borderRadius: "8px",
+        maxWidth: "300px"
       }}
     >
       <List>
