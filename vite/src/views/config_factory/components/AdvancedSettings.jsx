@@ -24,16 +24,8 @@ function AdvancedSettings({
         label="Show Waiting Last Value"
       />
       <FormControlLabel
-        control={<Checkbox checked={showAppId} onChange={toggleAppId} />}
-        label="Show (app: ID)"
-      />
-      <FormControlLabel
         control={<Checkbox checked={showAllRTValues} onChange={toggleAllRTValues} />}
         label="Show All RT Values"
-      />
-      <FormControlLabel
-        control={<Checkbox checked={showWaiting} onChange={toggleShowWaiting} />}
-        label="Show Waiting"
       />
       <FormControlLabel
         control={<Checkbox checked={showGK} onChange={toggleGK} />}

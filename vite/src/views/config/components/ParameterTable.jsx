@@ -5,7 +5,7 @@ import { Box } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
 import Clock from "./TimeConfig";
 
-export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel }) {
+export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel, onShowWaitingChange }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWaitingHint, setShowWaitingHint] = useState(
     JSON.parse(localStorage.getItem("showWaitingHint")) ?? true
@@ -112,6 +112,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     const newValue = !showWaiting;
     setShowWaiting(newValue);
     localStorage.setItem("showWaiting", JSON.stringify(newValue));
+    onShowWaitingChange?.(newValue);
   };
 
   const toggleGK = () => {
@@ -259,28 +260,28 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         marginLeft: "10px"
       }}
     >
+       <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', marginTop: '10px'}}>
       <Typography 
         variant="h3" 
         sx={{ 
-          marginBottom: 1,
+         
           fontWeight: "bold",
-          marginTop: "10px"
         }}
       >
-        {groupLabel}
+        {filterType === "all" ? "All Parameters" : groupLabel}
       </Typography>
-      {pageLabel && (
+      {pageLabel && filterType !== "all" && (
         <Typography 
-          variant="h5" 
+          variant="h4" 
           sx={{ 
-            marginBottom: 2,
             color: "#666",
-            marginLeft: "2px"
+            marginTop: '1px'
           }}
         >
           {pageLabel}
         </Typography>
       )}
+      </Box>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
         {filterType !== "advanced" && filterType !== "time" &&(
           <>
@@ -307,7 +308,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       {filterType !== "advanced" && filterType !== "time" && (
         <TableContainer
           component={Paper}
-          sx={{ flexBasis: "100%", maxHeight: "calc(90vh - 150px)", overflow: "auto" }}
+          sx={{ flexBasis: "70%", maxHeight: "calc(90vh - 150px)", overflow: "auto" }}
         >
           <DataTable
             columns={columns}
@@ -337,7 +338,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           color="primary"
           onClick={handleApply}
           size="large"
-          sx={{ width: "100px", alignSelf: "left", marginTop: "-10px"}}
+          sx={{ width: "100px", alignSelf: "left", marginTop: "40px"}}
         >
           Apply
         </Button>

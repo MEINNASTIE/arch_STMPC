@@ -65,7 +65,6 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     
     return data.map(field => ({
       ...field,
-      index: field.gk,
       val_new: field.val_new || '',
       val_new_last: field.val_new_last || '',
       val_rt: field.val_rt || [],
@@ -162,54 +161,43 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       name: "New Value",
       cell: (row) => {
         const listOptions = resolveList(row, refs);
+        const currentValue = row.val_new;
+        
+        // keep this section in mind if changed
+        const normalizedValue = listOptions && listOptions.length > 0 && typeof listOptions[0].value === 'number' 
+          ? Number(currentValue) 
+          : currentValue;
+          
+        const currentLabel = listOptions?.find(opt => opt.value === normalizedValue)?.label || currentValue;
     
-        return typeof row.list === "string" && row.list.startsWith("$ref:") ? (
-          <Select
-            value={row.val_new}
-            onChange={(e) => handleInputChange(row.index, e.target.value)}
-            variant="outlined"
-            sx={{
-              width: "100%",
-              height: "40px",
-              fontSize: "14px",
-              margin: "5px 0px",
-              "& .MuiSelect-select": {
-                padding: "5px",
-              },
-            }}
-            onClick={() => handleOpenRefModal(row)} 
-          >
-            <MenuItem disabled>Select from List</MenuItem>
-            {listOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-        ) : row.type === "list" ? (
-          <Select
-            value={row.val_new}
-            onChange={(e) => handleInputChange(row.index, e.target.value)}
-            variant="outlined"
-            sx={{
-              width: "100%",
-              height: "40px",
-              fontSize: "14px",
-              margin: "5px 0px",
-              "& .MuiSelect-select": {
-                padding: "5px",
-              },
-            }}
-          >
-            {listOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-        ) : (
+        if (typeof row.list === "string" && row.list.startsWith("$ref:") || row.type === "list") {
+          return (
+            <Select
+              value={normalizedValue}
+              onChange={(e) => handleInputChange(row.index, e.target.value)}
+              variant="outlined"
+              sx={{
+                width: "100%",
+                height: "40px",
+                fontSize: "14px",
+                margin: "5px 0px",
+                "& .MuiSelect-select": {
+                  padding: "5px",
+                },
+              }}
+            >
+              {listOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        }
+        
+        return (
           <TextField
-            value={row.val_new}
+            value={currentLabel}
             onChange={(e) => handleInputChange(row.index, e.target.value)}
             variant="outlined"
             sx={{
@@ -291,9 +279,9 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           fontWeight: "bold",
         }}
       >
-        {groupLabel} 
+        {filterType === "all" ? "All Parameters" : groupLabel} 
       </Typography>
-      {pageLabel && (
+      {pageLabel && filterType !== "all" && (
         <Typography 
           variant="h4" 
           sx={{ 
@@ -361,7 +349,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           color="primary"
           onClick={handleApply}
           size="large"
-          sx={{ width: "100px", alignSelf: "left", marginTop: "-10px"}}
+          sx={{ width: "100px", alignSelf: "left", marginTop: "40px"}}
         >
           Apply
         </Button>
@@ -383,7 +371,6 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           toggleGK={toggleGK}
         />
       </Box>
-      
     )}
   </>
   );

@@ -13,6 +13,9 @@ function ConfigMain() {
   const [refs, setRefs] = useState({});
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedPage, setSelectedPage] = useState(null);
+  const [visibleGroups, setVisibleGroups] = useState(new Set());
+  const [showWaiting, setShowWaiting] = useState(true);
+  const [originalGroups, setOriginalGroups] = useState([]);
 
   // State for dialog
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -22,7 +25,7 @@ function ConfigMain() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://192.168.164.158/api/config/runtime-desc");
+        const response = await fetch("/api/config/runtime-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();
@@ -39,6 +42,20 @@ function ConfigMain() {
 
     fetchData();
   }, []);
+
+  // Add this new useEffect
+  useEffect(() => {
+    if (tableData.length > 0) {
+      const newVisibleGroups = new Set();
+      tableData.forEach(row => {
+        if (row.state !== 'U') { 
+          const groupLabel = row.groupPage.split(' > ')[0];
+          newVisibleGroups.add(groupLabel);
+        }
+      });
+      setVisibleGroups(newVisibleGroups);
+    }
+  }, [tableData]);
 
 // useEffect(() => {
 //   const data = runtimeDescData;
@@ -72,6 +89,7 @@ function ConfigMain() {
 
   const populateTree = (groups) => {
     console.log("Populating tree with groups:", groups);
+    setOriginalGroups(groups);
 
     const allItem = {
       label: "Change",
@@ -101,6 +119,27 @@ function ConfigMain() {
 
     setTreeData([allItem, ...groupItems]);
   };
+
+  useEffect(() => {
+    if (tableData.length > 0) {
+      const newVisibleGroups = new Set();
+      tableData.forEach(row => {
+        if (showWaiting || row.state !== 'U') { 
+          const groupLabel = row.groupPage.split(' > ')[0];
+          newVisibleGroups.add(groupLabel);
+        }
+      });
+      setVisibleGroups(newVisibleGroups);
+
+      setTreeData(prevTreeData => {
+        const [allItem, ...groupItems] = prevTreeData;
+        const filteredGroupItems = groupItems.filter(group => 
+          showWaiting || newVisibleGroups.has(group.label)
+        );
+        return [allItem, ...filteredGroupItems];
+      });
+    }
+  }, [tableData, showWaiting]);
 
   const populateTable = (groups) => {
     console.log("Populating table with payload:", groups);
@@ -206,6 +245,41 @@ function ConfigMain() {
     }
   };
 
+  const handleShowWaitingChange = (newValue) => {
+    setShowWaiting(newValue);
+  
+    if (newValue) {
+      setTreeData(prevTreeData => {
+        const [allItem] = prevTreeData;
+        const restoredGroups = originalGroups.map(group => ({
+          label: group.label || "Unnamed Group",
+          pages: group.pages.map(page => ({
+            label: page.label || "Unnamed Page",
+            id: page.id,
+            onClick: () => handleFilterChange(page.id, group, page),
+          })),
+        }));
+        return [allItem, ...restoredGroups];
+      });
+    } else {
+      const newVisibleGroups = new Set();
+      tableData.forEach(row => {
+        if (row.state !== 'U') {
+          const groupLabel = row.groupPage.split(' > ')[0];
+          newVisibleGroups.add(groupLabel);
+        }
+      });
+      
+      setTreeData(prevTreeData => {
+        const [allItem, ...groupItems] = prevTreeData;
+        const filteredGroupItems = groupItems.filter(group => 
+          newVisibleGroups.has(group.label)
+        );
+        return [allItem, ...filteredGroupItems];
+      });
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -219,7 +293,20 @@ function ConfigMain() {
     >
       <Tabs value={0} centered></Tabs>
       <Box display="flex" flexGrow={1} gap={2} p={2}>
+      <Box sx={{ 
+          width: { xs: '30%', sm: '25%', md: '20%' },
+          minWidth: '200px',
+          maxWidth: '300px',
+          overflow: 'auto'
+        }}>
         <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
+        </Box>
+        <Box sx={{ 
+          flex: 1,
+          width: '100%',
+          height: "650px",
+          overflow: 'auto'
+        }}>
         <ParameterTable 
           tableData={getFilteredData()} 
           handleApply={handleApply} 
@@ -229,8 +316,9 @@ function ConfigMain() {
           handleFilterChange={handleFilterChange} 
           refs={refs}
           groupLabel={selectedGroup?.label}
-          pageLabel={selectedPage?.label} 
-        />
+          pageLabel={selectedPage?.label}
+          onShowWaitingChange={handleShowWaitingChange}
+        /></Box>
       </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>

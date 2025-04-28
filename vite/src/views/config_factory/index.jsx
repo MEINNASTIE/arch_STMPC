@@ -22,7 +22,7 @@ function ConfigMainFactory() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://192.168.164.158/api/config/system-desc");
+        const response = await fetch("api/config/system-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();
@@ -107,20 +107,27 @@ function ConfigMainFactory() {
     
     const rows = groups.flatMap((group, groupIdx) =>
       group.pages.flatMap((page, pageIdx) =>
-        page.fields.map((field, fieldIdx) => ({
-          index: field.gk,
-          label: field.label,
-          gk: field.gk,
-          type: field.type,  
-          list: field.list,
-          val_new: field.val || '',
-          val_rt: [],
-          state: 'A',
-          groupPage: `${group.label || "Unnamed Group"} > ${page.label || "Unnamed Page"}`,
-          pageId: page.id,
-          val_new_last: field.val || '',
-          selected: false,
-        }))
+        page.fields.map((field, fieldIdx) => {
+          // For list type fields, ensure we preserve the original value type
+          const initialValue = field.type === 'list' ? 
+            (typeof field.val === 'string' ? field.val : String(field.val)) : 
+            field.val;
+
+          return {
+            index: `${groupIdx + 1}.${pageIdx + 1}.${fieldIdx + 1}`,
+            label: field.label,
+            gk: field.gk,
+            type: field.type,  
+            list: field.list,
+            val_new: initialValue,
+            val_rt: [],
+            state: 'A',
+            groupPage: `${group.label || "Unnamed Group"} > ${page.label || "Unnamed Page"}`,
+            pageId: page.id,
+            val_new_last: initialValue,
+            selected: false,
+          };
+        })
       )
     );
   
@@ -172,7 +179,7 @@ function ConfigMainFactory() {
       .filter((row) => row.selected)
       .map((row) => ({
         gk: row.gk,
-        val_new: row.val_new,
+        val_rt: row.val_new,
       }));
 
     if (selectedData.length === 0) {
@@ -182,7 +189,7 @@ function ConfigMainFactory() {
     }
 
     try {
-      const response = await fetch("/api/config/runtime", {
+      const response = await fetch("/api/config/system", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(selectedData),
@@ -221,7 +228,7 @@ function ConfigMainFactory() {
       <Box display="flex" flexGrow={1} gap={2} p={2}>
         <Box sx={{ 
           width: { xs: '30%', sm: '25%', md: '20%' },
-          minWidth: '200px',
+          minWidth: '300px',
           maxWidth: '300px',
           overflow: 'auto'
         }}>
@@ -229,7 +236,8 @@ function ConfigMainFactory() {
         </Box>
         <Box sx={{ 
           flex: 1,
-          minWidth: '300px',
+          minWidth: '100%',
+          height: "650px",
           overflow: 'auto'
         }}>
           <ParameterTable 
