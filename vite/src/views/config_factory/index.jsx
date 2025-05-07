@@ -14,7 +14,6 @@ function ConfigMainFactory() {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedPage, setSelectedPage] = useState(null);
 
-  // State for dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
 
@@ -22,7 +21,7 @@ function ConfigMainFactory() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("api/config/system-desc");
+        const response = await fetch("/config/system-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();

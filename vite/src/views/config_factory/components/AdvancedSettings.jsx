@@ -24,10 +24,6 @@ function AdvancedSettings({
         label="Show Waiting Last Value"
       />
       <FormControlLabel
-        control={<Checkbox checked={showAllRTValues} onChange={toggleAllRTValues} />}
-        label="Show All RT Values"
-      />
-      <FormControlLabel
         control={<Checkbox checked={showGK} onChange={toggleGK} />}
         label="Show GK"
       />

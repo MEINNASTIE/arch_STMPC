@@ -58,8 +58,15 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, tableData, getStatusText, showWaiting]);
 
+  useEffect(() => {
+    const savedSearchTerm = localStorage.getItem("searchTerm") || "";
+    setSearchTerm(savedSearchTerm);
+  }, []);
+
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    localStorage.setItem("searchTerm", newSearchTerm);
   };
 
   const handleSearchBlur = () => {

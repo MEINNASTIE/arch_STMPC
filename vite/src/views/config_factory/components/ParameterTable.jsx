@@ -39,15 +39,22 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     return option ? option.label : value;
   };
   
-  const renderUsedInSystem = (valRt, list) => {
-    if (valRt && valRt.length > 0) {
-      return valRt.map(rt => 
-        showAppId 
-          ? `${getLabel(list, rt.val)} (app: ${rt.app_id})` 
-          : `${getLabel(list, rt.val)}`
-      ).join(", ");
-    }
-    return "-unknown-";
+  const renderUsedInSystem = (valRt, list, row) => {
+    const usedInSystem = valRt && valRt.length > 0 
+      ? valRt.map(rt => 
+          showAppId 
+            ? `${getLabel(list, rt.val)} (app: ${rt.app_id})` 
+            : `${getLabel(list, rt.val)}`
+        ).join(", ")
+      : "";
+
+    const originalValue = row.val_new_last || row.val; 
+    const normalizedValue = list && list.length > 0 && typeof list[0].value === 'number' 
+      ? Number(originalValue) 
+      : originalValue;
+    const originalLabel = list?.find(opt => opt.value === normalizedValue)?.label || originalValue;
+
+    return usedInSystem ? `${usedInSystem}, ${originalLabel}` : `${originalLabel}`;
   };
 
   const resolveList = (row, refs) => {
@@ -75,15 +82,16 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     }));
   };
 
+  const handleSearchChange = (e) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    localStorage.setItem("searchTerm", newSearchTerm);
+  };
+
   useEffect(() => {
-    console.log("Table Data received:", tableData);
-    console.log("Refs received:", refs);
-    
     const handleSearch = async () => {
       const searchTermLower = searchTerm.toLowerCase();
       const transformedData = transformData(tableData);
-      console.log("Transformed Data:", transformedData);
-      
       const result = transformedData.filter((row) => {
         if (!showWaiting && row.state === 'U') {
           return false;
@@ -95,7 +103,6 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           getStatusText(row.state).includes(searchTermLower)
         );
       });
-      console.log("Filtered Data:", result);
       setFilteredData(result);
     };
 
@@ -105,10 +112,6 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, tableData, getStatusText, showWaiting]);
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
 
   const handleSearchBlur = () => {
     setSearchTerm("");
@@ -216,41 +219,9 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     },
     {
       name: "Used in System", 
-      cell: (row) => renderUsedInSystem(row.val_rt, row.list), 
+      cell: (row) => renderUsedInSystem(row.val_rt, row.list, row), 
       width: "150px"
     },
-    showAllRTValues && { 
-      name: "All RT Values", 
-      cell: (row) => row.val_rt && row.val_rt.length > 0 
-        ? row.val_rt.map(rt => 
-            `${rt.app_id}: ${Array.isArray(rt.val) 
-              ? rt.val.map(v => getLabel(row.list, v)).join(", ") 
-              : getLabel(row.list, rt.val)}`
-          ).join(<br />)
-        : "-",
-      width: "150px"
-    },
-    {
-      name: "Status",
-      cell: (row) => {
-        const statusMap = {
-          A: <div className="status-A">Applied</div>,
-          P: <div className="status-P">Applying {getLabel(row.list, row.val_new_last)}</div>,
-          R: (
-            <div className="status-R">
-              Rejected {row.type === "list" ? getLabel(row.list, row.val_new_last) : row.val_new_last}
-            </div>
-          ),
-          U: showWaiting ? (
-            <div className="status-U">
-              Waiting {showWaitingHint ? row.val_new_last || "" : ""}
-            </div>
-          ) : null, 
-        };
-        return statusMap[row.state] || "";
-      },
-      width: "200px",
-    },    
     showGK && { name: "GK", selector: (row) => row.gk, width: "390px" },
   ].filter(Boolean);
 
@@ -293,7 +264,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         </Typography>
       )}
       </Box>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "82%" }}>
         {filterType !== "advanced" && filterType !== "time" &&(
           <>
             <TextField

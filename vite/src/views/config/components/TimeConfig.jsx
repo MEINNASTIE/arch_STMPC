@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Select, MenuItem, FormControl, InputLabel, Button, TextField, Paper,Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Select, MenuItem, FormControl, InputLabel, Button, TextField, Paper, Dialog, DialogTitle, DialogContent } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker, StaticTimePicker } from '@mui/x-date-pickers';
 import { format } from 'date-fns';
@@ -77,16 +77,11 @@ const TimeConfig = () => {
     setTempTime(null);
   };
 
-  const handleTimeConfirm = () => {
-    if (tempTime) {
-      const newTime = new Date(tempTime);
+  const handleTimeConfirm = (newTime) => {
+    if (newTime) {
       setTime(newTime);
-      if (isAuto) {
-        setIsAuto(false);
-      }
     }
     setShowTimePicker(false);
-    setTempTime(null);
   };
 
   const getAdjustedTime = (date) => {
@@ -173,13 +168,6 @@ const TimeConfig = () => {
           <Dialog 
             open={showTimePicker} 
             onClose={handleTimeDialogClose}
-            PaperProps={{
-              sx: {
-                '& .MuiDialogContent-root': {
-                  padding: 0,
-                },
-              },
-            }}
           >
             <DialogContent>
               <StaticTimePicker
@@ -190,18 +178,6 @@ const TimeConfig = () => {
                 views={['hours', 'minutes']}
                 onAccept={handleTimeConfirm}
                 onClose={handleTimeDialogClose}
-                sx={{
-                  '& .MuiClock-pin': {
-                    bgcolor: 'primary.main',
-                  },
-                  '& .MuiClockPointer-root': {
-                    bgcolor: 'primary.main',
-                  },
-                  '& .MuiClockPointer-thumb': {
-                    bgcolor: 'primary.main',
-                    borderColor: 'primary.main',
-                  },
-                }}
               />
             </DialogContent>
           </Dialog>

@@ -17,7 +17,6 @@ function ConfigMain() {
   const [showWaiting, setShowWaiting] = useState(true);
   const [originalGroups, setOriginalGroups] = useState([]);
 
-  // State for dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
 
@@ -43,7 +42,6 @@ function ConfigMain() {
     fetchData();
   }, []);
 
-  // Add this new useEffect
   useEffect(() => {
     if (tableData.length > 0) {
       const newVisibleGroups = new Set();

@@ -5,7 +5,26 @@ import Plot from 'react-plotly.js';
 const MeasurementPage = () => {
   return (
     <MainCard title="Measurement Status SpectroTRACER">
-      <Grid container spacing={2}>
+      <Box 
+        sx={{ 
+          p: 3,
+          height: 'calc(100vh - 200px)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          textAlign: 'center'
+        }}
+      >
+        <Typography variant="h4" component="h1" gutterBottom>
+          SpectroTRACER 
+        </Typography>
+        <Typography variant="body1">
+          Sample page, more features to come
+        </Typography>
+      </Box>
+
+      {/* <Grid container spacing={2}>
         <Grid item xs={3}>
           <Box>
             <Typography variant="h6">Sidebar where more info and table will go</Typography>
@@ -69,7 +88,7 @@ const MeasurementPage = () => {
             </Typography>
           </Box>
         </Grid>
-      </Grid>
+      </Grid> */}
     </MainCard>
   );
 };

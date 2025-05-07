@@ -13,6 +13,8 @@ const AuthCardWrapper = ({ children, ...other }) => {
   const theme = useTheme();
   return  (
   <MainCard
+    border={true}
+    borderColor={theme.palette.primary.main}
     sx={{
       maxWidth: { xs: 400, lg: 475 },
       margin: { xs: 2.5, md: 3 },
@@ -20,8 +22,6 @@ const AuthCardWrapper = ({ children, ...other }) => {
         flexGrow: 1,
         flexBasis: '50%'
       },
-      border: '3px solid', 
-      borderColor: theme.palette.primary.main,
       backgroundColor: 'white'
     }}
     content={false}
