@@ -1,6 +1,0 @@
-# virtual environment python 
-venv/
-
-# gunicorn socket 
-gunicorn.sock
-config.py

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography } from "@mui/material";
 import DataTable from "react-data-table-component";
 import { Box } from "@mui/system";
@@ -66,33 +66,14 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     return Array.isArray(row.list) ? row.list : [];
   };
 
-  const transformData = (data) => {
-    console.log("Transforming data:", data);
-    if (!data) return [];
-    
-    return data.map(field => ({
-      ...field,
-      val_new: field.val_new || '',
-      val_new_last: field.val_new_last || '',
-      val_rt: field.val_rt || [],
-      state: field.state || 'A',
-      selected: field.selected || false,
-      list: field.list || [],
-      type: field.type || 'text'
-    }));
-  };
-
-  const handleSearchChange = (e) => {
-    const newSearchTerm = e.target.value;
-    setSearchTerm(newSearchTerm);
-    localStorage.setItem("searchTerm", newSearchTerm);
-  };
+  useEffect(() => {
+    setFilteredData(tableData); 
+  }, [tableData]);
 
   useEffect(() => {
     const handleSearch = async () => {
       const searchTermLower = searchTerm.toLowerCase();
-      const transformedData = transformData(tableData);
-      const result = transformedData.filter((row) => {
+      const filtered = tableData.filter((row) => {
         if (!showWaiting && row.state === 'U') {
           return false;
         }
@@ -100,21 +81,33 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           row.label.toLowerCase().includes(searchTermLower) ||
           row.index.toLowerCase().includes(searchTermLower) ||
           row.gk.toLowerCase().includes(searchTermLower) ||
-          getStatusText(row.state).includes(searchTermLower)
+          getStatusText(row.state).toLowerCase().includes(searchTermLower)
         );
       });
-      setFilteredData(result);
+      setFilteredData((prevFilteredData) => {
+        if (JSON.stringify(prevFilteredData) !== JSON.stringify(filtered)) {
+          return filtered;
+        }
+        return prevFilteredData;
+      });
     };
 
     const delayDebounceFn = setTimeout(() => {
       handleSearch();
-    }, 300); 
+    }, 100); 
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, tableData, getStatusText, showWaiting]);
 
-  const handleSearchBlur = () => {
-    setSearchTerm("");
+  useEffect(() => {
+    const savedSearchTerm = localStorage.getItem("searchTerm") || "";
+    setSearchTerm(savedSearchTerm);
+  }, []);
+
+  const handleSearchChange = (e) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    localStorage.setItem("searchTerm", newSearchTerm);
   };
   
   const toggleWaitingHint = () => {
@@ -147,7 +140,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     localStorage.setItem("showGK", JSON.stringify(newValue));
   };
 
-  const columns = [
+  const columns =  useMemo(() => [
     {
       cell: (row) => (
         <input
@@ -219,11 +212,46 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     },
     {
       name: "Used in System", 
-      cell: (row) => renderUsedInSystem(row.val_rt, row.list, row), 
-      width: "150px"
+      cell: (row) => {
+        const usedInSystemValue = renderUsedInSystem(row.val_rt, row.list, row);
+        
+        if (usedInSystemValue.length > 30) {
+          return (
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              style={{
+                width: "100%",
+                minHeight: "40px",
+                maxHeight: "40px",
+                resize: "both",
+                overflow: "auto",
+                padding: "5px",
+                margin: "5px",
+                fontSize: "14px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                backgroundColor: "transparent",
+              }}
+            >
+              {usedInSystemValue}
+            </div>
+          );
+        }
+        
+        return (
+          <Typography variant="body2" sx={{ margin: "5px 0px" }}>
+            {usedInSystemValue}
+          </Typography>
+        );
+      },
+      width: "350px"
     },
     showGK && { name: "GK", selector: (row) => row.gk, width: "390px" },
-  ].filter(Boolean);
+  ], [handleRowSelect, handleInputChange]).filter(Boolean);
+
+  const memoizedColumns = useMemo(() => columns, [columns]);
+  const memoizedData = useMemo(() => filteredData, [filteredData]);
 
   return (
     <>
@@ -272,31 +300,30 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
               variant="outlined"
               value={searchTerm}
               onChange={handleSearchChange}
-              onBlur={handleSearchBlur}
               sx={{ width: "20%" }}
             />
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              sx={{ width: "160px", marginRight: "20px" }}
-              onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
-            >
-              Show Selected
-            </Button>
+            {filterType !== "selected" && (
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                sx={{ width: "270px", marginRight: "20px", marginBottom: "20px"}}
+                onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
+              >
+                Preview Selected Changes
+              </Button>
+            )}
           </>
         )}
       </Box>
       {filterType !== "advanced" && filterType !== "time" && (
         <TableContainer
           component={Paper}
-          sx={{ flexBasis: "70%", maxHeight: "calc(90vh - 150px)", overflow: "auto" }}
+          sx={{ flexBasis: "70%"}}
         >
           <DataTable
-            columns={columns}
-            data={filteredData}
-            fixedHeader
-            fixedHeaderScrollHeight="calc(90vh - 150px)"
+            columns={memoizedColumns}
+            data={memoizedData}
             highlightOnHover
             customStyles={{
               cells: {
@@ -320,9 +347,9 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           color="primary"
           onClick={handleApply}
           size="large"
-          sx={{ width: "100px", alignSelf: "left", marginTop: "40px"}}
+          sx={{ width: "160px", alignSelf: "left", marginTop: "40px",  backgroundColor: "#FFD700 !important", color: "black !important"}}
         >
-          Apply
+          Apply Changes
         </Button>
       )}
     </Box>

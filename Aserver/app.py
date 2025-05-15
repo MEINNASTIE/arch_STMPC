@@ -34,6 +34,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# keep in mind for production time
+# @app.middleware("http")
+# async def restrict_api_access(request: Request, call_next):
+#     if request.url.path.startswith(API_BASE_URL):
+#         token = request.headers.get('Authorization')
+#         if not token or not token.startswith('Bearer '):
+#             raise HTTPException(status_code=403, detail="Access denied to this API endpoint")
+
+#         token = token.split()[1]
+#         try:
+#             payload = verify_token(token)
+#         except HTTPException as e:
+#             raise e  
+
+#     response = await call_next(request)
+#     return response
 
 def generate_jwt(user_id: str, allow_api=False):
     payload = {

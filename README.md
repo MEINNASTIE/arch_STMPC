@@ -47,3 +47,29 @@ ssl key - /etc/ssl/private/nginx-selfsigned.key
 
 
 https://chatgpt.com/share/67fcd574-ffac-800b-9fa8-055333cf3a08
+
+
+{
+	"returnCode": 0,
+	"duration": 3,
+	"mpcSN": "STNC0458",
+	"errorText": "",
+	"errorTextDetails": "",
+	"payload": {
+		"userId": "78368428-1466-4f0b-b25d-e8e17caa4f88",
+		"username": "admin",
+		"enabled": 1,
+		"expDate": "2999-01-01T00:00:00+00:00",
+		"rolename": "admin",
+		"rights": {
+			"system_time": "rwx",
+			"api/config/user": "rw",
+			"api/config/system": "rw"
+		}
+	},
+	"nowUTC": "2025-04-17 07:02:00+00:00",
+	"nowLocal": "2025-04-17 07:02:00+00:00",
+	"TimeDiffServerClient": 0,
+	"TimeZoneDiffServerClient": 0,
+	"payloadLen": -1
+}

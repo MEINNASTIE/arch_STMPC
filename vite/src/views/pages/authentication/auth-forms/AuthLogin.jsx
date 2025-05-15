@@ -18,6 +18,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import CryptoJS from 'crypto-js';
 import { useAuth } from 'contexts/AuthContext';
 
+// conideration to shift to Aserver 
 const secretKey = "9rqD*1:fzOi4<</mj2Hk%*6\Yd!:£'";
 
 const generateHashB64 = async (username, password) => {
@@ -127,6 +128,7 @@ const AuthLogin = () => {
   
       if (response.status === 201) {
         navigate('/main');
+        window.location.reload();
       }
     } catch (error) {
       setErrors({ submit: 'Error initializing admin account' });

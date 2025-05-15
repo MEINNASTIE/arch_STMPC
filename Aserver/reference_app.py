@@ -22,7 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 def generate_jwt(user_id: str, allow_api=False):
     payload = {
         'sub': user_id,

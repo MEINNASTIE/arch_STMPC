@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Box, Tabs, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from "@mui/material";
+import React, { useState, useEffect, useCallback } from "react";
+import { Box, Tabs } from "@mui/material";
 import TreeView from "./components/TreeView";
 import ParameterTable from "./components/ParameterTable";
-
-// only for testing at home purposes
-import runtimeDescData from './RuntimeConfigDesc_en.json'; 
+import ApplyMessage from "./components/ApplyMessage";
 
 function ConfigMain() {
   const [tableData, setTableData] = useState([]);
@@ -24,21 +22,27 @@ function ConfigMain() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/config/runtime-desc");
+        const response = await fetch("https://192.168.164.158/api/config/runtime-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
+  
         const data = await response.json();
         console.log("Loaded runtimeDescData:", data);
-
-        resolveRefs(data.payload);
-        populateTree(data.payload.groups);
-        populateTable(data.payload.groups);
+  
+        processData(data.payload); 
         setRefs(data.payload.refs);
       } catch (error) {
         console.error("Failed to fetch runtime description:", error);
+      } finally {
+        setShowWaiting(true);
       }
     };
-
+  
+    const processData = (payload) => {
+      resolveRefs(payload);
+      populateTree(payload.groups);
+      populateTable(payload.groups);
+    };
+  
     fetchData();
   }, []);
 
@@ -54,16 +58,6 @@ function ConfigMain() {
       setVisibleGroups(newVisibleGroups);
     }
   }, [tableData]);
-
-// useEffect(() => {
-//   const data = runtimeDescData;
-//   console.log("Loaded runtimeDescData:", data);
-
-//   resolveRefs(data.payload);
-//   populateTree(data.payload.groups);
-//   populateTable(data.payload.groups);
-//   setRefs(data.payload.refs);
-// }, []);
 
   const resolveRefs = (payload) => {
     console.log("Resolving references in payload:", payload);
@@ -178,7 +172,6 @@ function ConfigMain() {
         return tableData.filter((row) => row.pageId === filterType);
     }
   };
-  
 
   const handleRowSelect = (rowIndex) => {
     setTableData((prev) =>
@@ -188,16 +181,17 @@ function ConfigMain() {
     );
   };  
 
-  const handleInputChange = (rowIndex, value) => {
-    setTableData((prev) =>
-      prev.map((row) =>
+  const handleInputChange = useCallback((rowIndex, value) => {
+    setTableData((prev) => {
+      const updatedData = prev.map((row) =>
         row.index === rowIndex
-          ? { ...row, val_new: value, selected: true } 
+          ? { ...row, val_new: value, selected: true }
           : row
-      )
-    );
-  };
-
+      );
+      return updatedData;
+    });
+  }, []);
+  
   const handleFilterChange = (filter, group, page) => {
     setFilterType(filter);
     setSelectedGroup(group);
@@ -206,42 +200,49 @@ function ConfigMain() {
 
   const handleApply = async () => {
     const selectedData = tableData
-      .filter((row) => row.selected)
-      .map((row) => ({
-        gk: row.gk,
-        val_new: row.val_new,
-      }));
+        .filter((row) => row.selected)
+        .map((row) => ({
+            gk: row.gk,
+            type: row.type,
+            label: row.label,
+            list: row.list,
+            val: {
+                new: row.val_new.new,
+                rt: row.val_new.rt,
+                state: row.val_new.state
+            }
+        }));
 
     if (selectedData.length === 0) {
-      setDialogMessage("No changes selected!");
-      setDialogOpen(true);
-      return;
+        setDialogMessage("No changes selected!");
+        setDialogOpen(true);
+        return;
     }
 
     try {
-      const response = await fetch("/api/config/runtime", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedData),
-      });
+        const response = await fetch("/api/config/runtime", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(selectedData),
+        });
 
-      if (!response.ok) throw new Error("Failed to apply changes");
+        if (!response.ok) throw new Error("Failed to apply changes");
 
-      setTableData((prev) =>
-        prev.map((row) =>
-          row.selected ? { ...row, selected: false, state: "A" } : row
-        )
-      );
+        setTableData((prev) =>
+            prev.map((row) =>
+                row.selected ? { ...row, selected: false, state: "A" } : row
+            )
+        );
 
-      setDialogMessage("Changes were successfully applied!");
-      setDialogOpen(true);
-      handleFilterChange("notApplied", { label: "Change" }, { label: "Not yet Applied" });
+        setDialogMessage("Changes were successfully applied!");
+        setDialogOpen(true);
+        handleFilterChange("notApplied", { label: "Change" }, { label: "Not yet Applied" });
     } catch (error) {
-      console.error("Error applying changes:", error);
-      setDialogMessage("Failed to apply changes.");
-      setDialogOpen(true);
+        console.error("Error applying changes:", error);
+        setDialogMessage("Failed to apply changes.");
+        setDialogOpen(true);
     }
-  };
+}; 
 
   const handleShowWaitingChange = (newValue) => {
     setShowWaiting(newValue);
@@ -318,18 +319,7 @@ function ConfigMain() {
           onShowWaitingChange={handleShowWaitingChange}
         /></Box>
       </Box>
-
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-        <DialogTitle>Hey there,</DialogTitle>
-        <DialogContent>
-          <Typography>{dialogMessage}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ApplyMessage open={dialogOpen} onClose={() => setDialogOpen(false)} dialogMessage={dialogMessage} />
     </Box>
   );
 }

@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography } from "@mui/material";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography, Checkbox } from "@mui/material";
 import DataTable from "react-data-table-component";
 import { Box } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
@@ -24,20 +24,36 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   );
   const [filteredData, setFilteredData] = useState(tableData);
 
+  const toggleState = (stateSetter, localStorageKey, currentValue, callback) => {
+    const newValue = !currentValue;
+    stateSetter(newValue);
+    localStorage.setItem(localStorageKey, JSON.stringify(newValue));
+    if (callback) callback(newValue);
+  };
+
+  const toggleAppId = () => toggleState(setShowAppId, "showAppId", showAppId);
+  const toggleAllRTValues = () => toggleState(setShowAllRTValues, "showAllRTValues", showAllRTValues);
+  const toggleShowWaiting = () => toggleState(setShowWaiting, "showWaiting", showWaiting, onShowWaitingChange);
+  const toggleWaitingHint = () => toggleState(setShowWaitingHint, "showWaitingHint", showWaitingHint, onShowWaitingChange);
+  const toggleGK = () => toggleState(setShowGK, "showGK", showGK);
+
   const getStatusText = useCallback((state) => {
     switch (state) {
       case 'A': return 'applied';
       case 'P': return 'applying';
       case 'R': return 'rejected';
       case 'U': return 'waiting';
-      default: return '';
     }
-  }, []);
+  });
+
+  useEffect(() => {
+    setFilteredData(tableData); 
+  }, [tableData]);
 
   useEffect(() => {
     const handleSearch = async () => {
       const searchTermLower = searchTerm.toLowerCase();
-      const result = tableData.filter((row) => {
+      const filtered = tableData.filter((row) => {
         if (!showWaiting && row.state === 'U') {
           return false;
         }
@@ -45,15 +61,20 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           row.label.toLowerCase().includes(searchTermLower) ||
           row.index.toLowerCase().includes(searchTermLower) ||
           row.gk.toLowerCase().includes(searchTermLower) ||
-          getStatusText(row.state).includes(searchTermLower)
+          getStatusText(row.state).toLowerCase().includes(searchTermLower)
         );
       });
-      setFilteredData(result);
+      setFilteredData((prevFilteredData) => {
+        if (JSON.stringify(prevFilteredData) !== JSON.stringify(filtered)) {
+          return filtered;
+        }
+        return prevFilteredData;
+      });
     };
 
     const delayDebounceFn = setTimeout(() => {
       handleSearch();
-    }, 300); 
+    }, 100); 
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, tableData, getStatusText, showWaiting]);
@@ -69,10 +90,6 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     localStorage.setItem("searchTerm", newSearchTerm);
   };
 
-  const handleSearchBlur = () => {
-    setSearchTerm("");
-  };
-  
   const getLabel = (list, value) => {
     const option = list.find(item => item.value === value);
     return option ? option.label : value;
@@ -89,46 +106,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     return "-unknown-";
   };
 
-  const resolveList = (row, refs) => {
-    if (typeof row.list === "string" && row.list.startsWith("$ref:")) {
-      const refKey = row.list.replace("$ref:", "").trim();
-      return refs?.[refKey] || [];
-    }
-    return row.list || [];
-  };
-
-  const toggleWaitingHint = () => {
-    const newValue = !showWaitingHint;
-    setShowWaitingHint(newValue);
-    localStorage.setItem("showWaitingHint", JSON.stringify(newValue));
-  };  
-
-  const toggleAppId = () => {
-    const newValue = !showAppId;
-    setShowAppId(newValue);
-    localStorage.setItem("showAppId", JSON.stringify(newValue));
-  };
-
-  const toggleAllRTValues = () => {
-    const newValue = !showAllRTValues;
-    setShowAllRTValues(newValue);
-    localStorage.setItem("showAllRTValues", JSON.stringify(newValue));
-  };
-
-  const toggleShowWaiting = () => {
-    const newValue = !showWaiting;
-    setShowWaiting(newValue);
-    localStorage.setItem("showWaiting", JSON.stringify(newValue));
-    onShowWaitingChange?.(newValue);
-  };
-
-  const toggleGK = () => {
-    const newValue = !showGK;
-    setShowGK(newValue);
-    localStorage.setItem("showGK", JSON.stringify(newValue));
-  };
-
-  const columns = [
+  const columns = useMemo(() => [
     {
       cell: (row) => (
         <input
@@ -144,8 +122,69 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     {
       name: "New Value",
       cell: (row) => {
-        const listOptions = resolveList(row, refs);
-    
+        const listOptions = row.list || [];
+
+        // conserve for later
+        if (row.type === "list_mc") {
+          const currentValues = row.val && row.val.rt ? row.val.rt.map(item => item.val) : [];
+
+          return (
+            <Select
+              multiple
+              value={currentValues}
+              onChange={(e) => {
+                const valueArray = e.target.value;
+
+                const newValue = {
+                  new: valueArray.join('|'),
+                  rt: valueArray.map(val => {
+                    const foundOption = listOptions.find(option => option.value === val);
+                    return {
+                      val: val,
+                      app_id: foundOption ? foundOption.app_id || "" : ""
+                    };
+                  })
+                };
+
+                const foundIndex = tableData.findIndex(item => item.index === row.index);
+
+                if (foundIndex !== -1) {
+                  const updatedData = [...tableData];
+                  updatedData[foundIndex].val = newValue;
+                  handleInputChange(foundIndex, newValue);
+                } else {
+                  console.error("Invalid row index:", row.index);
+                }
+              }}
+              variant="outlined"
+              renderValue={(selected) => {
+                console.log("Render value for selected:", selected);
+                return selected.length > 0 ? selected.join(', ') : "Select values...";
+              }}
+              sx={{
+                width: "100%",
+                height: "40px",
+                fontSize: "14px",
+                margin: "5px 0px",
+                "& .MuiSelect-select": {
+                  padding: "5px",
+                },
+              }}
+            >
+              {listOptions.length > 0 ? (
+                listOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    <Checkbox checked={currentValues.includes(option.value)} />
+                    {option.label}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>No options available</MenuItem>
+              )}
+            </Select>
+          );
+        }
+        
         return typeof row.list === "string" && row.list.startsWith("$ref:") ? (
           <Select
             value={row.val_new}
@@ -247,7 +286,10 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       width: "200px",
     },    
     showGK && { name: "GK", selector: (row) => row.gk, width: "390px" },
-  ].filter(Boolean);
+  ], [handleRowSelect, handleInputChange]).filter(Boolean);
+
+  const memoizedColumns = useMemo(() => columns, [columns]);
+  const memoizedData = useMemo(() => filteredData, [filteredData]);
 
   return (
     <>
@@ -297,31 +339,31 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
               variant="outlined"
               value={searchTerm}
               onChange={handleSearchChange}
-              onBlur={handleSearchBlur}
               sx={{ width: "20%" }}
             />
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              sx={{ width: "160px", marginRight: "20px" }}
-              onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
-            >
-              Show Selected
-            </Button>
+            {filterType !== "selected" && (
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                sx={{ width: "270px", marginRight: "20px", marginBottom: "20px"}}
+                onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
+              >
+                Preview Selected Changes
+              </Button>
+            )}
           </>
         )}
       </Box>
       {filterType !== "advanced" && filterType !== "time" && (
         <TableContainer
           component={Paper}
-          sx={{ flexBasis: "70%", maxHeight: "calc(90vh - 150px)", overflow: "auto" }}
+          sx={{ flexBasis: "70%"}}
         >
           <DataTable
-            columns={columns}
-            data={filteredData}
-            fixedHeader
-            fixedHeaderScrollHeight="calc(90vh - 150px)"
+            columns={memoizedColumns}
+            data={memoizedData}
+            pagination
             highlightOnHover
             customStyles={{
               cells: {
@@ -345,9 +387,9 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           color="primary"
           onClick={handleApply}
           size="large"
-          sx={{ width: "100px", alignSelf: "left", marginTop: "40px"}}
+          sx={{ width: "160px", alignSelf: "left", marginTop: "40px", backgroundColor: "#FFD700 !important", color: "black !important"}}
         >
-          Apply
+          Apply Changes
         </Button>
       )}
     </Box>

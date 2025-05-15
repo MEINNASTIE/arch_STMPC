@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Typography, Box, Grid, TextField, Button } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
 import { AccessAlarm, ThreeDRotation, Assignment, AttachMoney } from '@mui/icons-material';
@@ -22,6 +22,7 @@ const SystemStatus = () => {
     "api/config/system": "rw"
   });
   const [userIdToDelete, setUserIdToDelete] = useState('');
+  const [users, setUsers] = useState([]);
 
   const generateHashB64 = async (username, password) => {
     const encoder = new TextEncoder();
@@ -78,6 +79,22 @@ const SystemStatus = () => {
     .then(data => console.log('User deleted:', data))
     .catch(error => console.error('Error:', error));
   };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+          throw new Error('Network response was not ok ' + response.statusText);
+        }
+        const data = await response.json();
+        setUsers(data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   return (
     <MainCard title="User Management" style={{ textAlign: 'center', marginTop: '100px' }}>
@@ -144,12 +161,21 @@ const SystemStatus = () => {
       </Typography>
       <Box mb={2}>
         <TextField
-          label="User ID to Delete"
+          select
+          label="Select User to Delete"
           variant="outlined"
           value={userIdToDelete}
           onChange={(e) => setUserIdToDelete(e.target.value)}
           required
-        />
+          SelectProps={{
+            native: true,
+          }}
+        >
+          <option value="">Select a user</option>
+          {users.map((user) => (
+            <option key={user.id} value={user.id}>{user.username}</option>
+          ))}
+        </TextField>
       </Box>
       <Button onClick={handleDelete} variant="contained" color="secondary">
         Delete User

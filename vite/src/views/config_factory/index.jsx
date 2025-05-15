@@ -3,9 +3,6 @@ import { Box, Tabs, Dialog, DialogTitle, DialogContent, DialogActions, Button, T
 import TreeView from "./components/TreeView";
 import ParameterTable from "./components/ParameterTable";
 
-// only for testing at home purposes
-import runtimeDescData from './RuntimeConfigDesc_en.json'; 
-
 function ConfigMainFactory() {
   const [tableData, setTableData] = useState([]);
   const [treeData, setTreeData] = useState([]);
@@ -21,7 +18,7 @@ function ConfigMainFactory() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/config/system-desc");
+        const response = await fetch("https://192.168.164.158/api/config/system-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();
@@ -107,7 +104,6 @@ function ConfigMainFactory() {
     const rows = groups.flatMap((group, groupIdx) =>
       group.pages.flatMap((page, pageIdx) =>
         page.fields.map((field, fieldIdx) => {
-          // For list type fields, ensure we preserve the original value type
           const initialValue = field.type === 'list' ? 
             (typeof field.val === 'string' ? field.val : String(field.val)) : 
             field.val;
