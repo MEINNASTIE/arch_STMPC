@@ -71,8 +71,9 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   }, [tableData]);
 
   useEffect(() => {
-    const handleSearch = async () => {
+    const handleSearch = () => {
       const searchTermLower = searchTerm.toLowerCase();
+  
       const filtered = tableData.filter((row) => {
         if (!showWaiting && row.state === 'U') {
           return false;
@@ -84,19 +85,11 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           getStatusText(row.state).toLowerCase().includes(searchTermLower)
         );
       });
-      setFilteredData((prevFilteredData) => {
-        if (JSON.stringify(prevFilteredData) !== JSON.stringify(filtered)) {
-          return filtered;
-        }
-        return prevFilteredData;
-      });
+  
+      setFilteredData(filtered);
     };
-
-    const delayDebounceFn = setTimeout(() => {
-      handleSearch();
-    }, 100); 
-
-    return () => clearTimeout(delayDebounceFn);
+  
+    handleSearch();
   }, [searchTerm, tableData, getStatusText, showWaiting]);
 
   useEffect(() => {

@@ -279,6 +279,26 @@ function ConfigMain() {
     }
   };
 
+  useEffect(() => {
+    const savedGroup = localStorage.getItem("selectedGroup");
+    const savedPage = localStorage.getItem("selectedPage");
+
+    if (savedGroup && savedPage) {
+      setSelectedGroup(JSON.parse(savedGroup));
+      setSelectedPage(JSON.parse(savedPage));
+      setFilterType(JSON.parse(savedPage).id); 
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedGroup) {
+      localStorage.setItem("selectedGroup", JSON.stringify(selectedGroup));
+    }
+    if (selectedPage) {
+      localStorage.setItem("selectedPage", JSON.stringify(selectedPage));
+    }
+  }, [selectedGroup, selectedPage]);
+
   return (
     <Box
       sx={{
