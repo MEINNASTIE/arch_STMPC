@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API DataTable</title>
+    <!-- Include Material Design CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.material.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #fApiUrl {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 300px;
+        }
+        #bRefresh {
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #bRefresh:hover {
+            background-color: #3700b3;
+        }
+        table {
+            background-color: white;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <label for="fApiUrl">API URL:</label>
+        <input type="text" id="fApiUrl" value="/api/meas/status">
+        <button id="bRefresh">Refresh</button>
+    </div>
+
+    <table id="apiTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>ITID</th>
+                <th>MIID</th>
+                <th>PTID</th>
+                <th>MTIME</th>
+                <th>GK</th>
+                <th>VAL</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <!-- Include jQuery and DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.material.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const table = $('#apiTable').DataTable({
+                columnDefs: [
+                    {
+                        targets: '_all',
+                        className: 'mdl-data-table__cell--non-numeric'
+                    }
+                ]
+            });
+
+            $('#bRefresh').on('click', function () {
+                const apiUrl = $('#fApiUrl').val();
+
+                // Fetch data from the API
+                fetch(apiUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.returnCode === 0 && Array.isArray(data.payload)) {
+                            // Clear the table
+                            table.clear();
+
+                            // Add rows to the table
+                            data.payload.forEach(item => {
+                                table.row.add([
+                                    item.itid,
+                                    item.miid,
+                                    item.ptid,
+                                    item.mtime,
+                                    item.gk,
+                                    item.val
+                                ]);
+                            });
+
+                            // Redraw the table
+                            table.draw();
+                        } else {
+                            alert('Error in API response: ' + data.errorText);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Failed to fetch data: ' + error.message);
+                    });
+            });
+        });
+    </script>
+</body>
+</html>

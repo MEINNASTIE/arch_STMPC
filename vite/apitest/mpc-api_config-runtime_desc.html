@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Parameter Management</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .material-tabs {
+            display: flex;
+            border-bottom: 2px solid #ccc;
+        }
+
+        .material-tabs a {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            text-decoration: none;
+            color: #555;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+        }
+
+        .material-tabs a.active {
+            border-bottom: 3px solid #6200ea;
+            color: #6200ea;
+        }
+
+        .tab {
+            display: none;
+        }
+
+        .tab.active {
+            display: block;
+        }
+
+        .status-A { background-color: lightgreen; }
+        .status-P { background-color: yellow; }
+        .status-R { background-color: lightcoral; }
+        .status-U { background-color: lightgray; }
+        .tree-container {
+            float: left;
+            width: 20%;
+            padding-right: 10px;
+            border-right: 1px solid #ccc;
+        }
+        .table-container {
+            float: left;
+            width: 75%;
+            padding-left: 10px;
+        }
+
+        #parameters-table_wrapper .dataTables_scrollBody {
+            max-height: calc(100vh - 200px);
+        }
+
+        .apply-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #6200ea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="material-tabs">
+    <a href="#parameters-tab" class="active" onclick="showTab('parameters-tab', this)">Parameters Edit</a>
+    <a href="#api-tab" onclick="showTab('api-tab', this)">API Configuration</a>
+</div>
+
+<div id="parameters-tab" class="tab active">
+    <button id="request_and_fill-button">Request and fill</button>
+    <div class="tree-container">
+        <ul id="group-page-tree"></ul>
+    </div>
+    <div class="table-container">
+        <table id="parameters-table" class="display">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="api-tab" class="tab">
+    <label for="api-url">API URL GET:</label>
+    <input type="text" id="api-url" value="/api/config/runtime-desc">
+    <button id="request-button">Request</button>
+	<hr/>
+    <label for="api-url-post">API URL POST:</label>
+    <input type="text" id="api-url-post" value="/api/config/runtime">
+    <br><br>
+    <label for="runtime-desc">Runtime Descriptor:</label>
+    <textarea id="runtime-desc" rows="10" cols="80"></textarea>
+    <br><br>
+    <button id="fill-button">Fill Table</button>
+</div>
+
+<button id="apply-button" class="apply-button">Apply</button>
+
+<script>
+    $(document).ready(function () {
+        const columns = [
+            {
+                title: '',
+                data: null,
+                render: function (data, type, row) {
+                    return `<input type='checkbox' class='row-select' />`;
+                },
+                orderable: true
+            },
+            { title: 'Index', data: 'index'
+			},
+            { title: 'Label', data: 'label' },
+            {
+                title: 'New Value',
+                data: 'val_new',
+                render: function () {
+                    return `<input type='text' value='' />`;
+                }
+            },
+            {
+                title: 'Used in System',
+                data: 'val_rt',
+                render: function (data) {
+                    if (data && data.length > 0) {
+                        return data[0].val;
+                    }
+                    return "-unknown-";
+                }
+            },
+			
+            { // New column for showing all rt values
+                title: 'All RT Values',
+                data: 'val_rt',
+                render: function (data) {
+                    if (data && data.length > 0) {
+                        return data.map(rt => `${rt.app_id}: ${Array.isArray(rt.val) ? rt.val.join(", ") : rt.val}`).join('<br>');
+                    }
+                    return "-";
+                }
+            },
+            {
+                title: 'Status',
+                data: 'state',
+                render: function (data, type, row) {
+                    let status = "";
+                    switch (data) {
+                        case 'A':
+                            status = `Applied`;
+                            return `<div class='status-A'>${status}</div>`;
+                        case 'P':
+                            status = `Applying: ${row.val_new_last}`;
+                            return `<div class='status-P'>${status}</div>`;
+                        case 'R':
+                            status = `Rejected: ${row.val_new_last}`;
+                            return `<div class='status-R'>${status}</div>`;
+                        case 'U':
+                            status = `Waiting: ${row.val_new_last || ""}`;
+                            return `<div class='status-U'>${status}</div>`;
+                        default:
+                            return "";
+                    }
+                }
+            },
+            { title: 'gk', data: 'gk' }
+        ];
+
+        const table = $('#parameters-table').DataTable({
+            paging: false,
+            scrollY: "calc(100vh - 200px)",
+            scrollCollapse: true,
+            columns: columns
+        });
+
+		$('#request_and_fill-button').on('click', async function () {
+            await requestData();
+            $('#fill-button').click();
+        });
+		
+        $('#request-button').on('click', function () {
+            requestData();
+        });
+		
+		async function requestData() {
+    const apiUrl = $('#api-url').val();
+    return new Promise((resolve, reject) => {
+        $.get(apiUrl, function (data) {
+            $('#runtime-desc').val(JSON.stringify(data, null, 2));
+            resolve();
+        }).fail(function () {
+            reject('API request failed');
+        });
+    });
+}
+		
+		
+
+        $('#fill-button').on('click', function () {
+            const jsonString = $('#runtime-desc').val();
+            try {
+                const jsonData = JSON.parse(jsonString);
+                resolveRefs(jsonData.payload);
+                populateTree(jsonData.payload.groups);
+                populateTable(jsonData.payload);
+            } catch (e) {
+                alert('Invalid JSON');
+            }
+        });
+
+        function resolveRefs(payload) {
+            const resolve = (root,path) => {
+                const pathList = path.split('.');
+                let current = root;
+                pathList.forEach(p => current = current[p]);
+                return current;
+            };
+
+            function traverse(root,obj) {
+                for (const key in obj) {
+                    if (typeof obj[key] === 'string' && obj[key].startsWith('$ref:')) {
+						path=obj[key].replace('$ref:','');
+                        obj[key] = resolve(root,path);
+                    } else if (typeof obj[key] === 'object') {
+                        traverse(root,obj[key]);
+                    }
+                }
+            }
+
+            traverse(payload,payload);
+        }
+
+        function populateTree(groups) {
+            const tree = $('#group-page-tree');
+            tree.empty();
+
+            const allItem = $('<li>All</li>');
+            /*
+			allItem.on('click', function () {
+                table.rows().every(function () {
+                    $(this.node()).show();
+                });
+            });
+			*/
+            const allPageList = $('<ul></ul>');
+			allItem.append(allPageList);
+            tree.append(allItem);
+            tree.append('<hr/>');
+
+
+            allItems = $('<li>All</li>');
+			allItems.on('click', function () {
+                table.rows().every(function () {
+                    $(this.node()).show();
+                });
+            });            
+			allPageList.append(allItems);
+
+			
+            const selectedItem = $('<li>Selected to change</li>');
+            selectedItem.on('click', function () {
+				$('#apply-button').show();
+                table.rows().every(function () {
+                    const checkbox = $(this.node()).find('.row-select');
+                    $(this.node()).toggle(checkbox.is(':checked'));
+                });
+               
+            });
+            allPageList.append(selectedItem);
+
+			const notAppliedItem = $('<li>Not yet applied</li>');
+            notAppliedItem.on('click', function () {
+				$('#apply-button').show();
+                table.rows().every(function () {
+						const row = this.data();
+						const matches1 = row.state != 'A';
+						$(this.node()).toggle(matches1);
+                });
+               
+            });
+            allPageList.append(notAppliedItem);
+
+			
+			
+			
+			
+			
+            groups.forEach(group => {
+                const groupItem = $(`<li>${group.label}</li>`);
+                const pageList = $('<ul></ul>');
+                group.pages.forEach(page => {
+                    const pageItem = $(`<li>${page.label}</li>`);
+                    pageItem.on('click', function () {
+                        table.rows().every(function (rowIdx, tableLoop, rowLoop) {
+                            const row = this.data();
+                            const matches = row.groupPage === `${group.id}.${page.id}`;
+                            $(this.node()).toggle(matches);
+                        });
+                    });
+                    pageList.append(pageItem);
+                });
+                groupItem.append(pageList);
+                tree.append(groupItem);
+            });
+        }
+
+        function populateTable(payload) {
+            const rows = [];
+            payload.groups.forEach((group, groupIndex) => {
+                group.pages.forEach((page, pageIndex) => {
+                    page.fields.forEach((field, fieldIndex) => {
+                        rows.push({
+                            index: (groupIndex+1)+'.'+(pageIndex+1)+'.'+(fieldIndex + 1),
+                            label: field.label,
+                            gk: field.gk,
+                            val_new: "",
+                            val_rt: field.val?.rt === null ? [] : field.val?.rt,
+                            state: field.val?.state || "U",
+                            groupPage: `${group.id}.${page.id}`,
+							val_new_last: field.val?.new === null ? '' : field.val?.new,
+                        });
+                    });
+                });
+            });
+            table.clear().rows.add(rows).draw();
+        }
+
+        $('#apply-button').on('click', function () {
+            const selectedData = [];
+            table.rows().every(function () {
+                const row = this.data();
+                const checkbox = $(this.node()).find('.row-select');
+                if (checkbox.is(':checked')) {
+                    selectedData.push({
+                        gk: row.gk,
+                        val_new: $(this.node()).find("input[type='text']").val()
+                    });
+                }
+            });
+            const apiUrl = $('#api-url-post').val();
+            $.ajax({
+                url: apiUrl,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(selectedData),
+                success: function (response) {
+                    alert('Successfully applied changes!');
+                },
+                error: function (error) {
+                    alert('Failed to apply changes.');
+                }
+            });
+        });
+    });
+
+    function showTab(tabId, element) {
+        $('.tab').removeClass('active');
+        $(`#${tabId}`).addClass('active');
+        $('.material-tabs a').removeClass('active');
+        $(element).addClass('active');
+    }
+</script>
+
+</body>
+</html>

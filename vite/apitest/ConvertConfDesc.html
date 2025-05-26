@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XML to JSON Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>XML to JSON Converter</h1>
+  <p>Paste the XML description in the text field below, click "Convert", and see the JSON output.</p>
+  
+  <label for="DescXml"><strong>XML Description:</strong></label>
+  <textarea id="DescXml" placeholder="Paste XML here..."></textarea>
+  
+  <button onclick="convertXmlToJson()">Convert</button>
+  
+  <label for="DescJson"><strong>JSON Description:</strong></label>
+  <textarea id="DescJson" readonly placeholder="JSON output will appear here..."></textarea>
+  
+  <script>
+    function convertXmlToJson() {
+      const parser = new DOMParser();
+      const xmlText = document.getElementById('DescXml').value;
+      const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+      const jsonOutput = { groups: [] };
+
+      const pages = xmlDoc.getElementsByTagName('page');
+      const groupMap = {};
+
+      for (let page of pages) {
+        const section = page.getAttribute('section');
+        const pageId = page.getAttribute('name');
+        const pageLabel = page.getAttribute('caption');
+        
+        if (!groupMap[section]) {
+          groupMap[section] = {
+            id: section,
+            label: section,
+            pages: []
+          };
+          jsonOutput.groups.push(groupMap[section]);
+        }
+        
+        const fields = [];
+        const items = page.getElementsByTagName('item');
+        for (let item of items) {
+          const type = item.getAttribute('type');
+          const keyGroup = item.getAttribute('group');
+          const key = item.getAttribute('key');
+          const caption = item.getAttribute('caption');
+          
+          if (type === 'select') {
+            const options = [];
+            const optionNodes = item.getElementsByTagName('option');
+            for (let option of optionNodes) {
+              options.push({
+                value: option.getAttribute('value'),
+                label: option.getAttribute('caption')
+              });
+            }
+            fields.push({
+              gk: `${keyGroup}.${key}`,
+              type: 'list',
+              label: caption,
+              list: options
+            });
+          } else {
+            fields.push({
+              gk: `${keyGroup}.${key}`,
+              type,
+              label: caption
+            });
+          }
+        }
+        
+        groupMap[section].pages.push({
+          id: pageId,
+          label: pageLabel,
+          fields
+        });
+      }
+      
+      document.getElementById('DescJson').value = JSON.stringify(jsonOutput, null, 2);
+    }
+  </script>
+</body>
+</html>

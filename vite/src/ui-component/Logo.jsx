@@ -1,10 +1,10 @@
-import logo from 'assets/images/Logo-Bertin-Technologies_RVB.png';
+import logo from 'assets/images/Bertin_logo_white.png';
 
 // ==============================|| LOGO SVG ||============================== //
 
 const Logo = () => {
   return (
-    <img src={logo} alt="Bertin" width="220" />
+    <img src={logo} alt="Bertin" width="35" />
   );
 };
 

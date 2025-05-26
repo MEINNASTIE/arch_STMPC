@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// material-ui
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -9,23 +7,35 @@ import Typography from '@mui/material/Typography';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 
-// assets
-import { IconPresentation, IconSettings, IconCpu, IconWorld, IconPrinter, IconRefresh } from '@tabler/icons-react';
+import { IconPresentation, IconSettings, IconCpu, IconWorld, IconPrinter, IconRefresh, IconUser } from '@tabler/icons-react';
 import usePrint from 'hooks/usePrint';
 import { Button } from '@mui/material';
 import useSerialNumber from 'context/SerialNumberContext';
+import MobileHeader from './MobileHeader';
 
 const HeaderMain = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-
   const { handlePrint } = usePrint();
-
   const [anchorEl, setAnchorEl] = useState(null);
   const [hoveredIcon, setHoveredIcon] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
 
-  const username = localStorage.getItem('username');
-  const rolename = localStorage.getItem('rolename');
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 900);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  if (isMobile) {
+    return <MobileHeader />;
+  }
+
+  const username = sessionStorage.getItem('username');
+  const rolename = sessionStorage.getItem('rolename');
 
   const handleMenuOpen = (event, index) => {
     setAnchorEl(event.currentTarget);
@@ -68,7 +78,7 @@ const HeaderMain = () => {
       label: 'System',
       options: [
         { label: 'System status', path: '/system-status' },
-        { label: 'Memory', path: '/system-memory' },
+        { label: 'Storage', path: '/system-storage' },
         { label: 'System info', path: '/system-info' }
       ]
     },
@@ -117,24 +127,20 @@ const HeaderMain = () => {
   }, [setSerialNumber]);
 
   return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          backgroundColor: '#3e4aec',
-          borderRadius: '8px',
-          marginTop: '1px',
-          [theme.breakpoints.down('md')]: {
-            flexDirection: 'row',
-            justifyContent: 'space-between'
-          }
-        }}
-      >
-      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-        <Typography variant="h2" sx={{ flex: 1, color: 'white', paddingLeft: '60px' }}>
-            SpectroTRACER {serialNumber || ''}
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        backgroundColor: '#3e4aec',
+        borderRadius: '8px',
+        marginTop: '1px',
+      }}
+    >
+      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'justify-between', alignItems: 'center', paddingLeft: '60px' }}>
+        <Typography variant="h2" sx={{ flex: 1, color: 'white' }}>
+          SpectroTRACER {serialNumber || ''}
         </Typography>
       </Box>
       <Box
@@ -146,9 +152,6 @@ const HeaderMain = () => {
           padding: '4px 16px',
           borderLeft: '2px solid white',
           borderRight: '2px solid white',
-          [theme.breakpoints.down('md')]: {
-            padding: '4px 8px',
-          },
           flex: 2,
         }}
       >
@@ -181,9 +184,6 @@ const HeaderMain = () => {
                 sx={{
                   ml: 0.5,
                   color: 'white',
-                  [theme.breakpoints.down('md')]: {
-                    display: 'none',
-                  },
                 }}
               >
                 {label}
@@ -225,9 +225,12 @@ const HeaderMain = () => {
       </Box>
       <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         {username && rolename && (
-          <Typography variant="body2" sx={{ color: 'white', paddingRight: '60px', fontWeight: 'bold' }}>
-          {username} ({rolename})
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconUser stroke={1.5} size="1.2rem" style={{ color: 'white' }} />
+            <Typography variant="body2" sx={{ color: 'white', paddingRight: '60px', fontWeight: 'bold' }}>
+              {username} ({rolename})
+            </Typography>
+          </Box>
         )}
         <Button
           style={{

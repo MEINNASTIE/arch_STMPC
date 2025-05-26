@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>System Alerts - No jQuery Table Comparison</title>
+  <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/styles/ag-grid.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/styles/ag-theme-alpine.css" rel="stylesheet" />
+  <style>
+    body { font-family: sans-serif; padding: 1em; }
+    h2 { margin-top: 2em; }
+    .gridjs, .tabulator, .ag-theme-alpine { margin-top: 1em; }
+    .table-container { margin-bottom: 3em; }
+    .critical { color: red; font-weight: bold; }
+    .error { color: darkred; }
+    .warning { color: orange; }
+    .info { color: gray; }
+  </style>
+</head>
+<body>
+  <h1>System Alerts - Table Comparison (Live Data)</h1>
+
+  <div class="table-container">
+    <h2>Grid.js</h2>
+    <div id="gridjs-table"></div>
+  </div>
+
+  <div class="table-container">
+    <h2>Tabulator</h2>
+    <div id="tabulator-table"></div>
+  </div>
+
+  <div class="table-container">
+    <h2>AG Grid</h2>
+    <div id="aggrid-table" class="ag-theme-alpine" style="height: 400px;"></div>
+  </div>
+
+  <!-- Grid.js -->
+  <script type="module">
+    import { Grid } from "https://unpkg.com/gridjs?module";
+
+    async function fetchAlertFiles() {
+      const response = await fetch('/app_alerts_dir/');
+      const text = await response.text();
+      const matches = [...text.matchAll(/<a href="(AppAlert_[^"]+\.json)">/g)];
+      return [...new Set(matches.map(m => m[1]))];
+    }
+
+    async function fetchAlerts(file) {
+      try {
+        const res = await fetch(`/app_alerts_dir/${file}`);
+        return await res.json();
+      } catch {
+        return [];
+      }
+    }
+
+    async function loadAllAlerts() {
+      const files = await fetchAlertFiles();
+      const allAlerts = [];
+      for (const file of files) {
+        const alerts = await fetchAlerts(file);
+        allAlerts.push(...alerts);
+      }
+      return allAlerts;
+    }
+
+    async function renderTables() {
+      const alerts = await loadAllAlerts();
+
+      // -------- Grid.js --------
+      const gridData = alerts.map(alert => [
+        alert.Timestamp,
+        `<span class="${alert.Level.toLowerCase()}">${alert.App}</span>`,
+        alert.Level,
+        alert.Message
+      ]);
+
+      new Grid({
+        columns: ["Timestamp", "App", "Level", "Message"],
+        data: gridData,
+        search: true,
+        sort: true,
+        pagination: { limit: 10, summary: true }
+      }).render(document.getElementById("gridjs-table"));
+
+      // Dispatch data for other tables
+      window.renderOtherTables(alerts);
+    }
+
+    renderTables();
+  </script>
+
+  <!-- Tabulator -->
+  <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
+  <!-- AG Grid -->
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.noStyle.js"></script>
+
+  <script>
+    window.renderOtherTables = function(alerts) {
+      const tabData = alerts.map(alert => ({
+        Timestamp: alert.Timestamp,
+        App: alert.App,
+        Level: alert.Level,
+        Message: alert.Message
+      }));
+
+      new Tabulator("#tabulator-table", {
+        data: tabData,
+        layout: "fitColumns",
+        pagination: "local",
+        paginationSize: 10,
+        columns: [
+          { title: "Timestamp", field: "Timestamp" },
+          { title: "App", field: "App", formatter: (cell) => {
+              const level = cell.getRow().getData().Level.toLowerCase();
+              return `<span class="${level}">${cell.getValue()}</span>`;
+          }},
+          { title: "Level", field: "Level" },
+          { title: "Message", field: "Message" }
+        ]
+      });
+
+      const gridOptions = {
+        columnDefs: [
+          { field: "Timestamp", sortable: true, filter: true },
+          { field: "App", cellRenderer: (params) =>
+              `<span class="${params.data.Level.toLowerCase()}">${params.value}</span>` },
+          { field: "Level", sortable: true, filter: true },
+          { field: "Message", sortable: true, filter: true }
+        ],
+        rowData: tabData,
+        pagination: true,
+        paginationPageSize: 10,
+        domLayout: 'autoHeight'
+      };
+
+      new agGrid.Grid(document.getElementById('aggrid-table'), gridOptions);
+    }
+  </script>
+</body>
+</html>

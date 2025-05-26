@@ -185,7 +185,11 @@ function ConfigMain() {
     setTableData((prev) => {
       const updatedData = prev.map((row) =>
         row.index === rowIndex
-          ? { ...row, val_new: value, selected: true }
+          ? {
+              ...row,
+              val_new: value,
+              selected: true,
+            }
           : row
       );
       return updatedData;
@@ -194,8 +198,15 @@ function ConfigMain() {
   
   const handleFilterChange = (filter, group, page) => {
     setFilterType(filter);
-    setSelectedGroup(group);
-    setSelectedPage(page);
+    if (filter === "all") {
+      setSelectedGroup(null);
+      setSelectedPage(null);
+      localStorage.removeItem("selectedGroup");
+      localStorage.removeItem("selectedPage");
+    } else {
+      setSelectedGroup(group);
+      setSelectedPage(page);
+    }
   };  
 
   const handleApply = async () => {
@@ -203,14 +214,7 @@ function ConfigMain() {
         .filter((row) => row.selected)
         .map((row) => ({
             gk: row.gk,
-            type: row.type,
-            label: row.label,
-            list: row.list,
-            val: {
-                new: row.val_new.new,
-                rt: row.val_new.rt,
-                state: row.val_new.state
-            }
+            val_new: row.val_new  
         }));
 
     if (selectedData.length === 0) {
@@ -295,15 +299,17 @@ function ConfigMain() {
       localStorage.setItem("selectedGroup", JSON.stringify(selectedGroup));
     }
     if (selectedPage) {
-      localStorage.setItem("selectedPage", JSON.stringify(selectedPage));
+      if (selectedPage.id === "allParameters") {
+        localStorage.removeItem("selectedPage");
+      } else {
+        localStorage.setItem("selectedPage", JSON.stringify(selectedPage));
+      }
     }
   }, [selectedGroup, selectedPage]);
 
   return (
     <Box
       sx={{
-        width: "100vw",
-        height: "100vh",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -311,33 +317,41 @@ function ConfigMain() {
       }}
     >
       <Tabs value={0} centered></Tabs>
-      <Box display="flex" flexGrow={1} gap={2} p={2}>
-      <Box sx={{ 
-          width: { xs: '30%', sm: '25%', md: '20%' },
-          minWidth: '200px',
-          maxWidth: '300px',
-          overflow: 'auto'
+      <Box 
+        display="flex" 
+        flexGrow={1} 
+        gap={2} 
+        p={2}
+        sx={{
+          flexDirection: { xs: 'column', sm: 'row' }
+        }}
+      >
+        <Box sx={{ 
+          width: { xs: '100%', sm: '25%', md: '20%' },
+          minWidth: { xs: 'auto', sm: '200px' },
+          maxWidth: { xs: '100%', sm: '300px' },
+          overflow: 'auto',
+          mb: { xs: 2, sm: 0 }
         }}>
-        <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
+          <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
         </Box>
         <Box sx={{ 
           flex: 1,
-          width: '100%',
-          height: "650px",
-          overflow: 'auto'
+          width: '100%'
         }}>
-        <ParameterTable 
-          tableData={getFilteredData()} 
-          handleApply={handleApply} 
-          handleRowSelect={handleRowSelect} 
-          handleInputChange={handleInputChange} 
-          filterType={filterType} 
-          handleFilterChange={handleFilterChange} 
-          refs={refs}
-          groupLabel={selectedGroup?.label}
-          pageLabel={selectedPage?.label}
-          onShowWaitingChange={handleShowWaitingChange}
-        /></Box>
+          <ParameterTable 
+            tableData={getFilteredData()} 
+            handleApply={handleApply} 
+            handleRowSelect={handleRowSelect} 
+            handleInputChange={handleInputChange} 
+            filterType={filterType} 
+            handleFilterChange={handleFilterChange} 
+            refs={refs}
+            groupLabel={selectedGroup?.label}
+            pageLabel={selectedPage?.label}
+            onShowWaitingChange={handleShowWaitingChange}
+          />
+        </Box>
       </Box>
       <ApplyMessage open={dialogOpen} onClose={() => setDialogOpen(false)} dialogMessage={dialogMessage} />
     </Box>

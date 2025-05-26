@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography } from "@mui/material";
 import DataTable from "react-data-table-component";
-import { Box } from "@mui/system";
+import { Box, useTheme } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
 
 
 export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel }) {
+  const theme = useTheme();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [showWaitingHint, setShowWaitingHint] = useState(
     JSON.parse(localStorage.getItem("showWaitingHint")) ?? true
@@ -133,7 +135,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     localStorage.setItem("showGK", JSON.stringify(newValue));
   };
 
-  const columns =  useMemo(() => [
+  const columns = useMemo(() => [
     {
       cell: (row) => (
         <input
@@ -142,10 +144,18 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           onChange={() => handleRowSelect(row.index)}
         />
       ),
-      width: "50px",
+      width: "40px",
     },
-    { name: "Index", selector: (row) => row.index, width: "80px" },
-    { name: "Label", selector: (row) => row.label, width: "310px" },
+    { 
+      name: "Index", 
+      selector: (row) => row.index, 
+      width: "80px",
+    },
+    { 
+      name: "Label", 
+      selector: (row) => row.label, 
+      width: "300px",
+    },
     {
       name: "New Value",
       cell: (row) => {
@@ -201,7 +211,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           />
         );
       },
-      width: "250px",
+      width: "200px",
     },
     {
       name: "Used in System", 
@@ -238,10 +248,14 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           </Typography>
         );
       },
-      width: "350px"
+      width: "200px",
     },
-    showGK && { name: "GK", selector: (row) => row.gk, width: "390px" },
-  ], [handleRowSelect, handleInputChange]).filter(Boolean);
+    showGK && { 
+      name: "GK", 
+      selector: (row) => row.gk, 
+      width: "300px",
+    },
+  ].filter(Boolean), [handleRowSelect, handleInputChange]);
 
   const memoizedColumns = useMemo(() => columns, [columns]);
   const memoizedData = useMemo(() => filteredData, [filteredData]);
@@ -260,8 +274,15 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       sx={{
         display: "flex",
         flexDirection: 'column',
-        flexBasis: (filterType === "advanced" || filterType === "time") ? "0" : "80%",
-        marginLeft: "10px"
+        flexBasis: (filterType === "advanced" || filterType === "time") ? "0" : "100%",
+        marginLeft: "10px",
+        padding: "20px",
+        border: `1px solid ${theme.palette.divider}`,
+        borderRadius: `10px`,
+        height: "calc(100vh - 100px)",
+        overflow: "hidden",
+        maxWidth: "100%",
+        boxSizing: "border-box"
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', marginTop: '10px'}}>
@@ -285,7 +306,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         </Typography>
       )}
       </Box>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "82%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: "10px" }}>
         {filterType !== "advanced" && filterType !== "time" &&(
           <>
             <TextField
@@ -293,14 +314,18 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
               variant="outlined"
               value={searchTerm}
               onChange={handleSearchChange}
-              sx={{ width: "20%" }}
+              sx={{ width: { xs: "100%", sm: "20%" } }}
             />
             {filterType !== "selected" && (
               <Button
                 variant="contained"
                 color="primary"
                 size="large"
-                sx={{ width: "270px", marginRight: "20px", marginBottom: "20px"}}
+                sx={{ 
+                  width: { xs: "100%", sm: "270px" }, 
+                  marginRight: { xs: 0, sm: "20px" }, 
+                  marginBottom: { xs: "10px", sm: "20px" }
+                }}
                 onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
               >
                 Preview Selected Changes
@@ -312,7 +337,15 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       {filterType !== "advanced" && filterType !== "time" && (
         <TableContainer
           component={Paper}
-          sx={{ flexBasis: "70%"}}
+          sx={{ 
+            flex: 1,
+            overflow: "auto",
+            width: "100%",
+            boxSizing: "border-box",
+            "& .MuiTableContainer-root": {
+              height: "100%"
+            }
+          }}
         >
           <DataTable
             columns={memoizedColumns}
@@ -322,13 +355,37 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
               cells: {
                 style: {
                   fontSize: '14px',
+                  whiteSpace: 'normal',
+                  wordWrap: 'break-word',
+                  padding: '8px',
                 },
               },
               headCells: {
                 style: {
                   fontSize: '16px',
+                  whiteSpace: 'normal',
+                  wordWrap: 'break-word',
+                  padding: '8px',
                 },
               },
+              table: {
+                style: {
+                  height: "100%",
+                  width: "100%",
+                }
+              },
+              tableWrapper: {
+                style: {
+                  overflowX: "auto",
+                  width: "100%",
+                }
+              },
+              responsiveWrapper: {
+                style: {
+                  overflowX: "auto",
+                  width: "100%",
+                }
+              }
             }}
           />
         </TableContainer>

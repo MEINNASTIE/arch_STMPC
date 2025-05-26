@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runtime Parameter Editor</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+    <h1>Runtime Parameter Editor</h1>
+    <div>
+        <label for="fApiUrl">API URL:</label>
+        <input type="text" id="fApiUrl" value="/api/config/runtime">
+        <button id="fetchButton">Get</button>
+    </div>
+    <br>
+
+    <table id="parametersTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>gk</th>
+                <th>val_new</th>
+                <th>val_rt</th>
+                <th>val_rej</th>
+                <th>Apply</th>
+                <th>Validation Error</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dynamic rows will be appended here -->
+        </tbody>
+    </table>
+
+    <script>
+        $(document).ready(function() {
+            const table = $('#parametersTable').DataTable();
+
+            $('#fetchButton').on('click', function() {
+                const apiUrl = $('#fApiUrl').val() + '/all';
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        table.clear(); // Clear existing data in the table
+
+                        data.payload.forEach((item) => {
+                            const row = $('<tr>');
+                            row.append(`<td>${item.gk}</td>`);
+                            row.append(`<td contenteditable="true" class="editable" data-gk="${item.gk}">${item.val_new}</td>`);
+                            row.append(`<td>${item.val_rt}</td>`);
+                            row.append(`<td>${item.val_rej || ''}</td>`);
+                            row.append(`<td><button class="applyButton" data-gk="${item.gk}">Apply</button></td>`);
+                            row.append(`<td>${item.validationError || ''}</td>`);
+                            table.row.add(row);
+                        });
+                        table.draw();
+                    })
+                    .catch(error => console.error('Error fetching data:', error));
+            });
+
+            $('#parametersTable tbody').on('click', '.applyButton', function() {
+                const row = $(this).closest('tr');
+                const gk = $(this).data('gk');
+                const val_new = row.find('.editable[data-gk="'+gk+'"]').text().trim();
+                const apiUrl = $('#fApiUrl').val() + '/new';
+
+                const requestBody = [{
+                    "gk": gk,
+                    "val_new": val_new
+                }];
+
+                fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.returnCode==0) {
+                        alert('Parameter updated successfully!');
+                    } else {
+                        alert('Error updating parameter.');
+                    }
+                })
+                .catch(error => console.error('Error updating data:', error));
+            });
+        });
+    </script>
+</body>
+</html>

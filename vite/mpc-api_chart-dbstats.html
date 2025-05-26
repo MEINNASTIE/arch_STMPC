@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disk Stats</title>
+    <!-- Materialize CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .echart {
+            width: 100%;
+            height: 100%;
+            margin-top: 20px;
+			min-height: 300px; /* Ensures minimum size for panels */
+        }
+        .panel {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex: 1;
+            min-width: 300px; /* Ensures minimum size for panels */
+        }
+        .panel h5 {
+            margin-bottom: 15px;
+        }
+        /* Flexbox container for horizontal layout */
+        .panel-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px; /* Space between panels */
+            margin-top: 20px;
+        }
+		
+		    /* Make container full width */
+    .container-fluid {
+        width: 100%; /* Full width */
+        max-width: 100%; /* Prevent Materialize's default max-width */
+        padding: 0 10px; /* Optional: Add padding for spacing inside the container */
+        margin: 0; /* Remove default margin */
+    }
+		
+		
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <h3>Disk Storage Statistics <span id="nowUTC"></span></h3>
+        
+        <div class="row">
+            <div class="input-field col s15">
+                <label for="fApiUrl">API URL:</label>
+                <input type="text" id="fApiUrl" value="/api/meas/storage/files/stats">
+            </div>
+            <div class="col s12">
+                <button class="btn waves-effect waves-light" id="bGet">Get Data</button>
+            </div>
+        </div>
+
+
+        <!-- Flexbox container for panels -->
+		<div class="panel-container">
+		
+		    <div id="chart1Panel" class="panel">
+        <div id="chart1" class="echart"></div>
+            </div>
+
+			<div id="chart2Panel" class="panel">
+        <div id="chart2" class="echart"></div>
+            </div>
+
+		
+        </div>
+		
+		
+        <div class="panel-container">
+		
+		
+		
+            <!-- StatIO Panel -->
+            <div id="statIOPanel" class="panel">
+                <h5>StatIO Details</h5>
+                <ul id="statIOList" class="collection"></ul>
+            </div>
+
+            <!-- Storage Limits Panel -->
+            <div id="storageLimitsPanel" class="panel">
+                <h5>Storage Limits</h5>
+                <ul id="storageLimitsList" class="collection"></ul>
+            </div>
+
+            <!-- Payload Details Panel -->
+            <div id="payloadDetailsPanel" class="panel">
+                <h5>Payload Details</h5>
+                <ul id="payloadDetailsList" class="collection"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Materialize JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <script>
+        // Utility function to format large numbers with commas and dots
+        function formatNumber(num) {
+            return num.toLocaleString('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+        }
+
+        document.getElementById('bGet').addEventListener('click', async () => {
+            const apiUrl = document.getElementById('fApiUrl').value;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.returnCode !== 0) {
+                    throw new Error(`API error: ${data.errorText}`);
+                }
+
+                // Display nowUTC next to the title
+                document.getElementById('nowUTC').textContent = `(UTC: ${data.nowUTC})`;
+
+                // Doughnut Chart Data
+                const totalMB = data.payload.DiskDB_totalMB;
+                const freeMB = data.payload.DiskDB_freeMB;
+                const usedMB = totalMB - freeMB;
+                const dbTotalMB = data.payload.DB_totalMB;
+
+                // Calculate 'Used by Files'
+                const usedByFilesMB = totalMB - dbTotalMB - freeMB;
+
+                // Display StatIO data
+                const statIO = data.payload.StatsIO;
+                const statIOList = document.getElementById('statIOList');
+                
+				 statIOList.innerHTML = `
+                    <li><strong>Name:</strong> ${statIO.Name}</li>
+                    <li><strong>Last Time:</strong> ${statIO.LastTime}</li>
+                    <li><strong>Number of Files:</strong> ${formatNumber(statIO.NoOfFiles)} (${formatNumber(statIO.NoOfFiles/1440/7)} days in 1 min cycle)</li>
+                    <li><strong>Number of Records:</strong> ${formatNumber(statIO.NoOfRecs)} (${formatNumber(statIO.NoOfRecs/1440/7)} days in 1 min cycle)</li>
+                    <li><strong>Number of Transactions:</strong> ${formatNumber(statIO.NoOfTrn)} (${formatNumber(statIO.NoOfTrn/1440)} days in 1 min cycle)</li>
+                    <li><strong>Number of Bytes:</strong> ${formatNumber(statIO.NoOfBytes)} (${formatNumber(statIO.NoOfBytes/15000/1440)} days in 1 min cycle)</li>
+                `;
+				
+				
+
+                // Display Storage Limits data
+                const storageLimits = data.payload.StorageLimits;
+                const storageLimitsList = document.getElementById('storageLimitsList');
+                storageLimitsList.innerHTML = `
+                    <li class="collection-item"><strong>Days to Keep:</strong> ${formatNumber(storageLimits.NoOfDaysToKeep)}</li>
+                    <li class="collection-item"><strong>Records to Keep:</strong> ${formatNumber(storageLimits.NoOfRecsToKeep)}</li>
+                    <li class="collection-item"><strong>Max DB Size (MB):</strong> ${formatNumber(storageLimits.DBmaxSizeMB)}</li>
+                    <li class="collection-item"><strong>Min Free Space DB (MB):</strong> ${formatNumber(storageLimits.DBminFreeSpaceMB)}</li>
+                    <li class="collection-item"><strong>Min Free Space Files (MB):</strong> ${formatNumber(storageLimits.FILESminFreeSpaceMB)}</li>
+                `;
+
+                // Display Payload Details data
+                const payload = data.payload;
+                const payloadDetailsList = document.getElementById('payloadDetailsList');
+                payloadDetailsList.innerHTML = `
+                    <li class="collection-item"><strong>DB Total MB:</strong> ${formatNumber(payload.DB_totalMB)}</li>
+                    <li class="collection-item"><strong>DB Used MB:</strong> ${formatNumber(payload.DB_usedMB)}</li>
+                    <li class="collection-item"><strong>DB Free MB:</strong> ${formatNumber(payload.DB_freeMB)}</li>
+                    <li class="collection-item"><strong>Page Size:</strong> ${formatNumber(payload.page_size)}</li>
+                    <li class="collection-item"><strong>Total Pages:</strong> ${formatNumber(payload.page_count_total)}</li>
+                    <li class="collection-item"><strong>Free Pages:</strong> ${formatNumber(payload.page_count_free)}</li>
+                    <li class="collection-item"><strong>Number of Records:</strong> ${formatNumber(payload.no_of_recs)}</li>
+                    <li class="collection-item"><strong>Min-Max Time:</strong> ${payload.min_time}-${payload.max_time}</li>
+                    <li class="collection-item"><strong>Last Clean Time:</strong> ${payload.lastCleanTime}</li>
+					<hr/>
+                    <li class="collection-item"><strong>MS Info - Records Table:</strong> ${formatNumber(payload.MSinfo.recsNoTable)}</li>
+                    <li class="collection-item"><strong>MS Info - Records List:</strong> ${formatNumber(payload.MSinfo.recsNoList)}</li>
+                    <li class="collection-item"><strong>MS Info - Records Dict:</strong> ${formatNumber(payload.MSinfo.recsNoDict)}</li>
+					<hr/>
+                    <li class="collection-item"><strong>Disk DB Total MB:</strong> ${formatNumber(payload.DiskDB_totalMB)}</li>
+                    <li class="collection-item"><strong>Disk DB Free MB:</strong> ${formatNumber(payload.DiskDB_freeMB)}</li>
+					<hr/>
+                    <li class="collection-item"><strong>Disk MFiles Total MB:</strong> ${formatNumber(payload.DiskMFiles_totalMB)}</li>
+                    <li class="collection-item"><strong>Disk MFiles Free MB:</strong> ${formatNumber(payload.DiskMFiles_freeMB)}</li>
+                `;
+
+                // Initialize ECharts
+                chart1 = echarts.init(document.getElementById('chart1'));
+
+                option1 = {
+                    title: {
+                        text: `Disk DB Usage. Total: ${formatNumber(totalMB)} MB`,
+                        left: 'center'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: (params) => {
+                            return `${params.name}: ${formatNumber(params.value)} MB (${params.percent}%)`;
+                        }
+                    },
+                    series: [
+                        // Outer doughnut (Disk Space Usage)
+                        {
+                            name: 'Disk Usage',
+                            type: 'pie',
+                            radius: ['60%', '80%'],
+                            label: {
+                                show: true,
+                                position: 'outside',
+                                formatter: (params) => `${params.name}: ${formatNumber(params.value)} MB`
+                            },
+                            data: [
+                                { value: usedMB, name: 'Used Disk Space', itemStyle: { color: 'orange' } },
+                                { value: freeMB, name: 'Free Disk Space', itemStyle: { color: 'blue' } }
+                            ]
+                        },
+                        // Inner doughnut (Database Usage)
+                        {
+                            name: 'Database Usage',
+                            type: 'pie',
+                            radius: ['30%', '50%'],
+                            label: {
+                                show: true,
+                                position: 'outside',
+                                formatter: (params) => `${params.name}: ${formatNumber(params.value)} MB`
+                            },
+                            data: [
+                                { value: dbTotalMB, name: `Database Total (${formatNumber(payload.no_of_recs)} recs.)`, itemStyle: { color: '#FFA726' } },
+                                { value: usedByFilesMB, name: 'Used by Files', itemStyle: { color: '#FB8C00' } }
+                            ]
+                        }
+                    ]
+                };
+
+                chart1.setOption(option1);
+				
+				
+				//Chart mfiles
+				
+				chart2 = echarts.init(document.getElementById('chart2'));
+
+                option2 = {
+                    title: {
+                        text: `Disk Mfiles Usage. Total: ${formatNumber(payload.DiskMFiles_totalMB)} MB`,
+                        left: 'center'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: (params) => {
+                            return `${params.name}: ${formatNumber(params.value)} MB (${params.percent}%)`;
+                        }
+                    },
+                    series: [
+                        // Outer doughnut (Disk mfiles Usage)
+                        {
+                            name: 'Disk Usage',
+                            type: 'pie',
+                            radius: ['60%', '80%'],
+                            label: {
+                                show: true,
+                                position: 'outside',
+                                formatter: (params) => `${params.name}: ${formatNumber(params.value)} MB`
+                            },
+                            data: [
+                                { value: payload.DiskDB_totalMB-payload.DiskDB_freeMB, name: 'Used Disk Space', itemStyle: { color: 'orange' } },
+                                { value: payload.DiskDB_freeMB, name: 'Free Disk Space', itemStyle: { color: 'blue' } }
+                            ]
+                        }
+                        
+                    ]
+                };
+
+                chart2.setOption(option2);
+				
+				
+				
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('Failed to fetch data. Check the console for details.');
+            }
+        });
+    </script>
+</body>
+</html>

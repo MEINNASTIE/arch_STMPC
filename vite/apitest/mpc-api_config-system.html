@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System config editor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .url-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .url-container label {
+            flex: 0 0 100px;
+            font-weight: bold;
+        }
+
+        .url-container input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+            transition: border 0.3s ease;
+        }
+
+        .url-container input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .tabs {
+            margin-top: 20px;
+        }
+
+        .tab-headers {
+            display: flex;
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        .tab-headers button {
+            background: none;
+            border: none;
+			color: black;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .tab-headers button.active {
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .tab-content input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .tab-content textarea {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .tab-content textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>System config editor</h1>
+
+        <div class="url-container">
+            <label for="getUrl">GET URL:</label>
+            <input type="text" id="getUrl" value="/api/config/system/files">
+            <button id="getBtn">GET Payload</button>
+        </div>
+
+        <button id="postBtn">POST Edited Content</button>
+
+        <div class="tabs">
+            <div class="tab-headers" id="tabHeaders"></div>
+            <div id="tabContents"></div>
+        </div>
+    </div>
+
+    <script>
+        // Function to clear tabs and content areas
+        function clearTabs() {
+            document.getElementById("tabHeaders").innerHTML = '';
+            document.getElementById("tabContents").innerHTML = '';
+        }
+
+        // Function to extract filename from filePath
+        function extractFileName(filePath) {
+            return filePath.split('/').pop().split('\\').pop(); // Get last part of filePath
+        }
+
+        // Function to create new tab and content
+        function createTab(index, filePath, tomlContent) {
+            const tabHeaders = document.getElementById("tabHeaders");
+            const tabContents = document.getElementById("tabContents");
+
+            // Create tab button with file name as the caption
+            const tabButton = document.createElement('button');
+            tabButton.innerText = extractFileName(filePath); // Use filename as tab caption
+            tabButton.classList.add('tab-btn');
+            tabButton.onclick = function() {
+                setActiveTab(index);
+            };
+            tabHeaders.appendChild(tabButton);
+
+            // Create tab content area
+            const tabContent = document.createElement('div');
+            tabContent.className = 'tab-content';
+            tabContent.id = `tab${index}`;
+
+            const filePathField = document.createElement('input');
+            filePathField.type = 'text';
+            filePathField.value = filePath;
+            filePathField.id = `filePath${index}`;
+			filePathField.readOnly = true; // Make the field readonly
+
+            const tomlTextarea = document.createElement('textarea');
+            tomlTextarea.id = `tomlContent${index}`;
+            tomlTextarea.value = tomlContent;
+
+            tabContent.appendChild(filePathField);
+            tabContent.appendChild(tomlTextarea);
+
+            tabContents.appendChild(tabContent);
+
+            // Make the first tab active
+            if (index === 0) {
+                setActiveTab(0);
+            }
+        }
+
+        // Function to set active tab
+        function setActiveTab(index) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+                tabButtons[i].classList.toggle('active', i === index);
+            });
+        }
+
+        // Function to handle GET request
+        document.getElementById("getBtn").onclick = async function() {
+		console.log("pressed");
+            const getUrl = document.getElementById("getUrl").value;
+            try {
+                const response = await fetch(getUrl);
+                const dataTmp = await response.json();
+				data=dataTmp.payload;
+
+                // Clear old tabs
+                clearTabs();
+
+                // Dynamically generate tabs for each file in the payload
+                data.forEach((item, index) => {
+                    createTab(index, item.filePath, item.tomlContent);
+                });
+            } catch (error) {
+                alert('Error fetching payload: ' + error);
+            }
+        };
+
+        // Function to handle POST request
+        document.getElementById("postBtn").onclick = async function() {
+            const getUrl = document.getElementById("getUrl").value;
+            const tabContents = document.querySelectorAll('.tab-content');
+            const payload = [];
+
+            // Construct new JSON array from edited tab contents
+            tabContents.forEach((tab, index) => {
+                const filePath = document.getElementById(`filePath${index}`).value;
+                const tomlContent = document.getElementById(`tomlContent${index}`).value;
+
+                payload.push({
+                    filePath: filePath,
+                    tomlContent: tomlContent
+                });
+            });
+
+            try {
+                const response = await fetch(getUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    alert('Payload successfully posted!');
+                } else {
+                    alert('Error posting payload: ' + response.statusText);
+                }
+            } catch (error) {
+                alert('Error posting payload: ' + error);
+            }
+        };
+    </script>
+
+</body>
+</html>

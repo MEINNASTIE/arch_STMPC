@@ -3,15 +3,17 @@ import Loadable from 'ui-component/Loadable';
 import SemiLayout from 'layout/SemiLayout';
 import ConfigMainFactory from 'views/config_factory';
 
+
 // Page components
 const FTPPage = Loadable(lazy(() => import('views/meas/ftp')));
 const SystemStatus = Loadable(lazy(() => import('views/system/system_status')));
 const SystemInfo = Loadable(lazy(() => import('views/system/system_info')));
-const SystemMemory = Loadable(lazy(() => import('views/system/system_memory')));
+const SystemStorage = Loadable(lazy(() => import('views/system/system_memory')));
 const MeasurementPage = Loadable(lazy(() => import('views/meas/meas_status')));
 const ConfigMain = Loadable(lazy(() => import('views/config')));
 
 // ==============================|| MAIN ROUTING ||============================== //
+// chnage route names later
 
 const MainRoutes = {
   path: '/',
@@ -30,8 +32,8 @@ const MainRoutes = {
       element: <SystemInfo />
     },
     {
-      path: 'system-memory',
-      element: <SystemMemory />
+      path: 'system-storage',
+      element: <SystemStorage />
     },
     {
       path: 'conf',

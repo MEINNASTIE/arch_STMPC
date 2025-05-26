@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCA Spectrum Viewer</title>
+    <script src="./resources/js_echarts/echarts.min.js"></script>
+    <style>
+        .container {
+            width: 90%;
+            margin: 20px auto;
+        }
+        .chart-container {
+            width: 100%;
+            height: 600px;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: 5px;
+        }
+        .scale-toggle {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .scale-toggle label {
+            cursor: pointer;
+        }
+        .info-text {
+            color: #666;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            background: #f0f0f0;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab-button.active {
+            background: white;
+            border-bottom: none;
+        }
+        .tab-content {
+            display: none;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 0 5px 5px 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .gaps-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .gaps-table th, .gaps-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .gaps-table th {
+            background-color: #f5f5f5;
+        }
+        .gaps-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .lock-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .lock-screen-content {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .lock-screen-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="lock-screen" id="lockScreen">
+        <div class="lock-screen-content">
+            <div class="lock-screen-spinner"></div>
+            <div id="lockScreenMessage">Communicating with MCA...</div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="showTab('spectrum')">Spectrum</button>
+            <button class="tab-button" onclick="showTab('gaps')">Gaps Analysis</button>
+            <button class="tab-button" onclick="showTab('metadata')">Metadata</button>
+        </div>
+
+        <div id="spectrum-tab" class="tab-content active">
+            <div class="controls">
+                <input type="text" id="fURLapi" value="/api/hw/mca/spectrum/sum/10" placeholder="API endpoint URL">
+                <button onclick="fetchAndDisplaySpectrum()">Show Spectrum</button>
+                <div class="scale-toggle">
+                    <input type="checkbox" id="logScale" onchange="toggleScale()">
+                    <label for="logScale">Log Scale</label>
+                </div>
+            </div>
+            <div class="controls">
+                <input type="text" id="liveURLapi" value="/api/hw/mca/spectrum/live" placeholder="Live spectrum URL">
+                <button onclick="fetchAndDisplayLiveSpectrum()">Show Live Spectrum</button>
+                <button onclick="clearLiveSpectrum(false)" style="background-color: #ffebee;">Clear Spectrum</button>
+                <button onclick="clearLiveSpectrum(true)" style="background-color: #ffebee;">Clear and Restart</button>
+            </div>
+            <div class="controls">
+                <button onclick="readGainSettings()">Read Gain</button>
+                <label for="fHV">Current HV:</label>
+                <input type="number" id="fHV" step="0.1" min="0" max="1000" style="width: 80px;" readonly>
+                <label for="fGAIN">Current GAIN:</label>
+                <input type="number" id="fGAIN" step="0.1" min="0" max="1000" style="width: 80px;" readonly>
+            </div>
+            <div class="controls">
+                <label for="fnewHV">New HV:</label>
+                <input type="number" id="fnewHV" step="0.1" min="0" max="1000" style="width: 80px;">
+                <label for="fnewGAIN">New GAIN:</label>
+                <input type="number" id="fnewGAIN" step="0.1" min="0" max="1000" style="width: 80px;">
+                <button onclick="setGainSettings()">Set Gain</button>
+            </div>
+            <div class="controls">
+                <label for="fPeakFound">Peak Calib Found:</label>
+                <input type="number" id="fPeakFound" step="1" min="0" max="1000" style="width: 80px;">
+                <label for="fPeakMustBe">Peak Calib Must Be:</label>
+                <input type="number" id="fPeakMustBe" step="1" min="0" max="1000" style="width: 80px;">
+                <button onclick="calculateNewGain()">Calc. New Gain</button>
+            </div>
+            <div id="spectrum-chart" class="chart-container"></div>
+        </div>
+
+        <div id="gaps-tab" class="tab-content">
+            <div class="controls">
+                <button onclick="fetchAndDisplayGaps()">Show Gaps</button>
+            </div>
+            <div id="gaps-chart" class="chart-container"></div>
+            <table class="gaps-table">
+                <thead>
+                    <tr>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Duration (minutes)</th>
+                    </tr>
+                </thead>
+                <tbody id="gaps-table-body">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="metadata-tab" class="tab-content">
+            <div class="controls">
+                <input type="text" id="URLmeta" value="/api/hw/mca/spectra/meta?maxcount=30" placeholder="Metadata API endpoint URL">
+                <button onclick="fetchAndDisplayMetadata()">Request</button>
+            </div>
+            <div id="metadata-chart" class="chart-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let spectrumChart = echarts.init(document.getElementById('spectrum-chart'));
+        let gapsChart = echarts.init(document.getElementById('gaps-chart'));
+        let metadataChart = echarts.init(document.getElementById('metadata-chart'));
+        let currentData = null;
+        
+        // Set default peak channel
+        document.getElementById('fPeakMustBe').value = '750';
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Resize charts
+            if (tabName === 'spectrum') {
+                spectrumChart.resize();
+            } else if (tabName === 'gaps') {
+                gapsChart.resize();
+            } else if (tabName === 'metadata') {
+                metadataChart.resize();
+            }
+        }
+
+        function toggleScale() {
+            if (currentData) {
+                const isLogScale = document.getElementById('logScale').checked;
+                const option = {
+                    yAxis: {
+                        type: isLogScale ? 'log' : 'value',
+                        name: 'Counts',
+                        nameLocation: 'middle',
+                        nameGap: 50,
+                        min: isLogScale ? 1 : undefined
+                    }
+                };
+                spectrumChart.setOption(option);
+            }
+        }
+
+        function formatDateTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString();
+        }
+
+        function showLockScreen(message = "Communicating with MCA...") {
+            document.getElementById('lockScreenMessage').textContent = message;
+            document.getElementById('lockScreen').style.display = 'flex';
+        }
+
+        function hideLockScreen() {
+            document.getElementById('lockScreen').style.display = 'none';
+        }
+
+        function fetchAndDisplaySpectrum() {
+            showLockScreen("Reading spectrum data...");
+            const apiUrl = document.getElementById('fURLapi').value;
+            const refreshTime = new Date().toLocaleString();
+            
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    hideLockScreen();
+                    if (data.returnCode === 0 && data.payload) {
+                        currentData = data.payload;
+                        const channels = currentData.chn;
+                        const xData = Array.from({length: channels.length}, (_, i) => i);
+                        const isLogScale = document.getElementById('logScale').checked;
+                        
+                        const option = {
+                            title: {
+                                text: `MCA Spectrum (Start: ${formatDateTime(currentData.mtime_start)}, End: ${formatDateTime(currentData.mtime)}, pcycleSec: ${Math.round(currentData.pcycleSec)}s, TimeAcc: ${Math.round(currentData.TimeAcc)}s)`,
+                                left: 'center'
+                            },
+                            tooltip: {
+                                trigger: 'axis',
+                                axisPointer: {
+                                    type: 'cross'
+                                }
+                            },
+                            toolbox: {
+                                feature: {
+                                    saveAsImage: {},
+                                    dataZoom: {},
+                                    restore: {}
+                                }
+                            },
+                            xAxis: {
+                                type: 'value',
+                                name: 'Channel',
+                                nameLocation: 'middle',
+                                nameGap: 30
+                            },
+                            yAxis: {
+                                type: isLogScale ? 'log' : 'value',
+                                name: 'Counts',
+                                nameLocation: 'middle',
+                                nameGap: 50,
+                                min: isLogScale ? 1 : undefined
+                            },
+                            dataZoom: [
+                                {
+                                    type: 'slider',
+                                    xAxisIndex: 0,
+                                    filterMode: 'none'
+                                },
+                                {
+                                    type: 'slider',
+                                    yAxisIndex: 0,
+                                    filterMode: 'none'
+                                },
+                                {
+                                    type: 'inside',
+                                    xAxisIndex: 0,
+                                    filterMode: 'none',
+                                    start: 0,
+                                    end: 100
+                                },
+                                {
+                                    type: 'inside',
+                                    yAxisIndex: 0,
+                                    filterMode: 'none',
+                                    start: 0,
+                                    end: 100
+                                }
+                            ],
+                            series: [{
+                                data: channels.map((value, index) => [index, value]),
+                                type: 'line',
+                                name: 'Spectrum',
+                                smooth: false,
+                                symbol: 'none'
+                            }]
+                        };
+                        
+                        spectrumChart.setOption(option);
+                    } else {
+                        alert('Error fetching spectrum data: ' + data.errorText);
+                    }
+                })
+                .catch(error => {
+                    hideLockScreen();
+                    console.error('Error:', error);
+                    alert('Failed to fetch spectrum data');
+                });
+        }
+
+        function fetchAndDisplayLiveSpectrum() {
+            showLockScreen("Reading live spectrum data...");
+            const apiUrl = document.getElementById('liveURLapi').value;
+            const refreshTime = new Date().toLocaleString();
+            
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    hideLockScreen();
+                    if (data.returnCode === 0 && data.payload) {
+                        currentData = data.payload;
+                        const channels = currentData.chn;
+                        const xData = Array.from({length: channels.length}, (_, i) => i);
+                        const isLogScale = document.getElementById('logScale').checked;
+                        
+                        const option = {
+                            title: {
+                                text: `Live MCA Spectrum (Start: ${formatDateTime(currentData.mtime_start)}, End: ${formatDateTime(currentData.mtime)}, TimeAcc: ${Math.round(currentData.TimeAcc)}s)`,
+                                left: 'center'
+                            },
+                            tooltip: {
+                                trigger: 'axis',
+                                axisPointer: {
+                                    type: 'cross'
+                                }
+                            },
+                            toolbox: {
+                                feature: {
+                                    saveAsImage: {},
+                                    dataZoom: {},
+                                    restore: {}
+                                }
+                            },
+                            xAxis: {
+                                type: 'value',
+                                name: 'Channel',
+                                nameLocation: 'middle',
+                                nameGap: 30
+                            },
+                            yAxis: {
+                                type: isLogScale ? 'log' : 'value',
+                                name: 'Counts',
+                                nameLocation: 'middle',
+                                nameGap: 50,
+                                min: isLogScale ? 1 : undefined
+                            },
+                            dataZoom: [
+                                {
+                                    type: 'slider',
+                                    xAxisIndex: 0,
+                                    filterMode: 'none'
+                                },
+                                {
+                                    type: 'slider',
+                                    yAxisIndex: 0,
+                                    filterMode: 'none'
+                                },
+                                {
+                                    type: 'inside',
+                                    xAxisIndex: 0,
+                                    filterMode: 'none',
+                                    start: 0,
+                                    end: 100
+                                },
+                                {
+                                    type: 'inside',
+                                    yAxisIndex: 0,
+                                    filterMode: 'none',
+                                    start: 0,
+                                    end: 100
+                                }
+                            ],
+                            series: [{
+                                data: channels.map((value, index) => [index, value]),
+                                type: 'line',
+                                name: 'Spectrum',
+                                smooth: false,
+                                symbol: 'none'
+                            }]
+                        };
+                        
+                        spectrumChart.setOption(option);
+                    } else {
+                        alert('Error fetching live spectrum data: ' + data.errorText);
+                    }
+                })
+                .catch(error => {
+                    hideLockScreen();
+                    console.error('Error:', error);
+                    alert('Failed to fetch live spectrum data');
+                });
+        }
+
+        function fetchAndDisplayGaps() {
+            fetch('/api/hw/mca/spectra/gaps')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.returnCode === 0 && data.payload) {
+                        const gaps = data.payload.gaps;
+                        const startTime = new Date(data.payload.start_time);
+                        const endTime = new Date(data.payload.end_time);
+                        
+                        // Update gaps table
+                        const tableBody = document.getElementById('gaps-table-body');
+                        tableBody.innerHTML = '';
+                        gaps.forEach(gap => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${formatDateTime(gap.first_missing)}</td>
+                                <td>${formatDateTime(gap.last_missing)}</td>
+                                <td>${Math.round(gap.duration_seconds / 60)} minutes</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                        
+                        // Create timeline chart
+                        const option = {
+                            title: {
+                                text: `Spectrum Collection Timeline (${data.payload.file_count} spectra, from ${formatDateTime(data.payload.start_time)} to ${formatDateTime(data.payload.end_time)})`,
+                                left: 'center'
+                            },
+                            tooltip: {
+                                trigger: 'axis',
+                                formatter: function(params) {
+                                    const timestamp = params[0].value[0];
+                                    return new Date(timestamp).toLocaleString();
+                                }
+                            },
+                            toolbox: {
+                                feature: {
+                                    saveAsImage: {},
+                                    dataZoom: {},
+                                    restore: {}
+                                }
+                            },
+                            xAxis: {
+                                type: 'time',
+                                name: 'Time',
+                                nameLocation: 'middle',
+                                nameGap: 30
+                            },
+                            yAxis: {
+                                type: 'value',
+                                name: 'Status',
+                                nameLocation: 'middle',
+                                nameGap: 50,
+                                min: -5,
+                                max: 6,
+                                splitLine: { show: false },
+                                axisLabel: { show: false }
+                            },
+                            series: [
+                                {
+                                    name: 'Data Points',
+                                    type: 'scatter',
+                                    data: generateTimelineData(startTime, endTime, gaps),
+                                    symbol: 'circle',
+                                    symbolSize: 8,
+                                    itemStyle: {
+                                        color: function(params) {
+                                            return params.data[2] ? '#ff0000' : '#00ff00';
+                                        }
+                                    }
+                                }
+                            ],
+                            dataZoom: [
+                                {
+                                    type: 'slider',
+                                    xAxisIndex: 0,
+                                    filterMode: 'none'
+                                },
+                                {
+                                    type: 'inside',
+                                    xAxisIndex: 0,
+                                    filterMode: 'none',
+                                    start: 0,
+                                    end: 100
+                                }
+                            ]
+                        };
+                        
+                        gapsChart.setOption(option);
+                    } else {
+                        alert('Error fetching gaps data: ' + data.errorText);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to fetch gaps data');
+                });
+        }
+
+        function generateTimelineData(startTime, endTime, gaps) {
+            const data = [];
+            let currentTime = new Date(startTime);
+            
+            while (currentTime <= endTime) {
+                const isGap = gaps.some(gap => {
+                    const gapStart = new Date(gap.first_missing);
+                    const gapEnd = new Date(gap.last_missing);
+                    return currentTime >= gapStart && currentTime <= gapEnd;
+                });
+                
+                data.push([
+                    currentTime.getTime(),  // Use timestamp instead of ISO string
+                    isGap ? 2 : 0,  // Y position (-1 for gaps, 1 for valid points)
+                    isGap  // Color flag (true for red, false for green)
+                ]);
+                
+                currentTime.setMinutes(currentTime.getMinutes() + 1);
+            }
+            
+            return data;
+        }
+
+        function clearLiveSpectrum(restart) {
+            fetch('/api/hw/mca/spectra/live/clear', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.returnCode === 0) {
+                    alert('Spectrum cleared successfully');
+                    if (restart && data.payload && data.payload.clearTime) {
+                        // Update the URL with the clear time
+                        const urlInput = document.getElementById('liveURLapi');
+                        const baseUrl = urlInput.value.split('?')[0];
+                        urlInput.value = `${baseUrl}?from=${data.payload.clearTime}`;
+                    }
+                    // Refresh the live spectrum display
+                    fetchAndDisplayLiveSpectrum();
+                } else {
+                    alert('Failed to clear spectrum: ' + data.errorText);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to clear spectrum');
+            });
+        }
+
+        function fetchAndDisplayMetadata() {
+            showLockScreen("Reading metadata...");
+            const apiUrl = document.getElementById('URLmeta').value;
+            
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    hideLockScreen();
+                    if (data.returnCode === 0 && data.payload) {
+                        const metadata = data.payload;
+                        
+                        // Prepare data series
+                        const timestamps = metadata.map(item => new Date(item.mtime));
+                        const tempScint = metadata.map(item => item.TemperScint || null);
+                        const tempMCA = metadata.map(item => item.TemperBoardMCA);
+                        const pcycleSec = metadata.map(item => item.pcycleSec);
+                        const timeAcc = metadata.map(item => item.TimeAcc);
+                        const gain = metadata.map(item => item.GAIN);
+                        const hv = metadata.map(item => item.HV);
+                        
+                        const option = {
+                            title: {
+                                text: 'MCA Metadata Over Time',
+                                left: 'center'
+                            },
+                            tooltip: {
+                                trigger: 'axis',
+                                axisPointer: {
+                                    type: 'cross'
+                                }
+                            },
+                            legend: {
+                                data: ['Scintillator Temp', 'MCA Board Temp', 'Gain', 'HV', 'P-Cycle (s)', 'Time Acc (s)'],
+                                top: 30
+                            },
+                            toolbox: {
+                                feature: {
+                                    saveAsImage: {},
+                                    dataZoom: {},
+                                    restore: {}
+                                }
+                            },
+                            grid: [
+                                {
+                                    left: '3%',
+                                    right: '4%',
+                                    height: '30%',
+                                    top: '15%'
+                                },
+                                {
+                                    left: '3%',
+                                    right: '4%',
+                                    height: '30%',
+                                    top: '50%'
+                                },
+                                {
+                                    left: '3%',
+                                    right: '4%',
+                                    height: '30%',
+                                    top: '85%'
+                                }
+                            ],
+                            xAxis: [
+                                {
+                                    type: 'time',
+                                    name: 'Time',
+                                    nameLocation: 'middle',
+                                    nameGap: 30,
+                                    gridIndex: 0
+                                },
+                                {
+                                    type: 'time',
+                                    name: 'Time',
+                                    nameLocation: 'middle',
+                                    nameGap: 30,
+                                    gridIndex: 1
+                                },
+                                {
+                                    type: 'time',
+                                    name: 'Time',
+                                    nameLocation: 'middle',
+                                    nameGap: 30,
+                                    gridIndex: 2
+                                }
+                            ],
+                            yAxis: [
+                                {
+                                    type: 'value',
+                                    name: 'Temperature (°C)',
+                                    position: 'left',
+                                    gridIndex: 0,
+                                    axisLabel: {
+                                        formatter: '{value} °C'
+                                    }
+                                },
+                                {
+                                    type: 'value',
+                                    name: 'Gain',
+                                    position: 'right',
+                                    gridIndex: 0,
+                                    axisLabel: {
+                                        formatter: '{value}'
+                                    }
+                                },
+                                {
+                                    type: 'value',
+                                    name: 'HV',
+                                    position: 'left',
+                                    gridIndex: 1,
+                                    axisLabel: {
+                                        formatter: '{value}'
+                                    }
+                                },
+                                {
+                                    type: 'value',
+                                    name: 'Time (s)',
+                                    position: 'left',
+                                    gridIndex: 2,
+                                    axisLabel: {
+                                        formatter: '{value} s'
+                                    }
+                                }
+                            ],
+                            series: [
+                                // Temperature and Gain Chart
+                                {
+                                    name: 'Scintillator Temp',
+                                    type: 'line',
+                                    data: timestamps.map((t, i) => [t, tempScint[i]]),
+                                    xAxisIndex: 0,
+                                    yAxisIndex: 0,
+                                    symbol: 'circle',
+                                    symbolSize: 6
+                                },
+                                {
+                                    name: 'MCA Board Temp',
+                                    type: 'line',
+                                    data: timestamps.map((t, i) => [t, tempMCA[i]]),
+                                    xAxisIndex: 0,
+                                    yAxisIndex: 0,
+                                    symbol: 'circle',
+                                    symbolSize: 6
+                                },
+                                {
+                                    name: 'Gain',
+                                    type: 'line',
+                                    data: timestamps.map((t, i) => [t, gain[i]]),
+                                    xAxisIndex: 0,
+                                    yAxisIndex: 1,
+                                    symbol: 'circle',
+                                    symbolSize: 6
+                                },
+                                // HV Chart
+                                {
+                                    name: 'HV',
+                                    type: 'line',
+                                    data: timestamps.map((t, i) => [t, hv[i]]),
+                                    xAxisIndex: 1,
+                                    yAxisIndex: 2,
+                                    symbol: 'circle',
+                                    symbolSize: 6
+                                },
+                                // Time Chart
+                                {
+                                    name: 'P-Cycle (s)',
+                                    type: 'line',
+                                    data: timestamps.map((t, i) => [t, pcycleSec[i]]),
+                                    xAxisIndex: 2,
+                                    yAxisIndex: 3,
+                                    symbol: 'circle',
+                                    symbolSize: 6
+                                },
+                                {
+                                    name: 'Time Acc (s)',
+                                    type: 'line',
+                                    data: timestamps.map((t, i) => [t, timeAcc[i]]),
+                                    xAxisIndex: 2,
+                                    yAxisIndex: 3,
+                                    symbol: 'circle',
+                                    symbolSize: 6
+                                }
+                            ],
+                            dataZoom: [
+                                {
+                                    type: 'slider',
+                                    xAxisIndex: [0, 1, 2],
+                                    filterMode: 'none',
+                                    bottom: 0
+                                },
+                                {
+                                    type: 'inside',
+                                    xAxisIndex: [0, 1, 2],
+                                    filterMode: 'none',
+                                    start: 0,
+                                    end: 100
+                                }
+                            ]
+                        };
+                        
+                        metadataChart.setOption(option);
+                    } else {
+                        alert('Error fetching metadata: ' + data.errorText);
+                    }
+                })
+                .catch(error => {
+                    hideLockScreen();
+                    console.error('Error:', error);
+                    alert('Failed to fetch metadata');
+                });
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            spectrumChart.resize();
+            gapsChart.resize();
+            metadataChart.resize();
+        });
+
+        // Initial load
+        fetchAndDisplaySpectrum();
+
+        // Add new functions for gain control
+        function readGainSettings() {
+            showLockScreen("Reading gain settings...");
+            fetch('/api/hw/mca/config/txt?command=HVSE;GAIN;')
+                .then(response => response.json())
+                .then(data => {
+                    hideLockScreen();
+                    if (data.returnCode === 0 && data.payload && data.payload.config) {
+                        const config = data.payload.config;
+                        const hvMatch = config.match(/HVSE=(\d+\.?\d*)/);
+                        const gainMatch = config.match(/GAIN=(\d+\.?\d*)/);
+                        
+                        if (hvMatch) {
+                            const hvValue = hvMatch[1];
+                            document.getElementById('fHV').value = hvValue;
+                            document.getElementById('fnewHV').value = hvValue;
+                        }
+                        if (gainMatch) {
+                            const gainValue = gainMatch[1];
+                            document.getElementById('fGAIN').value = gainValue;
+                            document.getElementById('fnewGAIN').value = gainValue;
+                        }
+                    } else {
+                        alert('Error reading gain settings: ' + data.errorText);
+                    }
+                })
+                .catch(error => {
+                    hideLockScreen();
+                    console.error('Error:', error);
+                    alert('Failed to read gain settings');
+                });
+        }
+
+        function setGainSettings() {
+            const hv = document.getElementById('fnewHV').value;
+            const gain = document.getElementById('fnewGAIN').value;
+            
+            if (!hv || !gain) {
+                alert('Please enter both HV and GAIN values');
+                return;
+            }
+            
+            showLockScreen("Setting gain values...");
+            // Format gain with one decimal place
+            const formattedGain = parseFloat(gain).toFixed(1);
+            const command = `HVSE=${hv};GAIN=${formattedGain};`;
+            
+            fetch('/api/hw/mca/config/txt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ command: command })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLockScreen();
+                if (data.returnCode === 0) {
+                    alert('Gain settings updated successfully');
+                    // Update the current values
+                    document.getElementById('fHV').value = hv;
+                    document.getElementById('fGAIN').value = gain;
+                    // Refresh the spectrum display
+                    fetchAndDisplaySpectrum();
+                } else {
+                    alert('Error setting gain: ' + data.errorText);
+                }
+            })
+            .catch(error => {
+                hideLockScreen();
+                console.error('Error:', error);
+                alert('Failed to set gain settings');
+            });
+        }
+
+        function calculateNewGain() {
+            const peakFound = parseFloat(document.getElementById('fPeakFound').value);
+            const peakMustBe = parseFloat(document.getElementById('fPeakMustBe').value);
+            const gainAct = parseFloat(document.getElementById('fGAIN').value);
+            
+            if (!peakFound || !peakMustBe || !gainAct) {
+                alert('Please enter all required values');
+                return;
+            }
+            
+            if (peakFound === 0) {
+                alert('Peak Found cannot be zero');
+                return;
+            }
+            
+            const newGain = gainAct * (peakMustBe / peakFound);
+            document.getElementById('fnewGAIN').value = newGain.toFixed(1);
+        }
+    </script>
+</body>
+</html>

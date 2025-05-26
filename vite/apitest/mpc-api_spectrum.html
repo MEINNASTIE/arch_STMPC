@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectrum Chart</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+
+<h1>Spectrum Chart Viewer</h1>
+
+<!-- Input field for API URL -->
+<label for="fApiURL">API URL:</label>
+<input type="text" id="fApiURL" value="/api/hw/mca/livespectrum">
+
+<!-- Button to refresh chart -->
+<button id="bRefresh">Refresh Chart</button>
+
+<!-- Div for displaying the chart -->
+<div id="spectrumChart" style="width:100%;height:500px;"></div>
+
+<script>
+// Function to fetch spectrum data and draw the chart
+async function fetchAndDrawSpectrum() {
+    // Get the API URL from the input field
+    const apiUrl = document.getElementById('fApiURL').value;
+
+    try {
+        // Fetch the data from the API
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        // Check if the request was successful
+        if (data.returnCode !== 0) {
+            console.error('Error fetching data:', data.errorText);
+            alert('Failed to fetch spectrum data: ' + data.errorText);
+            return;
+        }
+
+        // Extract the channel data from the response
+        const Chn = data.payload.chn;
+
+        // Prepare the data for Plotly
+        const xData = [...Array(Chn.length).keys()]; // X-axis: Index of Chn array
+        const yData = Chn; // Y-axis: Values of Chn array
+
+        // Create the trace for the chart
+        const trace = {
+            x: xData,
+            y: yData,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Spectrum'
+        };
+
+        // Plot the chart using Plotly
+        Plotly.newPlot('spectrumChart', [trace], {
+            title: 'Live Spectrum at '+data.payload.mtime +' over '+data.payload.TimeAcc+" sec. Total counts: "+data.payload.TotalCounts ,
+            xaxis: { title: 'Channel Index' },
+            yaxis: { title: 'Channel Value' }
+        });
+
+    } catch (error) {
+        console.error('Error fetching or processing data:', error);
+        alert('Error occurred while fetching or plotting spectrum data.');
+    }
+}
+
+// Add event listener to the button for refreshing the chart
+document.getElementById('bRefresh').addEventListener('click', fetchAndDrawSpectrum);
+
+</script>
+
+</body>
+</html>

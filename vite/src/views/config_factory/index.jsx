@@ -165,8 +165,15 @@ function ConfigMainFactory() {
 
   const handleFilterChange = (filter, group, page) => {
     setFilterType(filter);
-    setSelectedGroup(group);
-    setSelectedPage(page);
+    if (filter === "all") {
+      setSelectedGroup(null);
+      setSelectedPage(null);
+      localStorage.removeItem("selectedGroup");
+      localStorage.removeItem("selectedPage");
+    } else {
+      setSelectedGroup(group);
+      setSelectedPage(page);
+    }
   };  
 
   const handleApply = async () => {
@@ -208,11 +215,29 @@ function ConfigMainFactory() {
     }
   };
 
+  useEffect(() => {
+    const savedGroup = localStorage.getItem("selectedGroup");
+    const savedPage = localStorage.getItem("selectedPage");
+
+    if (savedGroup && savedPage) {
+      setSelectedGroup(JSON.parse(savedGroup));
+      setSelectedPage(JSON.parse(savedPage));
+      setFilterType(JSON.parse(savedPage).id); 
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedGroup) {
+      localStorage.setItem("selectedGroup", JSON.stringify(selectedGroup));
+    }
+    if (selectedPage) {
+      localStorage.setItem("selectedPage", JSON.stringify(selectedPage));
+    }
+  }, [selectedGroup, selectedPage]);
+
   return (
     <Box
       sx={{
-        width: "100vw",
-        height: "100vh",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -232,7 +257,7 @@ function ConfigMainFactory() {
         <Box sx={{ 
           flex: 1,
           minWidth: '100%',
-          height: "650px",
+          height: "850px",
           overflow: 'auto'
         }}>
           <ParameterTable 

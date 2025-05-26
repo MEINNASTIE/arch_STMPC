@@ -1,28 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Grid, TextField, Button } from '@mui/material';
-import MainCard from 'ui-component/cards/MainCard';
-import { AccessAlarm, ThreeDRotation, Assignment, AttachMoney } from '@mui/icons-material';
-
-const SampleComponent = ({ icon: Icon, title }) => (
-  <Box display="flex" alignItems="center" mb={2}>
-    <Icon style={{ marginRight: 8 }} />
-    <Typography variant="subtitle1">{title}</Typography>
-  </Box>
-);
+import { Typography, Box, TextField, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 const SystemStatus = () => {
   const [username, setUsername] = useState('');
-  const [rolename, setRolename] = useState('');
+  const [rolename, setRolename] = useState('user');
   const [password, setPassword] = useState('');
-  const [expDate, setExpDate] = useState('2999-01-01');
-  const [enabled, setEnabled] = useState('1');
-  const [userRights, setUserRights] = useState({
+  const [expDate] = useState('2999-01-01');
+  const [enabled] = useState('1');
+  const [userRights] = useState({
     "system_time": "rwx",
     "api/config/user": "rw",
     "api/config/system": "rw"
   });
-  const [userIdToDelete, setUserIdToDelete] = useState('');
   const [users, setUsers] = useState([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({
+    password: '',
+    rolename: '',
+    expDate: '',
+    enabled: '1',
+    rights: {
+      "system_time": "rwx",
+      "api/config/user": "rw",
+      "api/config/system": "rw"
+    }
+  });
 
   const generateHashB64 = async (username, password) => {
     const encoder = new TextEncoder();
@@ -59,16 +62,19 @@ const SystemStatus = () => {
       }
       return response.json();
     })
-    .then(data => console.log(data))
+    .then(data => {
+      console.log(data);
+      window.location.reload();
+    })
     .catch(error => console.error('Error:', error));
   };
 
-  const handleDelete = () => {
-    fetch(`/api/user/userId/${userIdToDelete}`, {
+  const handleDelete = (username) => {
+    fetch(`/api/user/username/${username}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-      },
+      }
     })
     .then(response => {
       if (!response.ok) {
@@ -76,8 +82,71 @@ const SystemStatus = () => {
       }
       return response.json();
     })
-    .then(data => console.log('User deleted:', data))
+    .then(data => {
+      console.log('User deleted:', data);
+      window.location.reload();
+    })
     .catch(error => console.error('Error:', error));
+  };
+
+  const handleEdit = (user) => {
+    setEditingUser(user);
+    setEditForm({
+      password: '',
+      rolename: user.rolename,
+      expDate: user.expDate.split('T')[0],
+      enabled: user.enabled.toString(),
+      rights: { ...user.rights }
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingUser) return;
+
+    try {
+      const updateData = {};
+      
+      if (editForm.password) {
+        updateData.hash = await generateHashB64(editingUser.username, editForm.password);
+      }
+      
+      if (editForm.rolename !== editingUser.rolename) {
+        updateData.rolename = editForm.rolename;
+      }
+      
+      updateData.expDate = editForm.expDate;
+      updateData.enabled = editForm.enabled === '1' ? 1 : 0;
+      
+      if (JSON.stringify(editForm.rights) !== JSON.stringify(editingUser.rights)) {
+        updateData.rights = editForm.rights;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        console.log('No changes to update');
+        setEditDialogOpen(false);
+        return;
+      }
+
+      const response = await fetch(`/api/user/username/${editingUser.username}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      console.log('User updated:', data);
+      setEditDialogOpen(false);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
   };
 
   useEffect(() => {
@@ -88,7 +157,7 @@ const SystemStatus = () => {
           throw new Error('Network response was not ok ' + response.statusText);
         }
         const data = await response.json();
-        setUsers(data);
+        setUsers(data.payload);
       } catch (error) {
         console.error('Error fetching users:', error);
       }
@@ -97,7 +166,7 @@ const SystemStatus = () => {
   }, []);
 
   return (
-    <MainCard title="User Management" style={{ textAlign: 'center', marginTop: '100px' }}>
+    <Box title="User Management" style={{ textAlign: 'center', marginTop: '100px', width: '100%' }}>
       <Typography variant="h4" gutterBottom>
         Create User
       </Typography>
@@ -113,12 +182,19 @@ const SystemStatus = () => {
         </Box>
         <Box mb={2}>
           <TextField
-            label="Role Name"
+            select
+            label="Role"
             variant="outlined"
             value={rolename}
             onChange={(e) => setRolename(e.target.value)}
             required
-          />
+            SelectProps={{
+              native: true,
+            }}
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </TextField>
         </Box>
         <Box mb={2}>
           <TextField
@@ -130,84 +206,87 @@ const SystemStatus = () => {
             required
           />
         </Box>
-        <Box mb={2}>
-          <TextField
-            label="Expiration Date"
-            variant="outlined"
-            type="date"
-            value={expDate}
-            onChange={(e) => setExpDate(e.target.value)}
-            InputLabelProps={{
-              shrink: true,
-            }}
-          />
-        </Box>
-        <Box mb={2}>
-          <TextField
-            label="Enabled (1 or 0)"
-            variant="outlined"
-            value={enabled}
-            onChange={(e) => setEnabled(e.target.value)}
-            required
-          />
-        </Box>
         <Button type="submit" variant="contained" color="primary">
           Create User
         </Button>
       </form>
 
       <Typography variant="h4" gutterBottom style={{ marginTop: '50px' }}>
-        Delete User
+        Users
       </Typography>
-      <Box mb={2}>
-        <TextField
-          select
-          label="Select User to Delete"
-          variant="outlined"
-          value={userIdToDelete}
-          onChange={(e) => setUserIdToDelete(e.target.value)}
-          required
-          SelectProps={{
-            native: true,
-          }}
-        >
-          <option value="">Select a user</option>
-          {users.map((user) => (
-            <option key={user.id} value={user.id}>{user.username}</option>
-          ))}
-        </TextField>
-      </Box>
-      <Button onClick={handleDelete} variant="contained" color="secondary">
-        Delete User
-      </Button>
+      <TableContainer component={Paper} style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Username</TableCell>
+              <TableCell>Role</TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.userId}>
+                <TableCell>{user.username}</TableCell>
+                <TableCell>{user.rolename}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button 
+                      onClick={() => handleEdit(user)}
+                      variant="contained" 
+                      color="primary"
+                      size="small"
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      onClick={() => handleDelete(user.username)}
+                      variant="contained" 
+                      color="secondary"
+                      size="small"
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      <Grid container justifyContent="center" spacing={3}>
-        <Grid item xs={12} md={6}>
-          <SampleComponent icon={AccessAlarm} title="First Component" />
-          <Typography variant="body2" gutterBottom>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-          </Typography>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <SampleComponent icon={ThreeDRotation} title="Second Component" />
-          <Typography variant="body2" gutterBottom>
-            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-          </Typography>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <SampleComponent icon={Assignment} title="Third Component" />
-          <Typography variant="body2" gutterBottom>
-            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-          </Typography>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <SampleComponent icon={AttachMoney} title="Fourth Component" />
-          <Typography variant="body2" gutterBottom>
-            Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-          </Typography>
-        </Grid>
-      </Grid>
-    </MainCard>
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+        <DialogTitle>Edit User</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+            <TextField
+              label="Password"
+              type="password"
+              value={editForm.password}
+              onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+              helperText="Leave blank to keep current password"
+            />
+            
+            <FormControl fullWidth>
+              <InputLabel>Role</InputLabel>
+              <Select
+                value={editForm.rolename}
+                label="Role"
+                onChange={(e) => setEditForm({...editForm, rolename: e.target.value})}
+              >
+                <MenuItem value="user">User</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleUpdate} variant="contained" color="primary">
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

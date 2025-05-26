@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { Box, List, ListItem, ListItemText, Collapse, Divider } from "@mui/material";
+import { Box, List, ListItem, ListItemText, Collapse, Divider, useMediaQuery, useTheme } from "@mui/material";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
 
-function TreeView({ treeData, handleFilterChange }) {
+function TreeView({ treeData, handleFilterChange, tableData }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [openGroups, setOpenGroups] = useState({});
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedPage, setSelectedPage] = useState(null);
@@ -35,12 +37,12 @@ function TreeView({ treeData, handleFilterChange }) {
   return (
     <Box
       sx={{
-        flexBasis: "35%",
-        maxHeight: "calc(100vh - 150px)",
+        width: '100%',
+        maxHeight: isMobile ? '300px' : "calc(100vh - 300px)",
         overflow: "auto",
         border: "1px solid #ddd",
         borderRadius: "8px",
-        maxWidth: "300px"
+        backgroundColor: 'white',
       }}
     >
       <List>

@@ -4,7 +4,7 @@ import Plot from 'react-plotly.js';
 
 const MeasurementPage = () => {
   return (
-    <MainCard title="Measurement Status SpectroTRACER">
+    <Box title="Measurement Status SpectroTRACER" sx={{ width: '100%', height: '100%' }}>
       <Box 
         sx={{ 
           p: 3,
@@ -89,7 +89,7 @@ const MeasurementPage = () => {
           </Box>
         </Grid>
       </Grid> */}
-    </MainCard>
+    </Box>
   );
 };
 

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>System Alerts - AG Grid</title>
+  <link rel="stylesheet" href="./resources/ag-grid/ag-grid.css">
+  <link rel="stylesheet" href="./resources/ag-grid/ag-theme-alpine.css">
+  <style>
+    body { font-family: sans-serif; padding: 1em; }
+    .ag-theme-alpine { height: 600px; width: 100%; }
+    .critical { color: red; font-weight: bold; }
+    .error { color: darkred; }
+    .warning { color: orange; }
+    .info { color: gray; }
+  </style>
+</head>
+<body>
+  <h1>System Alerts - AG Grid</h1>
+  <div id="alertGrid" class="ag-theme-alpine"></div>
+
+  <script src="./resources/ag-grid/ag-grid-community.min.noStyle.js"></script>
+  <script>
+    async function fetchAlertFiles() {
+      const response = await fetch('/app_alerts_dir/');
+      const text = await response.text();
+      const matches = [...text.matchAll(/<a href="(AppAlert_[^"]+\.json)">/g)];
+      return [...new Set(matches.map(m => m[1]))];
+    }
+
+    async function fetchAlerts(file) {
+      try {
+        const res = await fetch(`/app_alerts_dir/${file}`);
+        return await res.json();
+      } catch {
+        return [];
+      }
+    }
+
+    async function loadAlerts() {
+      const files = await fetchAlertFiles();
+      let alerts = [];
+      for (const file of files) {
+        const fileAlerts = await fetchAlerts(file);
+        alerts = alerts.concat(fileAlerts);
+      }
+      return alerts;
+    }
+
+function renderAGGrid(data) {
+  const gridOptions = {
+    columnDefs: [
+      { headerName: "Timestamp", field: "Timestamp", sortable: true, filter: true },
+      {
+        headerName: "App", field: "App", cellRenderer: (params) => {
+          const level = params.data.Level.toLowerCase();
+          return `<span class="${level}">${params.value}</span>`;
+        }
+      },
+      { headerName: "Level", field: "Level", sortable: true, filter: true },
+      { headerName: "Message", field: "Message", sortable: true, filter: true }
+    ],
+    rowData: data,
+    pagination: true,
+    paginationPageSize: 50,
+    domLayout: 'autoHeight'
+  };
+
+  // ✅ New v31+ API
+  const gridApi = agGrid.createGrid(document.getElementById('alertGrid'), gridOptions);
+}
+
+
+    async function initializeGrid() {
+      const alerts = await loadAlerts();
+      renderAGGrid(alerts);
+      setInterval(async () => {
+        const updated = await loadAlerts();
+        document.getElementById('alertGrid').innerHTML = ''; // clear old grid
+        renderAGGrid(updated);
+      }, 10000);
+    }
+
+    initializeGrid();
+  </script>
+</body>
+</html

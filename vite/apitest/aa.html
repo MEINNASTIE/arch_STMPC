@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <!-- Material Design CSS -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background-color: #f5f5f5;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header .title {
+            font-size: 20px;
+            margin: 0;
+        }
+        .sidebar {
+            width: 200px;
+            background-color: #f5f5f5;
+            padding: 20px;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+        }
+        .sidebar a {
+            display: block;
+            margin: 10px 0;
+            font-size: 16px;
+            text-decoration: none;
+            color: #1e88e5;
+        }
+        .sidebar a:hover {
+            text-decoration: underline;
+        }
+        .main-content {
+            margin-left: 220px; /* Adjust margin to account for sidebar width */
+            padding: 20px;
+            flex: 1;
+            height: calc(100vh - 60px); /* Adjust height to account for header */
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="#" data-url="mpc-api_mstatus.html">Status: Runtime</a>
+        <a href="#" data-url="mpc-api_config-runtime.html">Config: Runtime </a>
+        <a href="#" data-url="mpc-api_config-runtime_desc.html">Config: Runtime+descriptors</a>
+        <a href="#" data-url="mpc-api_config-system.html">Config: System/Factory</a>
+        <a href="#" data-url="mpc-api_chart-upf.html">Data: Chart</a>
+        <a href="#" data-url="mpc-api_spectrum.html">Data: Spectrum</a>
+        <a href="#" data-url="mpc-api_spectrumN.html">Data: Spectrum HW API</a>
+        <a href="#" data-url="mpc-api_chart-dbstats.html">DB: Storage</a>
+        <a href="#" data-url="/api/meas/storage/files/stats-io">DB: IO statistics</a>
+        <a href="#" data-url="mpc-api_hw-adc.html">HW: ADC</a>
+		 
+		
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <div class="title" id="title">Loading...</div>
+        </div>
+        <iframe id="content" src="" title="Content Frame"></iframe>
+    </div>
+
+    <!-- Material Design JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to load JSON data and update the title
+            function loadJsonData() {
+                fetch('/api/config/system')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.returnCode === 0) {
+                            const payload = data.payload;
+                            const target = payload.find(item => item.gk === "MPC.factory.sn");
+
+                            if (target && target.val_rt) {
+                                const valRt = target.val_rt;
+                                document.getElementById('title').textContent = valRt;
+                                document.title = valRt;
+                            } else {
+                                document.getElementById('title').textContent = 'Value Not Found';
+                            }
+                        } else {
+                            document.getElementById('title').textContent = 'Error Loading Data';
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById('title').textContent = 'Error Loading Data';
+                    });
+            }
+
+            // Function to load content from the specified URL into the iframe
+            function loadContent(url) {
+                document.getElementById('content').src = url;
+            }
+
+            // Load JSON data on page load
+            loadJsonData();
+
+            // Add click event listeners to sidebar links
+            document.querySelectorAll('.sidebar a').forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const url = this.getAttribute('data-url');
+                    loadContent(url);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

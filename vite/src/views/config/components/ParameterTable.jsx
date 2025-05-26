@@ -1,11 +1,15 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography, Checkbox } from "@mui/material";
+import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography, Checkbox, useMediaQuery } from "@mui/material";
 import DataTable from "react-data-table-component";
-import { Box } from "@mui/system";
+import { Box, useTheme } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
 import Clock from "./TimeConfig";
+import MobileParameterTable from "./MobileParameterTable";
 
 export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel, onShowWaitingChange }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [searchTerm, setSearchTerm] = useState("");
   const [showWaitingHint, setShowWaitingHint] = useState(
     JSON.parse(localStorage.getItem("showWaitingHint")) ?? true
@@ -24,18 +28,18 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   );
   const [filteredData, setFilteredData] = useState(tableData);
 
-  const toggleState = (stateSetter, localStorageKey, currentValue, callback) => {
+  const toggleState = useCallback((stateSetter, localStorageKey, currentValue, callback) => {
     const newValue = !currentValue;
     stateSetter(newValue);
     localStorage.setItem(localStorageKey, JSON.stringify(newValue));
     if (callback) callback(newValue);
-  };
+  }, []);
 
-  const toggleAppId = () => toggleState(setShowAppId, "showAppId", showAppId);
-  const toggleAllRTValues = () => toggleState(setShowAllRTValues, "showAllRTValues", showAllRTValues);
-  const toggleShowWaiting = () => toggleState(setShowWaiting, "showWaiting", showWaiting, onShowWaitingChange);
-  const toggleWaitingHint = () => toggleState(setShowWaitingHint, "showWaitingHint", showWaitingHint, onShowWaitingChange);
-  const toggleGK = () => toggleState(setShowGK, "showGK", showGK);
+  const toggleAppId = useCallback(() => toggleState(setShowAppId, "showAppId", showAppId), [showAppId, toggleState]);
+  const toggleAllRTValues = useCallback(() => toggleState(setShowAllRTValues, "showAllRTValues", showAllRTValues), [showAllRTValues, toggleState]);
+  const toggleShowWaiting = useCallback(() => toggleState(setShowWaiting, "showWaiting", showWaiting, onShowWaitingChange), [showWaiting, toggleState, onShowWaitingChange]);
+  const toggleWaitingHint = useCallback(() => toggleState(setShowWaitingHint, "showWaitingHint", showWaitingHint, onShowWaitingChange), [showWaitingHint, toggleState, onShowWaitingChange]);
+  const toggleGK = useCallback(() => toggleState(setShowGK, "showGK", showGK), [showGK, toggleState]);
 
   const getStatusText = useCallback((state) => {
     switch (state) {
@@ -43,52 +47,22 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       case 'P': return 'applying';
       case 'R': return 'rejected';
       case 'U': return 'waiting';
+      default: return '';
     }
-  });
-
-  useEffect(() => {
-    setFilteredData(tableData); 
-  }, [tableData]);
-
-  useEffect(() => {
-    const handleSearch = () => {
-      const searchTermLower = searchTerm.toLowerCase();
-  
-      const filtered = tableData.filter((row) => {
-        if (!showWaiting && row.state === 'U') {
-          return false;
-        }
-        return (
-          row.label.toLowerCase().includes(searchTermLower) ||
-          row.index.toLowerCase().includes(searchTermLower) ||
-          row.gk.toLowerCase().includes(searchTermLower) ||
-          getStatusText(row.state).toLowerCase().includes(searchTermLower)
-        );
-      });
-  
-      setFilteredData(filtered);
-    };
-  
-    handleSearch();
-  }, [searchTerm, tableData, getStatusText, showWaiting]);
-  
-  useEffect(() => {
-    const savedSearchTerm = localStorage.getItem("searchTerm") || "";
-    setSearchTerm(savedSearchTerm);
   }, []);
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = useCallback((e) => {
     const newSearchTerm = e.target.value;
     setSearchTerm(newSearchTerm);
     localStorage.setItem("searchTerm", newSearchTerm);
-  };
+  }, []);
 
-  const getLabel = (list, value) => {
+  const getLabel = useCallback((list, value) => {
     const option = list.find(item => item.value === value);
     return option ? option.label : value;
-  };
+  }, []);
   
-  const renderUsedInSystem = (valRt, list) => {
+  const renderUsedInSystem = useCallback((valRt, list) => {
     if (valRt && valRt.length > 0) {
       return valRt.map(rt => 
         showAppId 
@@ -97,7 +71,32 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       ).join(", ");
     }
     return "-unknown-";
-  };
+  }, [showAppId, getLabel]);
+
+  useEffect(() => {
+    setFilteredData(tableData);
+  }, [tableData]);
+
+  useEffect(() => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const filtered = tableData.filter((row) => {
+      if (!showWaiting && row.state === 'U') {
+        return false;
+      }
+      return (
+        row.label.toLowerCase().includes(searchTermLower) ||
+        row.index.toLowerCase().includes(searchTermLower) ||
+        row.gk.toLowerCase().includes(searchTermLower) ||
+        getStatusText(row.state).toLowerCase().includes(searchTermLower)
+      );
+    });
+    setFilteredData(filtered);
+  }, [searchTerm, tableData, getStatusText, showWaiting]);
+
+  useEffect(() => {
+    const savedSearchTerm = localStorage.getItem("searchTerm") || "";
+    setSearchTerm(savedSearchTerm);
+  }, []);
 
   const columns = useMemo(() => [
     {
@@ -108,51 +107,42 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           onChange={() => handleRowSelect(row.index)}
         />
       ),
-      width: "50px",
+      width: "40px",
     },
-    { name: "Index", selector: (row) => row.index, width: "80px" },
-    { name: "Label", selector: (row) => row.label, width: "310px" },
+    { 
+      name: "Index", 
+      selector: (row) => row.index, 
+      width: "80px",
+    },
+    { 
+      name: "Label", 
+      selector: (row) => row.label, 
+      width: "300px",
+    },
     {
       name: "New Value",
       cell: (row) => {
         const listOptions = row.list || [];
 
-        // conserve for later
         if (row.type === "list_mc") {
-          const currentValues = row.val && row.val.rt ? row.val.rt.map(item => item.val) : [];
+          const currentValues = row.val_new ? row.val_new.split('|') : [];
 
           return (
             <Select
               multiple
               value={currentValues}
               onChange={(e) => {
-                const valueArray = e.target.value;
-
-                const newValue = {
-                  new: valueArray.join('|'),
-                  rt: valueArray.map(val => {
-                    const foundOption = listOptions.find(option => option.value === val);
-                    return {
-                      val: val,
-                      app_id: foundOption ? foundOption.app_id || "" : ""
-                    };
-                  })
-                };
-
-                const foundIndex = tableData.findIndex(item => item.index === row.index);
-
-                if (foundIndex !== -1) {
-                  const updatedData = [...tableData];
-                  updatedData[foundIndex].val = newValue;
-                  handleInputChange(foundIndex, newValue);
-                } else {
-                  console.error("Invalid row index:", row.index);
-                }
+                const newValue = e.target.value.join('|');
+                handleInputChange(row.index, newValue);
               }}
               variant="outlined"
               renderValue={(selected) => {
-                console.log("Render value for selected:", selected);
-                return selected.length > 0 ? selected.join(', ') : "Select values...";
+                return selected.length > 0 
+                  ? selected.map(val => {
+                      const option = row.list.find(opt => opt.value === val);
+                      return option ? option.label : val;
+                    }).join(', ')
+                  : "Select values...";
               }}
               sx={{
                 width: "100%",
@@ -164,16 +154,12 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
                 },
               }}
             >
-              {listOptions.length > 0 ? (
-                listOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    <Checkbox checked={currentValues.includes(option.value)} />
-                    {option.label}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>No options available</MenuItem>
-              )}
+              {row.list.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  <Checkbox checked={currentValues.includes(option.value)} />
+                  {option.label}
+                </MenuItem>
+              ))}
             </Select>
           );
         }
@@ -192,9 +178,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
                 padding: "5px",
               },
             }}
-            onClick={() => handleOpenRefModal(row)} 
           >
-            <MenuItem disabled>Select from List</MenuItem>
             {listOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
@@ -239,12 +223,12 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           />
         );
       },
-      width: "250px",
+      width: "200px",
     },
     {
       name: "Used in System", 
       cell: (row) => renderUsedInSystem(row.val_rt, row.list), 
-      width: "150px"
+      width: "200px",
     },
     showAllRTValues && { 
       name: "All RT Values", 
@@ -255,7 +239,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
               : getLabel(row.list, rt.val)}`
           ).join(<br />)
         : "-",
-      width: "150px"
+      width: "200px",
     },
     {
       name: "Status",
@@ -276,140 +260,202 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         };
         return statusMap[row.state] || "";
       },
-      width: "200px",
+      width: "150px",
     },    
-    showGK && { name: "GK", selector: (row) => row.gk, width: "390px" },
-  ], [handleRowSelect, handleInputChange]).filter(Boolean);
+    showGK && { 
+      name: "GK", 
+      selector: (row) => row.gk, 
+      width: "300px",
+    },
+  ].filter(Boolean), [handleRowSelect, handleInputChange, showAllRTValues, showWaiting, showWaitingHint, showGK, getLabel, renderUsedInSystem]);
 
-  const memoizedColumns = useMemo(() => columns, [columns]);
   const memoizedData = useMemo(() => filteredData, [filteredData]);
+
+  if (isMobile) {
+    return (
+      <MobileParameterTable
+        tableData={tableData}
+        handleApply={handleApply}
+        handleRowSelect={handleRowSelect}
+        handleInputChange={handleInputChange}
+        filterType={filterType}
+        handleFilterChange={handleFilterChange}
+        refs={refs}
+        groupLabel={groupLabel}
+        pageLabel={pageLabel}
+        onShowWaitingChange={onShowWaitingChange}
+      />
+    );
+  }
 
   return (
     <>
-    <style>
-      {`
-        .status-A { background-color: lightgreen; padding: 10px; border-radius: 5px; }
-        .status-P { background-color: yellow; padding: 10px; border-radius: 5px; }
-        .status-R { background-color: lightcoral; padding: 10px; border-radius: 5px; }
-        .status-U { background-color: lightgray; padding: 10px; border-radius: 5px; }
-      `}
-    </style>
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: 'column',
-        flexBasis: (filterType === "advanced" || filterType === "time") ? "0" : "80%",
-        marginLeft: "10px"
-      }}
-    >
-       <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', marginTop: '10px'}}>
-      <Typography 
-        variant="h3" 
-        sx={{ 
-         
-          fontWeight: "bold",
+      <style>
+        {`
+          .status-A { background-color: lightgreen; padding: 10px; border-radius: 5px; }
+          .status-P { background-color: yellow; padding: 10px; border-radius: 5px; }
+          .status-R { background-color: lightcoral; padding: 10px; border-radius: 5px; }
+          .status-U { background-color: lightgray; padding: 10px; border-radius: 5px; }
+        `}
+      </style>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: 'column',
+          flexBasis: (filterType === "advanced" || filterType === "time") ? "0" : "100%",
+          marginLeft: "10px",
+          padding: "20px",
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: `10px`,
+          height: "calc(100vh - 100px)",
+          overflow: "hidden",
+          maxWidth: "100%",
+          boxSizing: "border-box"
         }}
       >
-        {filterType === "all" ? "All Parameters" : groupLabel}
-      </Typography>
-      {pageLabel && filterType !== "all" && (
-        <Typography 
-          variant="h4" 
-          sx={{ 
-            color: "#666",
-            marginTop: '1px'
-          }}
-        >
-          {pageLabel}
-        </Typography>
-      )}
-      </Box>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-        {filterType !== "advanced" && filterType !== "time" &&(
-          <>
-            <TextField
-              label="Search"
-              variant="outlined"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              sx={{ width: "20%" }}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', marginTop: '10px'}}>
+          <Typography 
+            variant="h3" 
+            sx={{ 
+              fontWeight: "bold",
+            }}
+          >
+            {filterType === "all" ? "All Parameters" : groupLabel}
+          </Typography>
+          {pageLabel && filterType !== "all" && (
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                color: "#666",
+                marginTop: '1px'
+              }}
+            >
+              {pageLabel}
+            </Typography>
+          )}
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: "10px" }}>
+          {filterType !== "advanced" && filterType !== "time" &&(
+            <>
+              <TextField
+                label="Search"
+                variant="outlined"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                sx={{ width: { xs: "100%", sm: "20%" } }}
+              />
+              {filterType !== "selected" && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  sx={{ 
+                    width: { xs: "100%", sm: "270px" }, 
+                    marginRight: { xs: 0, sm: "20px" }, 
+                    marginBottom: { xs: "10px", sm: "20px" }
+                  }}
+                  onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
+                >
+                  Preview Selected Changes
+                </Button>
+              )}
+            </>
+          )}
+        </Box>
+        {filterType !== "advanced" && filterType !== "time" && (
+          <TableContainer
+            component={Paper}
+            sx={{ 
+              flex: 1,
+              overflow: "auto",
+              width: "100%",
+              boxSizing: "border-box",
+              "& .MuiTableContainer-root": {
+                height: "100%"
+              }
+            }}
+          >
+            <DataTable
+              columns={columns}
+              data={memoizedData}
+              pagination
+              highlightOnHover
+              customStyles={{
+                cells: {
+                  style: {
+                    fontSize: '14px',
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    padding: '8px',
+                  },
+                },
+                headCells: {
+                  style: {
+                    fontSize: '16px',
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    padding: '8px',
+                  },
+                },
+                table: {
+                  style: {
+                    height: "100%",
+                    width: "100%",
+                  }
+                },
+                tableWrapper: {
+                  style: {
+                    overflowX: "auto",
+                    width: "100%",
+                  }
+                },
+                responsiveWrapper: {
+                  style: {
+                    overflowX: "auto",
+                    width: "100%",
+                  }
+                }
+              }}
             />
-            {filterType !== "selected" && (
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                sx={{ width: "270px", marginRight: "20px", marginBottom: "20px"}}
-                onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
-              >
-                Preview Selected Changes
-              </Button>
-            )}
-          </>
+          </TableContainer>
+        )}
+    
+        {filterType === "selected" && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleApply}
+            size="large"
+            sx={{ width: "160px", alignSelf: "left", marginTop: "40px", backgroundColor: "#FFD700 !important", color: "black !important"}}
+          >
+            Apply Changes
+          </Button>
         )}
       </Box>
-      {filterType !== "advanced" && filterType !== "time" && (
-        <TableContainer
-          component={Paper}
-          sx={{ flexBasis: "70%"}}
-        >
-          <DataTable
-            columns={memoizedColumns}
-            data={memoizedData}
-            pagination
-            highlightOnHover
-            customStyles={{
-              cells: {
-                style: {
-                  fontSize: '14px',
-                },
-              },
-              headCells: {
-                style: {
-                  fontSize: '16px',
-                },
-              },
-            }}
+    
+      {filterType === "advanced" && (
+        <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px" }}>
+          <AdvancedSettings
+            showWaitingHint={showWaitingHint}
+            showAppId={showAppId}
+            showAllRTValues={showAllRTValues}
+            showWaiting={showWaiting}
+            showGK={showGK}
+            toggleWaitingHint={toggleWaitingHint}
+            toggleAppId={toggleAppId}
+            toggleAllRTValues={toggleAllRTValues}
+            toggleShowWaiting={toggleShowWaiting}
+            toggleGK={toggleGK}
           />
-        </TableContainer>
+        </Box>
+        
       )}
-  
-      {filterType === "selected" && (
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleApply}
-          size="large"
-          sx={{ width: "160px", alignSelf: "left", marginTop: "40px", backgroundColor: "#FFD700 !important", color: "black !important"}}
-        >
-          Apply Changes
-        </Button>
+      {filterType === "time" && (
+        <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px", width: "80%"}}>
+            <Clock />
+        </Box>
       )}
-    </Box>
-  
-    {filterType === "advanced" && (
-      <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px" }}>
-        <AdvancedSettings
-          showWaitingHint={showWaitingHint}
-          showAppId={showAppId}
-          showAllRTValues={showAllRTValues}
-          showWaiting={showWaiting}
-          showGK={showGK}
-          toggleWaitingHint={toggleWaitingHint}
-          toggleAppId={toggleAppId}
-          toggleAllRTValues={toggleAllRTValues}
-          toggleShowWaiting={toggleShowWaiting}
-          toggleGK={toggleGK}
-        />
-      </Box>
-      
-    )}
-    {filterType === "time" && (
-      <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px", width: "80%"}}>
-          <Clock />
-      </Box>
-    )}
-  </>
+    </>
   );
 }
 
