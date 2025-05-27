@@ -14,7 +14,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Divider
 } from '@mui/material';
 
 const SystemStorage = () => {
@@ -193,12 +192,12 @@ const SystemStorage = () => {
         <Grid container spacing={{ xs: 2, sm: 3 }}>
           <Grid item xs={12} md={6}>
             <Paper 
-              elevation={3} 
               sx={{ 
                 p: { xs: 1, sm: 2 },
                 height: '100%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                 border: 1, borderColor: 'divider'
               }}
             >
               <div id="chart1" style={{ width: '100%', height: isMobile ? '300px' : isTablet ? '350px' : '400px' }}></div>
@@ -207,21 +206,20 @@ const SystemStorage = () => {
 
           <Grid item xs={12} md={6}>
             <Paper 
-              elevation={3} 
               sx={{ 
                 p: { xs: 1, sm: 2 },
                 height: '100%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                 border: 1, borderColor: 'divider'
               }}
             >
               <div id="chart2" style={{ width: '100%', height: isMobile ? '300px' : isTablet ? '350px' : '400px' }}></div>
             </Paper>
           </Grid>
 
-          {/* StatsIO Table */}
           <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: { xs: 1, sm: 2 } }}>
+            <Paper sx={{ p: { xs: 1, sm: 2 },  border: 1, borderColor: 'divider'}}>
               <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                 StatsIO Information
               </Typography>
@@ -274,9 +272,8 @@ const SystemStorage = () => {
             </Paper>
           </Grid>
 
-          {/* SD Stats Table */}
           <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: { xs: 1, sm: 2 } }}>
+            <Paper sx={{ p: { xs: 1, sm: 2 },  border: 1, borderColor: 'divider' }}>
               <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                 SD Stats Since Last Boot
               </Typography>
@@ -304,10 +301,9 @@ const SystemStorage = () => {
               </TableContainer>
             </Paper>
           </Grid>
-
-          {/* Storage Limits Table */}
+          
           <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: { xs: 1, sm: 2 } }}>
+            <Paper sx={{ p: { xs: 1, sm: 2 }, border: 1, borderColor: 'divider'}}>
               <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                 Storage Limits
               </Typography>

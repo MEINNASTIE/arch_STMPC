@@ -431,30 +431,30 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
             Apply Changes
           </Button>
         )}
-      </Box>
-    
-      {filterType === "advanced" && (
-        <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px" }}>
-          <AdvancedSettings
-            showWaitingHint={showWaitingHint}
-            showAppId={showAppId}
-            showAllRTValues={showAllRTValues}
-            showWaiting={showWaiting}
-            showGK={showGK}
-            toggleWaitingHint={toggleWaitingHint}
-            toggleAppId={toggleAppId}
-            toggleAllRTValues={toggleAllRTValues}
-            toggleShowWaiting={toggleShowWaiting}
-            toggleGK={toggleGK}
-          />
-        </Box>
+
+        {filterType === "advanced" && (
+          <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px" }}>
+            <AdvancedSettings
+              showWaitingHint={showWaitingHint}
+              showAppId={showAppId}
+              showAllRTValues={showAllRTValues}
+              showWaiting={showWaiting}
+              showGK={showGK}
+              toggleWaitingHint={toggleWaitingHint}
+              toggleAppId={toggleAppId}
+              toggleAllRTValues={toggleAllRTValues}
+              toggleShowWaiting={toggleShowWaiting}
+              toggleGK={toggleGK}
+            />
+          </Box>
+        )}
         
-      )}
-      {filterType === "time" && (
-        <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px", width: "80%"}}>
+        {filterType === "time" && (
+          <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", maxHeight: "calc(100vh - 150px)", borderRadius: "10px", width: "80%"}}>
             <Clock />
-        </Box>
-      )}
+          </Box>
+        )}
+      </Box>
     </>
   );
 }

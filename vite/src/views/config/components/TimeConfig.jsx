@@ -103,7 +103,7 @@ const TimeConfig = () => {
 
   return (
     <Box sx={{ mb: 4 }}>
-      <Paper elevation={3} sx={{ p: 3, mb: 2 }}>
+      <Paper sx={{ p: 3, mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <AnalogClock time={getAdjustedTime(time)} />
         </Box>

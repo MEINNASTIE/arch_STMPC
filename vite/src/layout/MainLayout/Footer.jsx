@@ -16,7 +16,7 @@ const Footer = () => {
         backgroundColor: '#3e4aec',
         borderRadius: { xs: '0', sm: '8px' },
         margin: { xs: '0', sm: '0 30px' },
-        marginBottom: { xs: '0', sm: '2px' }
+        marginBottom: { xs: '0', sm: '2px' },
       }}
     >
       <Box

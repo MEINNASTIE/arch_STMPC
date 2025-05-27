@@ -1,0 +1,27 @@
+{
+  "header": {
+    "measurementStatus": "Messstatus",
+    "configuration": {
+      "title": "Konfiguration",
+      "instrumentConfig": "Instrumentenkonfiguration",
+      "factoryConfig": "Werkseinstellungen",
+      "changesSummary": "Änderungsübersicht"
+    },
+    "system": {
+      "title": "System",
+      "status": "Systemstatus",
+      "storage": "Speicher",
+      "info": "Systeminformationen"
+    },
+    "language": {
+      "title": "Sprache",
+      "english": "Englisch",
+      "german": "Deutsch",
+      "french": "Französisch",
+      "russian": "Russisch"
+    },
+    "print": "Drucken",
+    "refresh": "Aktualisieren",
+    "logout": "Abmelden"
+  }
+} 

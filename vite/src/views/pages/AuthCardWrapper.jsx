@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 
 // project import
 import MainCard from 'ui-component/cards/MainCard';
+import Footer from 'layout/MainLayout/Footer';
 
 // ==============================|| AUTHENTICATION CARD WRAPPER ||============================== //
 

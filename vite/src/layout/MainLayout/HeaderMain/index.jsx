@@ -6,6 +6,7 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import { useTranslation } from 'react-i18next';
 
 import { IconPresentation, IconSettings, IconCpu, IconWorld, IconPrinter, IconRefresh, IconUser } from '@tabler/icons-react';
 import usePrint from 'hooks/usePrint';
@@ -16,6 +17,7 @@ import MobileHeader from './MobileHeader';
 const HeaderMain = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { handlePrint } = usePrint();
   const [anchorEl, setAnchorEl] = useState(null);
   const [hoveredIcon, setHoveredIcon] = useState(null);
@@ -61,42 +63,45 @@ const HeaderMain = () => {
   const iconMenuOptions = [
     {
       icon: <IconPresentation stroke={1.5} size="1.9rem" />,
-      label: 'Measurement status',
+      label: t('header.measurementStatus'),
       path: '/measurement-status'
     },
     {
       icon: <IconSettings stroke={1.5} size="1.9rem" />,
-      label: 'Configuration',
+      label: t('header.configuration.title'),
       options: [
-        { label: 'Instrument configuration', path: '/conf' },
-        { label: 'Factory configuration', path: '/conf-factory' },
-        { label: 'Summary of changes', path: '/dashboard' }
+        { label: t('header.configuration.instrumentConfig'), path: '/conf' },
+        { label: t('header.configuration.factoryConfig'), path: '/conf-factory' },
+        { label: t('header.configuration.changesSummary'), path: '/dashboard' }
       ]
     },
     {
       icon: <IconCpu stroke={1.5} size="1.9rem" />,
-      label: 'System',
+      label: t('header.system.title'),
       options: [
-        { label: 'System status', path: '/system-status' },
-        { label: 'Storage', path: '/system-storage' },
-        { label: 'System info', path: '/system-info' }
+        { label: t('header.system.status'), path: '/system-status' },
+        { label: t('header.system.storage'), path: '/system-storage' },
+        { label: t('header.system.info'), path: '/system-info' }
       ]
     },
     {
       icon: <IconWorld stroke={1.5} size="1.9rem" />,
+      label: t('header.language.title'),
       options: [
-        { label: 'English' },
-        { label: 'German' },
-        { label: 'French' },
-        { label: 'Russian' },
+        { label: t('header.language.english'), code: 'en' },
+        { label: t('header.language.german'), code: 'de' },
+        { label: t('header.language.french'), code: 'fr' },
+        { label: t('header.language.russian'), code: 'ru' },
       ]
     },
     {
       icon: <IconPrinter stroke={1.5} size="1.9rem" />,
+      label: t('header.print'),
       onClick: handlePrint
     },
     {
       icon: <IconRefresh stroke={1.5} size="1.9rem" />,
+      label: t('header.refresh'),
       onClick: handleRefresh,
     }
   ];
@@ -125,6 +130,11 @@ const HeaderMain = () => {
 
     fetchData();
   }, [setSerialNumber]);
+
+  const handleLanguageChange = (langCode) => {
+    i18n.changeLanguage(langCode);
+    handleMenuClose();
+  };
 
   return (
     <Box
@@ -207,10 +217,9 @@ const HeaderMain = () => {
                     key={i} 
                     onClick={() => {
                       if (option.path) {
-                        handleNavigation(option.path); 
-                      } else {
-                        console.log('Change language to', option.label);  
-                        handleMenuClose();
+                        handleNavigation(option.path);
+                      } else if (option.code) {
+                        handleLanguageChange(option.code);
                       }
                     }}
                     sx={{ cursor: 'pointer' }}
@@ -246,7 +255,7 @@ const HeaderMain = () => {
           }}
           onClick={handleLogout}  
         >
-          Log Out
+          {t('header.logout')}
         </Button>
       </Box>
     </Box>

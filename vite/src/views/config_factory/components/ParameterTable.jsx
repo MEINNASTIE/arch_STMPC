@@ -281,7 +281,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         borderRadius: `10px`,
         height: "calc(100vh - 100px)",
         overflow: "hidden",
-        maxWidth: "100%",
+        maxWidth: "87.5%",
         boxSizing: "border-box"
       }}
     >
@@ -350,6 +350,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           <DataTable
             columns={memoizedColumns}
             data={memoizedData}
+            pagination
             highlightOnHover
             customStyles={{
               cells: {

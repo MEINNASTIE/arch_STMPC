@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import { useTheme } from '@mui/material';
 import HeaderMain from 'layout/MainLayout/HeaderMain';
-import LogoSection from 'layout/MainLayout/LogoSection';
 import Footer from 'layout/MainLayout/Footer';
 
 // ==============================|| SEMI LAYOUT ||============================== //

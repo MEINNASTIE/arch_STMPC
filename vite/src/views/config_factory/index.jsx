@@ -247,17 +247,17 @@ function ConfigMainFactory() {
       <Tabs value={0} centered></Tabs>
       <Box display="flex" flexGrow={1} gap={2} p={2}>
         <Box sx={{ 
-          width: { xs: '30%', sm: '25%', md: '20%' },
-          minWidth: '300px',
-          maxWidth: '300px',
-          overflow: 'auto'
+          width: { xs: '100%', sm: '25%', md: '20%' },
+          minWidth: { xs: 'auto', sm: '200px' },
+          maxWidth: { xs: '100%', sm: '300px' },
+          overflow: 'auto',
+          mb: { xs: 2, sm: 0 }
         }}>
           <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
         </Box>
         <Box sx={{ 
           flex: 1,
           minWidth: '100%',
-          height: "850px",
           overflow: 'auto'
         }}>
           <ParameterTable 

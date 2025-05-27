@@ -1,5 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, TextField, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { 
+  Typography, 
+  Box, 
+  TextField, 
+  Button, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  Paper, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem,
+  Container,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PeopleIcon from '@mui/icons-material/People';
 
 const SystemStatus = () => {
   const [username, setUsername] = useState('');
@@ -166,127 +197,179 @@ const SystemStatus = () => {
   }, []);
 
   return (
-    <Box title="User Management" style={{ textAlign: 'center', marginTop: '100px', width: '100%' }}>
-      <Typography variant="h4" gutterBottom>
-        Create User
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <Box mb={2}>
-          <TextField
-            label="Username"
-            variant="outlined"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </Box>
-        <Box mb={2}>
-          <TextField
-            select
-            label="Role"
-            variant="outlined"
-            value={rolename}
-            onChange={(e) => setRolename(e.target.value)}
-            required
-            SelectProps={{
-              native: true,
-            }}
-          >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </TextField>
-        </Box>
-        <Box mb={2}>
-          <TextField
-            label="Password"
-            variant="outlined"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </Box>
-        <Button type="submit" variant="contained" color="primary">
-          Create User
-        </Button>
-      </form>
-
-      <Typography variant="h4" gutterBottom style={{ marginTop: '50px' }}>
-        Users
-      </Typography>
-      <TableContainer component={Paper} style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Username</TableCell>
-              <TableCell>Role</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.userId}>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.rolename}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+    <Container maxWidth="lg" sx={{ py: 8 }}>
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={4}>
+          <Card sx={{ border: 1, borderColor: 'divider' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <PersonAddIcon sx={{ mr: 1 }} />
+                <Typography variant="h5" component="h2">
+                  Create User
+                </Typography>
+              </Box>
+              <form onSubmit={handleSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Username"
+                      variant="outlined"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      select
+                      label="Role"
+                      variant="outlined"
+                      value={rolename}
+                      onChange={(e) => setRolename(e.target.value)}
+                      required
+                    >
+                      <MenuItem value="user">User</MenuItem>
+                      <MenuItem value="admin">Admin</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Password"
+                      variant="outlined"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
                     <Button 
-                      onClick={() => handleEdit(user)}
+                      fullWidth
+                      type="submit" 
                       variant="contained" 
                       color="primary"
-                      size="small"
+                      startIcon={<PersonAddIcon />}
                     >
-                      Edit
+                      Create User
                     </Button>
-                    <Button 
-                      onClick={() => handleDelete(user.username)}
-                      variant="contained" 
-                      color="secondary"
-                      size="small"
-                    >
-                      Delete
-                    </Button>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                  </Grid>
+                </Grid>
+              </form>
+            </CardContent>
+          </Card>
+        </Grid>
 
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
-        <DialogTitle>Edit User</DialogTitle>
+        {/* Users List Section */}
+        <Grid item xs={12} md={8}>
+          <Card sx={{ border: 1, borderColor: 'divider' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <PeopleIcon sx={{ mr: 1 }} />
+                <Typography variant="h5" component="h2">
+                  User Management
+                </Typography>
+              </Box>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Username</TableCell>
+                      <TableCell>Role</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.userId} hover>
+                        <TableCell>{user.username}</TableCell>
+                        <TableCell>{user.rolename}</TableCell>
+                        <TableCell align="right">
+                          <Tooltip title="Edit User">
+                            <IconButton 
+                              onClick={() => handleEdit(user)}
+                              color="primary"
+                              size="small"
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete User">
+                            <IconButton 
+                              onClick={() => handleDelete(user.username)}
+                              color="error"
+                              size="small"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Dialog 
+        open={editDialogOpen} 
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <EditIcon sx={{ mr: 1 }} />
+            Edit User
+          </Box>
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-            <TextField
-              label="Password"
-              type="password"
-              value={editForm.password}
-              onChange={(e) => setEditForm({...editForm, password: e.target.value})}
-              helperText="Leave blank to keep current password"
-            />
-            
-            <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
-              <Select
-                value={editForm.rolename}
-                label="Role"
-                onChange={(e) => setEditForm({...editForm, rolename: e.target.value})}
-              >
-                <MenuItem value="user">User</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-              </Select>
-            </FormControl>
+          <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type="password"
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                  helperText="Leave blank to keep current password"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Role</InputLabel>
+                  <Select
+                    value={editForm.rolename}
+                    label="Role"
+                    onChange={(e) => setEditForm({...editForm, rolename: e.target.value})}
+                  >
+                    <MenuItem value="user">User</MenuItem>
+                    <MenuItem value="admin">Admin</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleUpdate} variant="contained" color="primary">
+          <Button 
+            onClick={handleUpdate} 
+            variant="contained" 
+            color="primary"
+            startIcon={<EditIcon />}
+          >
             Update
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   );
 };
 
