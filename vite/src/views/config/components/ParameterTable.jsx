@@ -63,14 +63,14 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   }, []);
   
   const renderUsedInSystem = useCallback((valRt, list) => {
-    if (valRt && valRt.length > 0) {
-      return valRt.map(rt => 
-        showAppId 
-          ? `${getLabel(list, rt.val)} (app: ${rt.app_id})` 
-          : `${getLabel(list, rt.val)}`
-      ).join(", ");
+    if (!valRt || !Array.isArray(valRt) || valRt.length === 0) {
+      return "-unknown-";
     }
-    return "-unknown-";
+
+    return valRt.map((rt, index) => {
+      const label = getLabel(list, rt.val);
+      return showAppId ? `${label} (app: ${rt.app_id})` : label;
+    }).filter(Boolean).join(", ");
   }, [showAppId, getLabel]);
 
   useEffect(() => {

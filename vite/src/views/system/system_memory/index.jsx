@@ -32,12 +32,18 @@ const SystemStorage = () => {
     });
   };
 
-  const calculateTimeBasedMetric = (count, startTime) => {
-    const now = new Date();
-    const start = new Date(startTime);
-    const diffInMinutes = (now - start) / (1000 * 60);
-    const daysInOneMinute = count / diffInMinutes;
-    return daysInOneMinute.toFixed(2);
+  const calculateTimeBasedMetric = (count, startTime, type) => {
+    switch(type) {
+      case 'files':
+      case 'records':
+        return (count / 1440 / 7).toFixed(2);
+      case 'transactions':
+        return (count / 1440).toFixed(2);
+      case 'bytes':
+        return (count / 15000 / 1440).toFixed(2);
+      default:
+        return '0.00';
+    }
   };
 
   const formatBytes = (bytes) => {
@@ -59,7 +65,7 @@ const SystemStorage = () => {
 
     const fetchData = async () => {
       try {
-        const response = await fetch('https://192.168.164.158/api/meas/storage/files/stats');
+        const response = await fetch('/api/meas/storage/files/stats');
         const data = await response.json();
         setStorageData(data.payload);
         setUtcTime(data.nowUTC);
@@ -243,25 +249,25 @@ const SystemStorage = () => {
                         <TableCell>
                           {storageData.StatsIO.NoOfFiles.toLocaleString()}
                           <Typography variant="caption" display="block" color="text.secondary">
-                            ({calculateTimeBasedMetric(storageData.StatsIO.NoOfFiles, storageData.StatsIO.LastTime)} days in 1 min cycle)
+                            ({calculateTimeBasedMetric(storageData.StatsIO.NoOfFiles, storageData.StatsIO.LastTime, 'files')} days in 1 min cycle)
                           </Typography>
                         </TableCell>
                         <TableCell>
                           {storageData.StatsIO.NoOfRecs.toLocaleString()}
                           <Typography variant="caption" display="block" color="text.secondary">
-                            ({calculateTimeBasedMetric(storageData.StatsIO.NoOfRecs, storageData.StatsIO.LastTime)} days in 1 min cycle)
+                            ({calculateTimeBasedMetric(storageData.StatsIO.NoOfRecs, storageData.StatsIO.LastTime, 'records')} days in 1 min cycle)
                           </Typography>
                         </TableCell>
                         <TableCell>
                           {storageData.StatsIO.NoOfTrn.toLocaleString()}
                           <Typography variant="caption" display="block" color="text.secondary">
-                            ({calculateTimeBasedMetric(storageData.StatsIO.NoOfTrn, storageData.StatsIO.LastTime)} days in 1 min cycle)
+                            ({calculateTimeBasedMetric(storageData.StatsIO.NoOfTrn, storageData.StatsIO.LastTime, 'transactions')} days in 1 min cycle)
                           </Typography>
                         </TableCell>
                         <TableCell>
                           {formatBytes(storageData.StatsIO.NoOfBytes)}
                           <Typography variant="caption" display="block" color="text.secondary">
-                            ({calculateTimeBasedMetric(storageData.StatsIO.NoOfBytes, storageData.StatsIO.LastTime)} days in 1 min cycle (+ 0))
+                            ({calculateTimeBasedMetric(storageData.StatsIO.NoOfBytes, storageData.StatsIO.LastTime, 'bytes')} days in 1 min cycle)
                           </Typography>
                         </TableCell>
                       </TableRow>

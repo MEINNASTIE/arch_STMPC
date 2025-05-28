@@ -18,7 +18,7 @@ function ConfigMainFactory() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://192.168.164.158/api/config/system-desc");
+        const response = await fetch("/api/config/system-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();

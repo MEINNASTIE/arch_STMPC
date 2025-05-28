@@ -42,15 +42,16 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   };
   
   const renderUsedInSystem = (valRt, list, row) => {
-    const usedInSystem = valRt && valRt.length > 0 
-      ? valRt.map(rt => 
-          showAppId 
-            ? `${getLabel(list, rt.val)} (app: ${rt.app_id})` 
-            : `${getLabel(list, rt.val)}`
-        ).join(", ")
-      : "";
+    if (!valRt || !Array.isArray(valRt) || valRt.length === 0) {
+      return "";
+    }
 
-    const originalValue = row.val_new_last || row.val; 
+    const usedInSystem = valRt.map((rt, index) => {
+      const label = getLabel(list, rt.val);
+      return showAppId ? `${label} (app: ${rt.app_id})` : label;
+    }).filter(Boolean).join(", ");
+
+    const originalValue = row.val_new_last || row.val;
     const normalizedValue = list && list.length > 0 && typeof list[0].value === 'number' 
       ? Number(originalValue) 
       : originalValue;
