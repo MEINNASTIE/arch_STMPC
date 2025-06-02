@@ -28,6 +28,10 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   );
   const [filteredData, setFilteredData] = useState(tableData);
 
+  const hasSelectedParameters = useMemo(() => {
+    return tableData.some(row => row.selected);
+  }, [tableData]);
+
   const toggleState = useCallback((stateSetter, localStorageKey, currentValue, callback) => {
     const newValue = !currentValue;
     stateSetter(newValue);
@@ -206,6 +210,22 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
               </MenuItem>
             ))}
           </Select>
+        ) : row.type === "password" ? (
+          <TextField
+            type="password"
+            value={row.val_new || ""}
+            onChange={(e) => handleInputChange(row.index, e.target.value)}
+            variant="outlined"
+            sx={{
+              width: "100%",
+              height: "40px",
+              fontSize: "14px",
+              margin: "8px 0px",
+              "& input": {
+                padding: "10px",
+              },
+            }}
+          />
         ) : (
           <TextField
             value={row.val_new}
@@ -310,7 +330,8 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           height: "calc(100vh - 100px)",
           overflow: "hidden",
           maxWidth: "100%",
-          boxSizing: "border-box"
+          boxSizing: "border-box",
+          position: "relative"
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', marginTop: '10px'}}>
@@ -352,7 +373,11 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
                   sx={{ 
                     width: { xs: "100%", sm: "270px" }, 
                     marginRight: { xs: 0, sm: "20px" }, 
-                    marginBottom: { xs: "10px", sm: "20px" }
+                    marginBottom: { xs: "10px", sm: "20px" },
+                    ...(hasSelectedParameters && {
+                      backgroundColor: "#FFD700 !important",
+                      color: "black !important"
+                    })
                   }}
                   onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
                 >
@@ -370,6 +395,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
               overflow: "auto",
               width: "100%",
               boxSizing: "border-box",
+              position: "relative",
               "& .MuiTableContainer-root": {
                 height: "100%"
               }
@@ -401,18 +427,21 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
                   style: {
                     height: "100%",
                     width: "100%",
+                    tableLayout: "fixed"
                   }
                 },
                 tableWrapper: {
                   style: {
                     overflowX: "auto",
                     width: "100%",
+                    position: "relative"
                   }
                 },
                 responsiveWrapper: {
                   style: {
                     overflowX: "auto",
                     width: "100%",
+                    position: "relative"
                   }
                 }
               }}

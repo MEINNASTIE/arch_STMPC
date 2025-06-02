@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useTranslation } from 'react-i18next';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { IconPresentation, IconSettings, IconCpu, IconWorld, IconPrinter, IconRefresh, IconUser } from '@tabler/icons-react';
 import usePrint from 'hooks/usePrint';
@@ -19,22 +20,10 @@ const HeaderMain = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { handlePrint } = usePrint();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState(null);
   const [hoveredIcon, setHoveredIcon] = useState(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 900);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (isMobile) {
-    return <MobileHeader />;
-  }
+  const { serialNumber, setSerialNumber } = useSerialNumber();
 
   const username = sessionStorage.getItem('username');
   const rolename = sessionStorage.getItem('rolename');
@@ -59,6 +48,34 @@ const HeaderMain = () => {
     sessionStorage.removeItem('rolename');
     navigate('/');
   };
+
+  const handleNavigation = (path) => { 
+    if (path) {
+      navigate(path);
+      handleMenuClose();
+    }
+  };
+
+  const handleLanguageChange = (langCode) => {
+    i18n.changeLanguage(langCode);
+    handleMenuClose();
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/config/runtime-desc");
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const data = await response.json();
+        setSerialNumber(data.mpcSN);  
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    };
+
+    fetchData();
+  }, [setSerialNumber]);
 
   const iconMenuOptions = [
     {
@@ -106,35 +123,9 @@ const HeaderMain = () => {
     }
   ];
 
-  const handleNavigation = (path) => { 
-    if (path) {
-      navigate(path);
-      handleMenuClose();
-    }
-  };
-
-  const { serialNumber, setSerialNumber } = useSerialNumber();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/config/runtime-desc");
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-        const data = await response.json();
-        setSerialNumber(data.mpcSN);  
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      }
-    };
-
-    fetchData();
-  }, [setSerialNumber]);
-
-  const handleLanguageChange = (langCode) => {
-    i18n.changeLanguage(langCode);
-    handleMenuClose();
-  };
+  if (isMobile) {
+    return <MobileHeader />;
+  }
 
   return (
     <Box

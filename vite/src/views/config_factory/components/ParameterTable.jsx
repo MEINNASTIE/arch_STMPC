@@ -26,6 +26,10 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   );
   const [filteredData, setFilteredData] = useState(tableData);
 
+  const hasSelectedParameters = useMemo(() => {
+    return tableData.some(row => row.selected);
+  }, [tableData]);
+
   const getStatusText = useCallback((state) => {
     switch (state) {
       case 'A': return 'applied';
@@ -195,7 +199,23 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           );
         }
         
-        return (
+        return row.type === "password" ? (
+          <TextField
+            type="password"
+            value={row.val_new || ""}
+            onChange={(e) => handleInputChange(row.index, e.target.value)}
+            variant="outlined"
+            sx={{
+              width: "100%",
+              height: "40px",
+              fontSize: "14px",
+              margin: "8px 0px",
+              "& input": {
+                padding: "10px",
+              },
+            }}
+          />
+        ) : (
           <TextField
             value={currentLabel}
             onChange={(e) => handleInputChange(row.index, e.target.value)}
@@ -325,7 +345,11 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
                 sx={{ 
                   width: { xs: "100%", sm: "270px" }, 
                   marginRight: { xs: 0, sm: "20px" }, 
-                  marginBottom: { xs: "10px", sm: "20px" }
+                  marginBottom: { xs: "10px", sm: "20px" },
+                  ...(hasSelectedParameters && {
+                    backgroundColor: "#FFD700 !important",
+                    color: "black !important"
+                  })
                 }}
                 onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
               >

@@ -24,6 +24,10 @@ export function MobileParameterTable({ tableData, handleApply, handleRowSelect, 
   );
   const [filteredData, setFilteredData] = useState(tableData);
 
+  const hasSelectedParameters = useMemo(() => {
+    return tableData.some(row => row.selected);
+  }, [tableData]);
+
   const toggleState = useCallback((stateSetter, localStorageKey, currentValue, callback) => {
     const newValue = !currentValue;
     stateSetter(newValue);
@@ -175,6 +179,15 @@ export function MobileParameterTable({ tableData, handleApply, handleRowSelect, 
                   </MenuItem>
                 ))}
               </Select>
+            ) : row.type === "password" ? (
+              <TextField
+                type="password"
+                value={row.val_new || ""}
+                onChange={(e) => handleInputChange(row.index, e.target.value)}
+                variant="outlined"
+                fullWidth
+                sx={{ mt: 1 }}
+              />
             ) : (
               <TextField
                 value={row.val_new}
@@ -269,13 +282,25 @@ export function MobileParameterTable({ tableData, handleApply, handleRowSelect, 
         padding: "20px",
         border: `1px solid ${theme.palette.divider}`,
         borderRadius: `10px`,
+        position: "relative",
+        minHeight: "100vh",
+        boxSizing: "border-box"
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '20px', marginTop: '10px'}}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        gap: '10px', 
+        marginBottom: '20px', 
+        marginTop: '10px',
+        position: "relative"
+      }}>
         <Typography 
           variant="h3" 
           sx={{ 
             fontWeight: "bold",
+            textAlign: "center"
           }}
         >
           {filterType === "all" ? "All Parameters" : groupLabel}
@@ -285,6 +310,7 @@ export function MobileParameterTable({ tableData, handleApply, handleRowSelect, 
             variant="h4" 
             sx={{ 
               color: "#666",
+              textAlign: "center"
             }}
           >
             {pageLabel}
@@ -307,7 +333,14 @@ export function MobileParameterTable({ tableData, handleApply, handleRowSelect, 
                 variant="contained"
                 color="primary"
                 size="large"
-                sx={{ width: "100%", maxWidth: "600px" }}
+                sx={{ 
+                  width: "100%", 
+                  maxWidth: "600px",
+                  ...(hasSelectedParameters && {
+                    backgroundColor: "#FFD700 !important",
+                    color: "black !important"
+                  })
+                }}
                 onClick={() => handleFilterChange("selected", { label: "Change" }, { label: "Selected to Change" })}
               >
                 Preview Selected Changes
