@@ -5,6 +5,8 @@ import { Box, useTheme } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
 import Clock from "./TimeConfig";
 import MobileParameterTable from "./MobileParameterTable";
+import ValidationFeedback from "../../../components/ValidationFeedback";
+import { validateInput } from "../../../utils/validationUtils";
 
 export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel, onShowWaitingChange }) {
   const theme = useTheme();
@@ -27,6 +29,8 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     JSON.parse(localStorage.getItem("showGK")) ?? true
   );
   const [filteredData, setFilteredData] = useState(tableData);
+  const [validationStates, setValidationStates] = useState({});
+  const [typingStates, setTypingStates] = useState({});
 
   const hasSelectedParameters = useMemo(() => {
     return tableData.some(row => row.selected);
@@ -102,6 +106,23 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     setSearchTerm(savedSearchTerm);
   }, []);
 
+  const handleValueChange = (rowIndex, newValue, rowType, row) => {
+    if (!newValue || newValue === '') {
+      setValidationStates(prev => ({ ...prev, [rowIndex]: { isValid: true, message: '' } }));
+      setTypingStates(prev => ({ ...prev, [rowIndex]: false }));
+    } else {
+      const fieldValidation = row.validation || null;
+      const validationResult = validateInput(newValue, rowType, fieldValidation);
+      setValidationStates(prev => ({ ...prev, [rowIndex]: validationResult }));
+      setTypingStates(prev => ({ ...prev, [rowIndex]: true }));
+    }
+    handleInputChange(rowIndex, newValue);
+  };
+
+  const hasInvalidValues = useMemo(() => {
+    return Object.values(validationStates).some(state => !state.isValid);
+  }, [validationStates]);
+
   const columns = useMemo(() => [
     {
       cell: (row) => (
@@ -127,29 +148,75 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       name: "New Value",
       cell: (row) => {
         const listOptions = row.list || [];
+        const validation = validationStates[row.index] || { isValid: true, message: '' };
+
+        const handleCellValueChange = (newValue) => {
+          handleValueChange(row.index, newValue, row.type, row);
+        };
+
+        const getCurrentValueLabel = (value) => {
+          if (!value) return "";
+          const option = listOptions.find(opt => opt.value === value);
+          return option ? option.label : value;
+        };
 
         if (row.type === "list_mc") {
           const currentValues = row.val_new ? row.val_new.split('|') : [];
+          const validationResult = validateInput(currentValues, row.type);
 
           return (
+            <Box>
+              <Select
+                multiple
+                value={currentValues}
+                onChange={(e) => {
+                  const newValue = e.target.value.join('|');
+                  handleCellValueChange(newValue);
+                }}
+                variant="outlined"
+                renderValue={(selected) => {
+                  return selected.length > 0 
+                    ? selected.map(val => {
+                        const option = row.list.find(opt => opt.value === val);
+                        return option ? option.label : val;
+                      }).join(', ')
+                    : "Select values...";
+                }}
+                sx={{
+                  width: "180px",
+                  height: "40px",
+                  fontSize: "14px",
+                  margin: "5px 0px",
+                  "& .MuiSelect-select": {
+                    padding: "5px",
+                  },
+                }}
+              >
+                {row.list.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    <Checkbox checked={currentValues.includes(option.value)} />
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              <ValidationFeedback 
+                {...validation} 
+                hint={row.validation?.hint}
+                isTyping={typingStates[row.index]}
+              />
+            </Box>
+          );
+        }
+        
+        return typeof row.list === "string" && row.list.startsWith("$ref:") ? (
+          <Box>
             <Select
-              multiple
-              value={currentValues}
-              onChange={(e) => {
-                const newValue = e.target.value.join('|');
-                handleInputChange(row.index, newValue);
-              }}
+              value={row.val_new}
+              onChange={(e) => handleCellValueChange(e.target.value)}
               variant="outlined"
-              renderValue={(selected) => {
-                return selected.length > 0 
-                  ? selected.map(val => {
-                      const option = row.list.find(opt => opt.value === val);
-                      return option ? option.label : val;
-                    }).join(', ')
-                  : "Select values...";
-              }}
+              renderValue={(selected) => getCurrentValueLabel(selected)}
               sx={{
-                width: "100%",
+                width: "180px",
                 height: "40px",
                 fontSize: "14px",
                 margin: "5px 0px",
@@ -158,89 +225,92 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
                 },
               }}
             >
-              {row.list.map((option) => (
+              {listOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
-                  <Checkbox checked={currentValues.includes(option.value)} />
                   {option.label}
                 </MenuItem>
               ))}
             </Select>
-          );
-        }
-        
-        return typeof row.list === "string" && row.list.startsWith("$ref:") ? (
-          <Select
-            value={row.val_new}
-            onChange={(e) => handleInputChange(row.index, e.target.value)}
-            variant="outlined"
-            sx={{
-              width: "100%",
-              height: "40px",
-              fontSize: "14px",
-              margin: "5px 0px",
-              "& .MuiSelect-select": {
-                padding: "5px",
-              },
-            }}
-          >
-            {listOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
+            <ValidationFeedback 
+              {...validation} 
+              hint={row.validation?.hint}
+              isTyping={typingStates[row.index]}
+            />
+          </Box>
         ) : row.type === "list" ? (
-          <Select
-            value={row.val_new}
-            onChange={(e) => handleInputChange(row.index, e.target.value)}
-            variant="outlined"
-            sx={{
-              width: "100%",
-              height: "40px",
-              fontSize: "14px",
-              margin: "5px 0px",
-              "& .MuiSelect-select": {
-                padding: "5px",
-              },
-            }}
-          >
-            {listOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
+          <Box>
+            <Select
+              value={row.val_new}
+              onChange={(e) => handleCellValueChange(e.target.value)}
+              variant="outlined"
+              renderValue={(selected) => getCurrentValueLabel(selected)}
+              sx={{
+                width: "180px",
+                height: "40px",
+                fontSize: "14px",
+                margin: "5px 0px",
+                "& .MuiSelect-select": {
+                  padding: "5px",
+                },
+              }}
+            >
+              {listOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+            <ValidationFeedback 
+              {...validation} 
+              hint={row.validation?.hint}
+              isTyping={typingStates[row.index]}
+            />
+          </Box>
         ) : row.type === "password" ? (
-          <TextField
-            type="password"
-            value={row.val_new || ""}
-            onChange={(e) => handleInputChange(row.index, e.target.value)}
-            variant="outlined"
-            sx={{
-              width: "100%",
-              height: "40px",
-              fontSize: "14px",
-              margin: "8px 0px",
-              "& input": {
-                padding: "10px",
-              },
-            }}
-          />
+          <Box>
+            <TextField
+              type="password"
+              value={row.val_new || ""}
+              onChange={(e) => handleCellValueChange(e.target.value)}
+              variant="outlined"
+              sx={{
+                width: "180px",
+                height: "40px",
+                fontSize: "14px",
+                margin: "8px 0px",
+                "& input": {
+                  padding: "10px",
+                },
+              }}
+            />
+            <ValidationFeedback 
+              {...validation} 
+              hint={row.validation?.hint}
+              isTyping={typingStates[row.index]}
+            />
+          </Box>
         ) : (
-          <TextField
-            value={row.val_new}
-            onChange={(e) => handleInputChange(row.index, e.target.value)}
-            variant="outlined"
-            sx={{
-              width: "100%",
-              height: "40px",
-              fontSize: "14px",
-              margin: "8px 0px",
-              "& input": {
-                padding: "10px",
-              },
-            }}
-          />
+          <Box>
+            <TextField
+              value={row.val_new}
+              onChange={(e) => handleCellValueChange(e.target.value)}
+              variant="outlined"
+              sx={{
+                width: "180px",
+                height: "40px",
+                fontSize: "14px",
+                margin: "8px 0px",
+                "& input": {
+                  padding: "10px",
+                },
+              }}
+            />
+            <ValidationFeedback 
+              {...validation} 
+              hint={row.validation?.hint}
+              isTyping={typingStates[row.index]}
+            />
+          </Box>
         );
       },
       width: "200px",
@@ -287,7 +357,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       selector: (row) => row.gk, 
       width: "300px",
     },
-  ].filter(Boolean), [handleRowSelect, handleInputChange, showAllRTValues, showWaiting, showWaitingHint, showGK, getLabel, renderUsedInSystem]);
+  ].filter(Boolean), [handleRowSelect, handleInputChange, showAllRTValues, showWaiting, showWaitingHint, showGK, getLabel, renderUsedInSystem, validationStates, typingStates]);
 
   const memoizedData = useMemo(() => filteredData, [filteredData]);
 
@@ -455,7 +525,14 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
             color="primary"
             onClick={handleApply}
             size="large"
-            sx={{ width: "160px", alignSelf: "left", marginTop: "40px", backgroundColor: "#FFD700 !important", color: "black !important"}}
+            disabled={hasInvalidValues}
+            sx={{ 
+              width: "160px", 
+              alignSelf: "left", 
+              marginTop: "40px", 
+              backgroundColor: hasInvalidValues ? "#ccc !important" : "#FFD700 !important", 
+              color: "black !important"
+            }}
           >
             Apply Changes
           </Button>

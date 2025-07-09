@@ -18,7 +18,7 @@ function ConfigMainFactory() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/config/system-desc");
+        const response = await fetch("https://192.168.163.165/api/config/system-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();
@@ -99,39 +99,30 @@ function ConfigMainFactory() {
   };
 
   const populateTable = (groups) => {
-    console.log("Populating table with payload:", groups);
-    
-    const rows = groups.flatMap((group, groupIdx) =>
-      group.pages.flatMap((page, pageIdx) =>
-        page.fields.map((field, fieldIdx) => {
-          const initialValue = field.type === 'list' ? 
-            (typeof field.val === 'string' ? field.val : String(field.val)) : 
-            field.val;
-
-          return {
-            index: `${groupIdx + 1}.${pageIdx + 1}.${fieldIdx + 1}`,
+    const rows = [];
+    groups.forEach((group, groupIndex) => {
+      group.pages.forEach((page, pageIndex) => {
+        page.fields.forEach((field, fieldIndex) => {
+          rows.push({
+            index: (groupIndex+1)+'.'+(pageIndex+1)+'.'+(fieldIndex + 1),
             label: field.label,
             gk: field.gk,
-            type: field.type,  
-            list: field.list,
-            val_new: initialValue,
-            val_rt: [],
-            state: 'A',
-            groupPage: `${group.label || "Unnamed Group"} > ${page.label || "Unnamed Page"}`,
-            pageId: page.id,
-            val_new_last: initialValue,
-            selected: false,
-          };
-        })
-      )
-    );
-  
-    console.log("Generated Table Data:", rows);
+            type: field.type,
+            val_new: field.val || "",
+            val_rt: [], // Initialize as empty array since we don't have runtime values
+            state: "U", // Default state as waiting
+            groupPage: `${group.id}.${page.id}`,
+            val_new_last: field.val || '',
+            validation: field.validation || null,
+            list: field.list || []
+          });
+        });
+      });
+    });
     setTableData(rows);
   };
   
   const getFilteredData = () => {
-
     if (filterType === "all") return tableData;
     
     switch (filterType) {
@@ -140,18 +131,36 @@ function ConfigMainFactory() {
       case "notApplied":
         return tableData.filter((row) => row.state !== "A");
       default:
-        return tableData.filter((row) => row.pageId === filterType);
+        return tableData.filter((row) => {
+          const parts = row.groupPage.split('.');
+          const pageId = parts[parts.length - 1];
+          return pageId === filterType;
+        });
     }
   };
   
-
   const handleRowSelect = (rowIndex) => {
-    setTableData((prev) =>
-      prev.map((row) =>
-        row.index === rowIndex ? { ...row, selected: !row.selected } : row
-      )
-    );
-  };  
+    setTableData((prev) => {
+      const newData = prev.map((row) => {
+        if (row.index === rowIndex) {
+          const newSelected = !row.selected;
+          const selectedParams = JSON.parse(localStorage.getItem('selectedParametersFactory') || '{}');
+          
+          if (newSelected) {
+            selectedParams[rowIndex] = true;
+            localStorage.setItem('selectedParametersFactory', JSON.stringify(selectedParams));
+          } else {
+            delete selectedParams[rowIndex];
+            localStorage.setItem('selectedParametersFactory', JSON.stringify(selectedParams));
+          }
+          
+          return { ...row, selected: newSelected };
+        }
+        return row;
+      });
+      return newData;
+    });
+  };
 
   const handleInputChange = (rowIndex, value) => {
     setTableData((prev) =>
@@ -163,16 +172,29 @@ function ConfigMainFactory() {
     );
   };
 
-  const handleFilterChange = (filter, group, page) => {
-    setFilterType(filter);
-    if (filter === "all") {
+  const handleFilterChange = (pageId, group, page) => {
+    if (pageId === "all") {
+      setFilterType("all");
       setSelectedGroup(null);
       setSelectedPage(null);
       localStorage.removeItem("selectedGroup");
       localStorage.removeItem("selectedPage");
-    } else {
-      setSelectedGroup(group);
-      setSelectedPage(page);
+      return;
+    }
+
+    setFilterType(pageId);
+    setSelectedGroup(group);
+    setSelectedPage(page);
+    
+    // Reset validation states when changing pages
+    setValidationStates({});
+    
+    // Save to localStorage
+    if (group) {
+      localStorage.setItem("selectedGroup", JSON.stringify(group));
+    }
+    if (page) {
+      localStorage.setItem("selectedPage", JSON.stringify(page));
     }
   };  
 
@@ -222,7 +244,11 @@ function ConfigMainFactory() {
     if (savedGroup && savedPage) {
       setSelectedGroup(JSON.parse(savedGroup));
       setSelectedPage(JSON.parse(savedPage));
-      setFilterType(JSON.parse(savedPage).id); 
+      setFilterType(JSON.parse(savedPage).id);
+    } else {
+      setFilterType("all");
+      setSelectedGroup(null);
+      setSelectedPage(null);
     }
   }, []);
 
@@ -234,6 +260,17 @@ function ConfigMainFactory() {
       localStorage.setItem("selectedPage", JSON.stringify(selectedPage));
     }
   }, [selectedGroup, selectedPage]);
+
+  // Add effect to restore selected parameters on component mount
+  useEffect(() => {
+    const selectedParams = JSON.parse(localStorage.getItem('selectedParametersFactory') || '{}');
+    setTableData(prevData => 
+      prevData.map(row => ({
+        ...row,
+        selected: selectedParams[row.index] === true
+      }))
+    );
+  }, []);
 
   return (
     <Box

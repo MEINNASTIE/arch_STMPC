@@ -20,7 +20,7 @@ export const theme = (customization) => {
     colors: color,
     heading: color.grey900,
     paper: 'white',
-    backgroundDefault: 'white',
+    backgroundDefault: '#FAFAFA', // Snow drift - clean, minimal, honesty 
     background: color.primaryLight,
     darkTextPrimary: color.grey700,
     darkTextSecondary: color.grey500,

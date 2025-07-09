@@ -3,6 +3,8 @@ import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography 
 import DataTable from "react-data-table-component";
 import { Box, useTheme } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
+import ValidationFeedback from "../../../components/ValidationFeedback";
+import { validateInput } from "../../../utils/validationUtils";
 
 
 export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel }) {
@@ -25,6 +27,8 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     JSON.parse(localStorage.getItem("showGK")) ?? true
   );
   const [filteredData, setFilteredData] = useState(tableData);
+  const [validationStates, setValidationStates] = useState({});
+  const [typingStates, setTypingStates] = useState({});
 
   const hasSelectedParameters = useMemo(() => {
     return tableData.some(row => row.selected);
@@ -46,21 +50,22 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   };
   
   const renderUsedInSystem = (valRt, list, row) => {
-    if (!valRt || !Array.isArray(valRt) || valRt.length === 0) {
-      return "";
+    // Handle runtime values if they exist
+    let usedInSystem = "";
+    if (valRt && Array.isArray(valRt) && valRt.length > 0) {
+      usedInSystem = valRt.map((rt, index) => {
+        const label = getLabel(list, rt.val);
+        return showAppId ? `${label} (app: ${rt.app_id})` : label;
+      }).filter(Boolean).join(", ");
     }
 
-    const usedInSystem = valRt.map((rt, index) => {
-      const label = getLabel(list, rt.val);
-      return showAppId ? `${label} (app: ${rt.app_id})` : label;
-    }).filter(Boolean).join(", ");
-
-    const originalValue = row.val_new_last || row.val;
+    const originalValue = row.val_new_last || row.val_new;
     const normalizedValue = list && list.length > 0 && typeof list[0].value === 'number' 
       ? Number(originalValue) 
       : originalValue;
     const originalLabel = list?.find(opt => opt.value === normalizedValue)?.label || originalValue;
 
+    // Just show the current value
     return usedInSystem ? `${usedInSystem}, ${originalLabel}` : `${originalLabel}`;
   };
 
@@ -140,6 +145,23 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     localStorage.setItem("showGK", JSON.stringify(newValue));
   };
 
+  const handleValueChange = (rowIndex, newValue, rowType, row) => {
+    if (!newValue || newValue === '') {
+      setValidationStates(prev => ({ ...prev, [rowIndex]: { isValid: true, message: '' } }));
+      setTypingStates(prev => ({ ...prev, [rowIndex]: false }));
+    } else {
+      const fieldValidation = row.validation || null;
+      const validationResult = validateInput(newValue, rowType, fieldValidation);
+      setValidationStates(prev => ({ ...prev, [rowIndex]: validationResult }));
+      setTypingStates(prev => ({ ...prev, [rowIndex]: true }));
+    }
+    handleInputChange(rowIndex, newValue);
+  };
+
+  const hasInvalidValues = useMemo(() => {
+    return Object.values(validationStates).some(state => !state.isValid);
+  }, [validationStates]);
+
   const columns = useMemo(() => [
     {
       cell: (row) => (
@@ -165,71 +187,107 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       name: "New Value",
       cell: (row) => {
         const listOptions = resolveList(row, refs);
-        const currentValue = row.val_new;
-        
-        // keep this section in mind if changed
-        const normalizedValue = listOptions && listOptions.length > 0 && typeof listOptions[0].value === 'number' 
-          ? Number(currentValue) 
-          : currentValue;
-          
-        const currentLabel = listOptions?.find(opt => opt.value === normalizedValue)?.label || currentValue;
-    
+        const validation = validationStates[row.index] || { isValid: true, message: '' };
+
+        const handleCellValueChange = (newValue) => {
+          handleValueChange(row.index, newValue, row.type, row);
+        };
+
+        const getCurrentValueLabel = (value) => {
+          if (!value) return "";
+          const option = listOptions.find(opt => opt.value === value);
+          return option ? option.label : value;
+        };
+
+        const commonInputStyles = {
+          width: "180px",
+          height: "40px",
+          fontSize: "14px",
+          margin: "5px 0px",
+          "& .MuiSelect-select": {
+            padding: "5px",
+            width: "180px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          },
+          "& .MuiInputBase-root": {
+            width: "180px",
+            minWidth: "180px",
+            maxWidth: "180px"
+          }
+        };
+
         if (typeof row.list === "string" && row.list.startsWith("$ref:") || row.type === "list") {
           return (
-            <Select
-              value={normalizedValue}
-              onChange={(e) => handleInputChange(row.index, e.target.value)}
-              variant="outlined"
-              sx={{
-                width: "100%",
-                height: "40px",
-                fontSize: "14px",
-                margin: "5px 0px",
-                "& .MuiSelect-select": {
-                  padding: "5px",
-                },
-              }}
-            >
-              {listOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
+            <Box sx={{ width: "180px" }}>
+              <Select
+                value={row.val_new}
+                onChange={(e) => handleCellValueChange(e.target.value)}
+                variant="outlined"
+                renderValue={(selected) => getCurrentValueLabel(selected)}
+                sx={commonInputStyles}
+              >
+                {listOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              <ValidationFeedback 
+                {...validation} 
+                hint={row.validation?.hint}
+                isTyping={typingStates[row.index]}
+              />
+            </Box>
           );
         }
         
         return row.type === "password" ? (
-          <TextField
-            type="password"
-            value={row.val_new || ""}
-            onChange={(e) => handleInputChange(row.index, e.target.value)}
-            variant="outlined"
-            sx={{
-              width: "100%",
-              height: "40px",
-              fontSize: "14px",
-              margin: "8px 0px",
-              "& input": {
-                padding: "10px",
-              },
-            }}
-          />
+          <Box sx={{ width: "180px" }}>
+            <TextField
+              type="password"
+              value={row.val_new || ""}
+              onChange={(e) => handleCellValueChange(e.target.value)}
+              variant="outlined"
+              sx={{
+                ...commonInputStyles,
+                "& input": {
+                  padding: "10px",
+                  width: "180px",
+                  minWidth: "180px",
+                  maxWidth: "180px"
+                }
+              }}
+            />
+            <ValidationFeedback 
+              {...validation} 
+              hint={row.validation?.hint}
+              isTyping={typingStates[row.index]}
+            />
+          </Box>
         ) : (
-          <TextField
-            value={currentLabel}
-            onChange={(e) => handleInputChange(row.index, e.target.value)}
-            variant="outlined"
-            sx={{
-              width: "100%",
-              height: "40px",
-              fontSize: "14px",
-              margin: "8px 0px",
-              "& input": {
-                padding: "10px",
-              },
-            }}
-          />
+          <Box sx={{ width: "180px" }}>
+            <TextField
+              value={row.val_new}
+              onChange={(e) => handleCellValueChange(e.target.value)}
+              variant="outlined"
+              sx={{
+                ...commonInputStyles,
+                "& input": {
+                  padding: "10px",
+                  width: "180px",
+                  minWidth: "180px",
+                  maxWidth: "180px"
+                }
+              }}
+            />
+            <ValidationFeedback 
+              {...validation} 
+              hint={row.validation?.hint}
+              isTyping={typingStates[row.index]}
+            />
+          </Box>
         );
       },
       width: "200px",
@@ -276,7 +334,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       selector: (row) => row.gk, 
       width: "300px",
     },
-  ].filter(Boolean), [handleRowSelect, handleInputChange]);
+  ].filter(Boolean), [handleRowSelect, handleInputChange, showAllRTValues, showWaiting, showWaitingHint, showGK, getLabel, renderUsedInSystem, validationStates, typingStates]);
 
   const memoizedColumns = useMemo(() => columns, [columns]);
   const memoizedData = useMemo(() => filteredData, [filteredData]);
@@ -423,7 +481,14 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
           color="primary"
           onClick={handleApply}
           size="large"
-          sx={{ width: "160px", alignSelf: "left", marginTop: "40px",  backgroundColor: "#FFD700 !important", color: "black !important"}}
+          disabled={hasInvalidValues}
+          sx={{ 
+            width: "160px", 
+            alignSelf: "left", 
+            marginTop: "40px", 
+            backgroundColor: hasInvalidValues ? "#ccc !important" : "#FFD700 !important", 
+            color: "black !important"
+          }}
         >
           Apply Changes
         </Button>

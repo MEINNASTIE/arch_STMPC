@@ -1,21 +1,14 @@
 import PropTypes from 'prop-types';
 
-// material-ui
-import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 
-// project import
 import MainCard from 'ui-component/cards/MainCard';
-import Footer from 'layout/MainLayout/Footer';
-
-// ==============================|| AUTHENTICATION CARD WRAPPER ||============================== //
 
 const AuthCardWrapper = ({ children, ...other }) => {
-  const theme = useTheme();
+
   return  (
   <MainCard
     border={true}
-    borderColor={theme.palette.primary.main}
     sx={{
       maxWidth: { xs: 400, lg: 475 },
       margin: { xs: 2.5, md: 3 },

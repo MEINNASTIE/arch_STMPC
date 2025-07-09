@@ -1,0 +1,38 @@
+{
+  "validation": {
+    "text": {
+      "min_len": 3,
+      "max_len": 30,
+      "min_len_mess": "Too short",
+      "max_len_mess": "Too long",
+      "regex": "^[A-Za-z0-9\\s.,-_()]+$",
+      "regex_mess": "Only letters, numbers, spaces, and basic punctuation allowed"
+    },
+    "number": {
+      "min": 0,
+      "max": 10000,
+      "step": 1,
+      "min_mess": "Value too small",
+      "max_mess": "Value too large",
+      "step_mess": "Value must be a multiple of 1"
+    },
+    "list": {
+      "max_select": 1,
+      "max_select_mess": "Only one value allowed"
+    },
+    "list_mc": {
+      "max_select": 5,
+      "max_select_mess": "Maximum of 5 values allowed"
+    },
+    "password": {
+      "min_len": 8,
+      "max_len": 64,
+      "min_len_mess": "Password too short",
+      "max_len_mess": "Password too long",
+      "regex": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$",
+      "regex_mess": "Must include uppercase, lowercase, number, and special character",
+      "forbidden_substrings": ["password", "1234"],
+      "forbidden_mess": "Password contains disallowed words or sequences"
+    }
+  }
+} 

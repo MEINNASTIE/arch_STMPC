@@ -6,13 +6,10 @@ import './i18n';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline, StyledEngineProvider } from '@mui/material';
 
-// routing
 import router from 'routes';
 
-// defaultTheme
 import themes from 'themes';
 
-// project imports
 import NavigationScroll from 'layout/NavigationScroll';
 import { SerialNumberProvider } from 'context/SerialNumberContext';
 import { AuthProvider } from 'contexts/AuthContext';
