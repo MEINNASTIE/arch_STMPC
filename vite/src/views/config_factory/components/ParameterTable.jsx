@@ -50,7 +50,6 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
   };
   
   const renderUsedInSystem = (valRt, list, row) => {
-    // Handle runtime values if they exist
     let usedInSystem = "";
     if (valRt && Array.isArray(valRt) && valRt.length > 0) {
       usedInSystem = valRt.map((rt, index) => {
@@ -63,9 +62,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     const normalizedValue = list && list.length > 0 && typeof list[0].value === 'number' 
       ? Number(originalValue) 
       : originalValue;
-    const originalLabel = list?.find(opt => opt.value === normalizedValue)?.label || originalValue;
-
-    // Just show the current value
+    const originalLabel = list?.find(opt => opt.value === normalizedValue)?.label || originalValue; 
     return usedInSystem ? `${usedInSystem}, ${originalLabel}` : `${originalLabel}`;
   };
 
@@ -212,20 +209,40 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
             whiteSpace: "nowrap"
           },
           "& .MuiInputBase-root": {
-            width: "180px",
-            minWidth: "180px",
-            maxWidth: "180px"
+            width: "100%",
+            backgroundColor: "#f7f7f7",
+            borderRadius: "8px",
+            boxShadow: "none",
+          },
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderRadius: "8px",
+            borderColor: "#e0e0e0"
+          },
+          "& input": {
+            backgroundColor: "#f7f7f7",
+            borderRadius: "8px",
+            padding: "10px",
+            width: "100%"
           }
         };
 
         if (typeof row.list === "string" && row.list.startsWith("$ref:") || row.type === "list") {
+          const isNumberList = listOptions.length > 0 && typeof listOptions[0].value === "number";
+          const selectValue = isNumberList ? Number(row.val_new) : row.val_new;
+
           return (
             <Box sx={{ width: "180px" }}>
               <Select
-                value={row.val_new}
-                onChange={(e) => handleCellValueChange(e.target.value)}
+                value={selectValue}
+                onChange={(e) => {
+                  const value = isNumberList ? Number(e.target.value) : e.target.value;
+                  handleCellValueChange(value);
+                }}
                 variant="outlined"
-                renderValue={(selected) => getCurrentValueLabel(selected)}
+                renderValue={(selected) => {
+                  const option = listOptions.find(opt => opt.value === selected);
+                  return option ? option.label : selected;
+                }}
                 sx={commonInputStyles}
               >
                 {listOptions.map((option) => (
@@ -254,9 +271,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
                 ...commonInputStyles,
                 "& input": {
                   padding: "10px",
-                  width: "180px",
-                  minWidth: "180px",
-                  maxWidth: "180px"
+                  width: "100%"
                 }
               }}
             />
@@ -276,9 +291,7 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
                 ...commonInputStyles,
                 "& input": {
                   padding: "10px",
-                  width: "180px",
-                  minWidth: "180px",
-                  maxWidth: "180px"
+                  width: "100%"
                 }
               }}
             />

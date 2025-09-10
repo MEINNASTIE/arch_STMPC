@@ -18,7 +18,6 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import CryptoJS from 'crypto-js';
 import { useAuth } from 'contexts/AuthContext';
 
-// consideration to shift to Aserver 
 const secretKey = "9rqD*1:fzOi4<</mj2Hk%*6\Yd!:£'";
 
 const generateHashB64 = async (username, password) => {
@@ -45,34 +44,22 @@ const apiRequest = async (url, options = {}) => {
   });
 };
 
-const AuthLogin = () => {
+const AuthLogin = ({ onEmptyPassword }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [usersExist, setUsersExist] = useState(true);
   const [userId, setUserId] = useState(null);
-
-  useEffect(() => {
-    const fetchUserCount = async () => {
-      try {
-        const response = await fetch('/api/users/count');
-        const data = await response.json();
-        setUsersExist(data.payload.count > 0);
-      } catch (error) {
-        console.error('Error fetching user count:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserCount();
-  }, []);
 
   const handleLogin = async (values, { setSubmitting, setErrors }) => {
     try {
+      if (!values.password) {
+        if (onEmptyPassword) {
+          onEmptyPassword(values.username);
+          setSubmitting(false);
+          return;
+        }
+      }
       const hashB64 = await generateHashB64(values.username, values.password);
-      
       const response = await fetch(`/api/user/hash/${hashB64}`, {
         method: 'GET',
         headers: {
@@ -81,10 +68,17 @@ const AuthLogin = () => {
         credentials: 'include',
       });
       const responseData = await response.json();
-  
       if (responseData && responseData.payload) {
+        const { username } = responseData.payload;
+        if (username === 'bertin' || username === 'service') {
+          if (onEmptyPassword) {
+            onEmptyPassword(username);
+            setSubmitting(false);
+            return;
+          }
+        }
+
         const userId = responseData.payload.userId;
-  
         const tokenResponse = await fetch('/token', {
           method: 'POST',
           headers: {
@@ -92,69 +86,41 @@ const AuthLogin = () => {
           },
           body: JSON.stringify({ userId: userId }),
         });
-
         const tokenData = await tokenResponse.json();
-
         if (tokenData.token) {
           const encryptedToken = CryptoJS.AES.encrypt(tokenData.token, secretKey).toString();
-          login(encryptedToken, responseData.payload.username, responseData.payload.rolename);
+          login(encryptedToken, responseData.payload.username, responseData.payload.roles);
         } else {
           console.error('Token not found in response');
         }
-  
         setUserId(userId);
         navigate('/measurement-status');
       } else {
-        console.error('Response structure does not contain user data:', responseData);
         setErrors({ submit: 'Login failed: User data not found' });
       }
     } catch (error) {
-      console.error('Login error:', error);
       setErrors({ submit: 'Invalid username or password' });
     } finally {
       setSubmitting(false);
     }
   };
-  
-  const handleInitAdmin = async (values, { setSubmitting, setErrors }) => {
-    try {
-      const hashB64 = await generateHashB64(values.username, values.password);
-      const response = await fetch(`/api/user/initadmin?hash=${hashB64}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      if (response.status === 201) {
-        navigate('/main');
-        window.location.reload();
-      }
-    } catch (error) {
-      setErrors({ submit: 'Error initializing admin account' });
-      console.error('Admin init error:', error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
-  const Form = ({ isAdminInit }) => {
+  const Form = () => {
     const [showPassword, setShowPassword] = useState(false);
     const handleMouseDownPassword = (event) => event.preventDefault();
-
     return (
       <Formik
         initialValues={{ username: '', password: '', submit: null }}
         validationSchema={Yup.object().shape({
           username: Yup.string().max(255).required('Username is required'),
-          password: Yup.string().max(255).required('Password is required')
+          password: Yup.string().max(255) 
         })}
-        onSubmit={isAdminInit ? handleInitAdmin : handleLogin}
+        onSubmit={handleLogin}
       >
         {({ errors, handleBlur, handleChange, handleSubmit, touched, values, isSubmitting }) => (
           <form noValidate onSubmit={handleSubmit}>
             <Typography variant="h4" align="center">
-              {isAdminInit ? 'Admin Initialization' : 'User Login'}
+              User Login
             </Typography>
             <FormControl fullWidth error={Boolean(touched.username && errors.username)} sx={{ ...theme.typography.customInput }}>
               <InputLabel htmlFor="outlined-adornment-username">Username</InputLabel>
@@ -173,7 +139,6 @@ const AuthLogin = () => {
                 </FormHelperText>
               )}
             </FormControl>
-
             <FormControl fullWidth error={Boolean(touched.password && errors.password)} sx={{ ...theme.typography.customInput }}>
               <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
               <OutlinedInput
@@ -203,7 +168,6 @@ const AuthLogin = () => {
                 </FormHelperText>
               )}
             </FormControl>
-
             <AnimateButton>
               <Button
                 disableElevation
@@ -214,7 +178,7 @@ const AuthLogin = () => {
                 color="primary"
                 disabled={isSubmitting}
               >
-                {isAdminInit ? 'Initialize Admin' : 'Login'}
+                Login
               </Button>
             </AnimateButton>
             {errors.submit && (
@@ -228,20 +192,16 @@ const AuthLogin = () => {
     );
   };
 
-  if (loading) {
-    return <Typography>Loading...</Typography>;
-  }
-
   return (
     <Box>
-      {usersExist ? (
-        <Form isAdminInit={false} />
-      ) : (
-        <Form isAdminInit={true} />
-      )}
+      <Form />
       {userId && <Typography variant="h6">Logged in as User ID: {userId}</Typography>}
     </Box>
   );
+};
+
+AuthLogin.defaultProps = {
+  onEmptyPassword: undefined
 };
 
 export default AuthLogin;

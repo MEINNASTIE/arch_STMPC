@@ -1,0 +1,239 @@
+{
+  "duration": 28,
+  "errorText": "",
+  "errorTextDetails": "",
+  "payload": {
+    "common": {
+      "conditions": {
+        "measTypeCondition": {
+          "st.meastype": {
+            "equals": "air",
+            "valid_options": [
+              {
+                "label": "CO123 Air",
+                "value": "co123_air"
+              },
+              {
+                "label": "CS234 Air",
+                "value": "cs234_air"
+              }
+            ]
+          }
+        }
+      },
+      "optionLists": {
+        "st_rn_units": [
+          {
+            "label": "Bq/m³",
+            "value": "1"
+          },
+          {
+            "label": "Bq/m³ air",
+            "value": "2"
+          },
+          {
+            "label": "Bq/L",
+            "value": "3"
+          },
+          {
+            "label": "Bq",
+            "value": "4"
+          },
+          {
+            "label": "Bq/m³ aerosol",
+            "value": "5"
+          },
+          {
+            "label": "Bq/g water",
+            "value": "6"
+          }
+        ]
+      }
+    },
+    "groups": [
+      {
+        "id": "st",
+        "label": "Settings",
+        "pages": [
+          {
+            "id": "st_general",
+            "label": "General Settings",
+            "description": "Basic configuration for network and system settings",
+            "fields": [
+              {
+                "default": "aqua",
+                "gk": "st.meastype",
+                "label": "Measurement Type",
+                "options": [
+                  {
+                    "label": "Aqua",
+                    "val": { "new": "aqua", "rt": [{ "val": "water", "ts": "2024-10-24T12:00:00Z" }], "state": "A" }
+                  },
+                  {
+                    "label": "Air",
+                    "val": { "new": "air", "rt": [{ "val": "air", "ts": "2024-10-24T12:00:00Z" }], "state": "A" }
+                  }
+                ],
+                "type": "select"
+              },
+              {
+                "default": "Enabled",
+                "gk": "st.dhcpEnable",
+                "label": "DHCP Enable",
+                "options": [
+                  {
+                    "label": "Enabled",
+                    "val": { "new": "Enabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  },
+                  {
+                    "label": "Disabled",
+                    "val": { "new": "Disabled", "rt": [{ "val": "Disabled", "ts": "2024-10-24T14:00:00Z" }], "state": "P" }
+                  }
+                ],
+                "type": "select"
+              },
+              {
+                "default": "192.168.163.156",
+                "gk": "st.ipAddressOne",
+                "label": "IP Address 1",
+                "type": "text",
+                "val": { "new": "192.168.163.156", "rt": [{ "val": "192.168.10.10", "ts": "2024-10-24T10:00:00Z" }], "state": "R" }
+              },
+              {
+                "default": "255.255.255.0",
+                "gk": "st.subNetMaskOne",
+                "label": "Subnet Mask 1",
+                "type": "text",
+                "val": { "new": "255.255.255.0", "rt": [{ "val": "255.255.255.128", "ts": "2024-10-24T11:00:00Z" }], "state": "A" }
+              },
+              {
+                "default": "192.168.10.222",
+                "gk": "st.ipAddressTwo",
+                "label": "IP Address 2",
+                "type": "text",
+                "val": { "new": "192.168.10.222", "rt": [{ "val": "192.168.10.11", "ts": "2024-10-24T09:30:00Z" }], "state": "A" }
+              },
+              {
+                "default": "255.255.255.0",
+                "gk": "st.subNetMaskTwo",
+                "label": "Subnet Mask 2",
+                "type": "text",
+                "val": { "new": "255.255.255.0", "rt": [{ "val": "255.255.255.192", "ts": "2024-10-24T13:00:00Z" }], "state": "A" }
+              },
+              {
+                "default": "192.168.10.241",
+                "gk": "st.gateway",
+                "label": "Gateway",
+                "type": "text",
+                "val": { "new": "192.168.10.241", "rt": [{ "val": "192.168.1.1", "ts": "2024-10-24T08:45:00Z" }], "state": "P" }
+              },
+              {
+                "default": "0.0.0.0",
+                "gk": "st.dnsServer",
+                "label": "DNS Server",
+                "type": "text",
+                "val": { "new": "0.0.0.0", "rt": [{ "val": "8.8.8.8", "ts": "2024-10-24T15:00:00Z" }], "state": "A" }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "nt",
+        "label": "Network Settings",
+        "pages": [
+          {
+            "id": "nt_general",
+            "label": "Network General",
+            "description": "Configure general network settings",
+            "fields": [
+              {
+                "default": "8.8.8.8",
+                "gk": "nt.dnsPrimary",
+                "label": "Primary DNS",
+                "type": "text",
+                "val": {
+                  "new": "8.8.8.8",
+                  "rt": [
+                    {
+                      "val": "1.1.1.1",
+                      "ts": "2024-11-01T10:30:00Z"
+                    }
+                  ],
+                  "state": "A"
+                }
+              },
+              {
+                "default": "8.8.4.4",
+                "gk": "nt.dnsSecondary",
+                "label": "Secondary DNS",
+                "type": "text",
+                "val": {
+                  "new": "8.8.4.4",
+                  "rt": [
+                    {
+                      "val": "1.0.0.1",
+                      "ts": "2024-11-01T11:00:00Z"
+                    }
+                  ],
+                  "state": "P"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "sec",
+        "label": "Security Settings",
+        "pages": [
+          {
+            "id": "sec_auth",
+            "label": "Authentication Settings",
+            "description": "Manage authentication and user access",
+            "fields": [
+              {
+                "default": "true",
+                "gk": "sec.enable2FA",
+                "label": "Enable Two-Factor Authentication",
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Enabled",
+                    "val": { "new": "true", "state": "A" }
+                  },
+                  {
+                    "label": "Disabled",
+                    "val": { "new": "false", "state": "R" }
+                  }
+                ]
+              },
+              {
+                "default": "medium",
+                "gk": "sec.passwordStrength",
+                "label": "Password Strength",
+                "type": "select",
+                "options": [
+                  {
+                    "label": "Low",
+                    "val": { "new": "low", "state": "A" }
+                  },
+                  {
+                    "label": "Medium",
+                    "val": { "new": "medium", "state": "A" }
+                  },
+                  {
+                    "label": "High",
+                    "val": { "new": "high", "state": "P" }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "nowUTC": "2024-10-25 08:45:10+00:00",
+    "returnCode": 0
+  }
+}

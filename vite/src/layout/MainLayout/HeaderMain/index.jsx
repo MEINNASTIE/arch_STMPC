@@ -14,6 +14,7 @@ import usePrint from 'hooks/usePrint';
 import { Button } from '@mui/material';
 import useSerialNumber from 'context/SerialNumberContext';
 import MobileHeader from './MobileHeader';
+import { useAuth } from 'contexts/AuthContext';
 
 const HeaderMain = () => {
   const theme = useTheme();
@@ -24,9 +25,13 @@ const HeaderMain = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [hoveredIcon, setHoveredIcon] = useState(null);
   const { serialNumber, setSerialNumber } = useSerialNumber();
+  const { logout } = useAuth();
 
   const username = sessionStorage.getItem('username');
-  const rolename = sessionStorage.getItem('rolename');
+  const roles = (() => {
+    const stored = sessionStorage.getItem('roles');
+    return stored ? JSON.parse(stored) : [];
+  })();
 
   const handleMenuOpen = (event, index) => {
     setAnchorEl(event.currentTarget);
@@ -43,9 +48,7 @@ const HeaderMain = () => {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('username');
-    sessionStorage.removeItem('rolename');
+    logout();
     navigate('/');
   };
 
@@ -224,11 +227,11 @@ const HeaderMain = () => {
         ))}
       </Box>
       <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-        {username && rolename && (
+        {username && roles.length > 0 && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <IconUser stroke={1.5} size="1.2rem" style={{ color: 'white' }} />
             <Typography variant="body2" sx={{ color: 'white', paddingRight: '60px', fontWeight: 'bold' }}>
-              {username} ({rolename})
+              {username} ({roles.join(', ')})
             </Typography>
           </Box>
         )}

@@ -34,7 +34,7 @@ import PeopleIcon from '@mui/icons-material/People';
 
 const SystemStatus = () => {
   const [username, setUsername] = useState('');
-  const [rolename, setRolename] = useState('user');
+  const [roles, setRoles] = useState(['user']);
   const [password, setPassword] = useState('');
   const [expDate] = useState('2999-01-01');
   const [enabled] = useState('1');
@@ -48,7 +48,7 @@ const SystemStatus = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({
     password: '',
-    rolename: '',
+    roles: ['user'],
     expDate: '',
     enabled: '1',
     rights: {
@@ -74,7 +74,7 @@ const SystemStatus = () => {
     const userData = { 
       username, 
       hash: hashedPassword,
-      rolename, 
+      roles, 
       expDate, 
       enabled: enabled === '1' ? 1 : 0,
       rights: userRights
@@ -124,7 +124,7 @@ const SystemStatus = () => {
     setEditingUser(user);
     setEditForm({
       password: '',
-      rolename: user.rolename,
+      roles: user.roles || ['user'],
       expDate: user.expDate.split('T')[0],
       enabled: user.enabled.toString(),
       rights: { ...user.rights }
@@ -142,8 +142,8 @@ const SystemStatus = () => {
         updateData.hash = await generateHashB64(editingUser.username, editForm.password);
       }
       
-      if (editForm.rolename !== editingUser.rolename) {
-        updateData.rolename = editForm.rolename;
+      if (JSON.stringify(editForm.roles) !== JSON.stringify(editingUser.roles)) {
+        updateData.roles = editForm.roles;
       }
       
       updateData.expDate = editForm.expDate;
@@ -226,8 +226,8 @@ const SystemStatus = () => {
                       select
                       label="Role"
                       variant="outlined"
-                      value={rolename}
-                      onChange={(e) => setRolename(e.target.value)}
+                      value={roles[0]}
+                      onChange={(e) => setRoles([e.target.value])}
                       required
                     >
                       <MenuItem value="user">User</MenuItem>
@@ -285,7 +285,7 @@ const SystemStatus = () => {
                     {users.map((user) => (
                       <TableRow key={user.userId} hover>
                         <TableCell>{user.username}</TableCell>
-                        <TableCell>{user.rolename}</TableCell>
+                        <TableCell>{Array.isArray(user.roles) ? user.roles.join(', ') : user.roles || ''}</TableCell>
                         <TableCell align="right">
                           <Tooltip title="Edit User">
                             <IconButton 
@@ -345,9 +345,9 @@ const SystemStatus = () => {
                 <FormControl fullWidth>
                   <InputLabel>Role</InputLabel>
                   <Select
-                    value={editForm.rolename}
+                    value={editForm.roles[0]}
                     label="Role"
-                    onChange={(e) => setEditForm({...editForm, rolename: e.target.value})}
+                    onChange={(e) => setEditForm({ ...editForm, roles: [e.target.value] })}
                   >
                     <MenuItem value="user">User</MenuItem>
                     <MenuItem value="admin">Admin</MenuItem>

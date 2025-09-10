@@ -22,7 +22,7 @@ function ConfigMain() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://192.168.163.165/api/config/runtime-desc");
+        const response = await fetch("/api/config/runtime-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
   
         const data = await response.json();
@@ -234,11 +234,8 @@ function ConfigMain() {
     setFilterType(pageId);
     setSelectedGroup(group);
     setSelectedPage(page);
-    
-    // Reset validation states when changing pages
     setValidationStates({});
     
-    // Save to localStorage
     if (group) {
       localStorage.setItem("selectedGroup", JSON.stringify(group));
     }

@@ -13,20 +13,23 @@ import Divider from '@mui/material/Divider';
 import { IconPresentation, IconSettings, IconCpu, IconWorld, IconPrinter, IconRefresh, IconUser } from '@tabler/icons-react';
 import usePrint from 'hooks/usePrint';
 import useSerialNumber from 'context/SerialNumberContext';
+import { useAuth } from 'contexts/AuthContext';
 
 const MobileHeader = () => {
   const navigate = useNavigate();
   const { handlePrint } = usePrint();
   const [menuOpen, setMenuOpen] = useState(false);
   const { serialNumber } = useSerialNumber();
+  const { logout } = useAuth();
 
   const username = sessionStorage.getItem('username');
-  const rolename = sessionStorage.getItem('rolename');
+  const roles = (() => {
+    const stored = sessionStorage.getItem('roles');
+    return stored ? JSON.parse(stored) : [];
+  })();
 
   const handleLogout = () => {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('username');
-    sessionStorage.removeItem('rolename');
+    logout();
     navigate('/');
   };
 
@@ -120,11 +123,11 @@ const MobileHeader = () => {
         </IconButton>
       </Box>
 
-      {username && rolename && (
+      {username && roles.length > 0 && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pb: 0.5 }}>
           <IconUser stroke={1.5} size="1rem" style={{ color: '#3e4aec' }} />
           <Typography variant="body2" sx={{ color: '#3e4aec', fontWeight: 'medium' }}>
-            {username} ({rolename})
+            {username} ({roles.join(', ')})
           </Typography>
         </Box>
       )}

@@ -4,6 +4,7 @@ import LogoSection from './LogoSection';
 
 const Footer = () => {
   const theme = useTheme();
+  const version = import.meta.env.VITE_APP_VERSION || 'dev';
 
   return (
     <Box
@@ -51,7 +52,7 @@ const Footer = () => {
             textAlign: { xs: 'center', sm: 'left' }
           }}
         >
-          Spectrotracer v0.1.0
+          v{version}
         </Typography>
       </Box>
     </Box>

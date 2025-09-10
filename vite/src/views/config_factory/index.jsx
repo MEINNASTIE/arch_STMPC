@@ -14,11 +14,10 @@ function ConfigMainFactory() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
 
-  // never forget for dist production to erase the address only leave after /api
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://192.168.163.165/api/config/system-desc");
+        const response = await fetch("/api/config/system-desc");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();
@@ -109,8 +108,8 @@ function ConfigMainFactory() {
             gk: field.gk,
             type: field.type,
             val_new: field.val || "",
-            val_rt: [], // Initialize as empty array since we don't have runtime values
-            state: "U", // Default state as waiting
+            val_rt: [], 
+            state: "U",
             groupPage: `${group.id}.${page.id}`,
             val_new_last: field.val || '',
             validation: field.validation || null,
@@ -185,11 +184,8 @@ function ConfigMainFactory() {
     setFilterType(pageId);
     setSelectedGroup(group);
     setSelectedPage(page);
-    
-    // Reset validation states when changing pages
     setValidationStates({});
     
-    // Save to localStorage
     if (group) {
       localStorage.setItem("selectedGroup", JSON.stringify(group));
     }
@@ -261,7 +257,6 @@ function ConfigMainFactory() {
     }
   }, [selectedGroup, selectedPage]);
 
-  // Add effect to restore selected parameters on component mount
   useEffect(() => {
     const selectedParams = JSON.parse(localStorage.getItem('selectedParametersFactory') || '{}');
     setTableData(prevData => 
