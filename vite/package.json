@@ -5,7 +5,7 @@
   "homepage": ".",
   "scripts": {
     "start": "env-cmd -f .env vite",
-    "build": "export VITE_APP_VERSION=$(date +%Y%m%d%H%M%S) && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",

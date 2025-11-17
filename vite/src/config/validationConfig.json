@@ -20,10 +20,6 @@
       "max_select": 1,
       "max_select_mess": "Only one value allowed"
     },
-    "list_mc": {
-      "max_select": 5,
-      "max_select_mess": "Maximum of 5 values allowed"
-    },
     "password": {
       "min_len": 8,
       "max_len": 64,

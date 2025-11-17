@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography } from "@mui/material";
+import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography, IconButton } from "@mui/material";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DataTable from "react-data-table-component";
 import { Box, useTheme } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
@@ -7,7 +9,7 @@ import ValidationFeedback from "../../../components/ValidationFeedback";
 import { validateInput } from "../../../utils/validationUtils";
 
 
-export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel }) {
+export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel, sidebarOpen, onSidebarToggle }) {
   const theme = useTheme();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -373,30 +375,47 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         borderRadius: `10px`,
         height: "calc(100vh - 100px)",
         overflow: "hidden",
-        maxWidth: "87.5%",
+        maxWidth: "100%",
         boxSizing: "border-box"
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', marginTop: '10px'}}>
-      <Typography 
-        variant="h3" 
-        sx={{ 
-          fontWeight: "bold",
-        }}
-      >
-        {filterType === "all" ? "All Parameters" : groupLabel} 
-      </Typography>
-      {pageLabel && filterType !== "all" && (
+        {/* Sidebar Toggle Button */}
+        {onSidebarToggle && (
+          <IconButton
+            onClick={onSidebarToggle}
+            sx={{
+              backgroundColor: 'grey.100',
+              border: '1px solid',
+              borderColor: 'divider',
+              '&:hover': {
+                backgroundColor: 'grey.200',
+              },
+            }}
+            aria-label="toggle sidebar"
+          >
+            {sidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+          </IconButton>
+        )}
         <Typography 
-          variant="h4" 
+          variant="h3" 
           sx={{ 
-            color: "#666",
-            marginTop: '1px'
+            fontWeight: "bold",
           }}
         >
-          {pageLabel}
+          {filterType === "all" ? "All Parameters" : groupLabel} 
         </Typography>
-      )}
+        {pageLabel && filterType !== "all" && (
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              color: "#666",
+              marginTop: '1px'
+            }}
+          >
+            {pageLabel}
+          </Typography>
+        )}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: "10px" }}>
         {filterType !== "advanced" && filterType !== "time" &&(

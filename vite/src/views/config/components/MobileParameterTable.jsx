@@ -3,7 +3,7 @@ import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography,
 import DataTable from "react-data-table-component";
 import AdvancedSettings from "./AdvancedSettings";
 
-export function MobileParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel, onShowWaitingChange }) {
+export function MobileParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel, breadcrumbLabels = [], onShowWaitingChange }) {
   const theme = useTheme();
 
   const [searchTerm, setSearchTerm] = useState(() => localStorage.getItem("searchTerm") || "");
@@ -27,6 +27,22 @@ export function MobileParameterTable({ tableData, handleApply, handleRowSelect, 
   const hasSelectedParameters = useMemo(() => {
     return tableData.some(row => row.selected);
   }, [tableData]);
+
+  const displayedBreadcrumbs = useMemo(() => {
+    if (breadcrumbLabels?.length) {
+      return breadcrumbLabels;
+    }
+    if (filterType === "all") {
+      return ["All Parameters"];
+    }
+    const fallbackParts = [groupLabel, pageLabel].filter(Boolean);
+    if (fallbackParts.length) {
+      return fallbackParts;
+    }
+    return ["Parameters"];
+  }, [breadcrumbLabels, filterType, groupLabel, pageLabel]);
+
+  const breadcrumbText = useMemo(() => displayedBreadcrumbs.join(' → '), [displayedBreadcrumbs]);
 
   const toggleState = useCallback((stateSetter, localStorageKey, currentValue, callback) => {
     const newValue = !currentValue;
@@ -109,7 +125,13 @@ export function MobileParameterTable({ tableData, handleApply, handleRowSelect, 
               onChange={() => handleRowSelect(row.index)}
               sx={{ mr: 1 }}
             />
-            <Typography variant="h6" component="div">
+            <Typography 
+              variant="h6" 
+              component="div"
+              sx={{
+                color: row.pagelabel ? '#3e4aec' : 'inherit'
+              }}
+            >
               {row.label}
             </Typography>
           </Box>
@@ -297,25 +319,14 @@ export function MobileParameterTable({ tableData, handleApply, handleRowSelect, 
         position: "relative"
       }}>
         <Typography 
-          variant="h3" 
+          variant="h4" 
           sx={{ 
             fontWeight: "bold",
             textAlign: "center"
           }}
         >
-          {filterType === "all" ? "All Parameters" : groupLabel}
+          {breadcrumbText}
         </Typography>
-        {pageLabel && filterType !== "all" && (
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              color: "#666",
-              textAlign: "center"
-            }}
-          >
-            {pageLabel}
-          </Typography>
-        )}
       </Box>
 
       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", mb: 2 }}>

@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography, Checkbox, useMediaQuery } from "@mui/material";
+import { TableContainer, Paper, Button, TextField, Select, MenuItem, Typography, Checkbox, useMediaQuery, Tooltip, IconButton } from "@mui/material";
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DataTable from "react-data-table-component";
 import { Box, useTheme } from "@mui/system";
 import AdvancedSettings from "./AdvancedSettings";
@@ -8,7 +11,7 @@ import MobileParameterTable from "./MobileParameterTable";
 import ValidationFeedback from "../../../components/ValidationFeedback";
 import { validateInput } from "../../../utils/validationUtils";
 
-export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel, onShowWaitingChange }) {
+export function ParameterTable({ tableData, handleApply, handleRowSelect, handleInputChange, filterType, handleFilterChange, refs, groupLabel, pageLabel, breadcrumbLabels = [], onShowWaitingChange, sidebarOpen, onSidebarToggle }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -123,6 +126,22 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
     return Object.values(validationStates).some(state => !state.isValid);
   }, [validationStates]);
 
+  const displayedBreadcrumbs = useMemo(() => {
+    if (breadcrumbLabels?.length) {
+      return breadcrumbLabels;
+    }
+    if (filterType === "all") {
+      return ["All Parameters"];
+    }
+    const fallbackParts = [groupLabel, pageLabel].filter(Boolean);
+    if (fallbackParts.length) {
+      return fallbackParts;
+    }
+    return ["Parameters"];
+  }, [breadcrumbLabels, filterType, groupLabel, pageLabel]);
+
+  const headerText = useMemo(() => displayedBreadcrumbs.join(' → '), [displayedBreadcrumbs]);
+
   const columns = useMemo(() => [
     {
       cell: (row) => (
@@ -140,8 +159,27 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
       width: "80px",
     },
     { 
-      name: "Label", 
-      selector: (row) => row.label, 
+      name: "Label",
+      cell: (row) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontWeight: 500,
+              color: row.pagelabel ? '#3e4aec' : 'inherit'
+            }}
+          >
+            {row.label}
+          </Typography>
+          {(row.validation?.hint || row.hint) && (
+            <Tooltip title={row.validation?.hint || row.hint} arrow enterDelay={400}>
+              <IconButton size="small" sx={{ padding: 0.5 }} aria-label="hint">
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      ),
       width: "300px",
     },
     {
@@ -373,7 +411,10 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         refs={refs}
         groupLabel={groupLabel}
         pageLabel={pageLabel}
+        breadcrumbLabels={breadcrumbLabels}
         onShowWaitingChange={onShowWaitingChange}
+        sidebarOpen={sidebarOpen}
+        onSidebarToggle={onSidebarToggle}
       />
     );
   }
@@ -405,25 +446,30 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', marginTop: '10px'}}>
+          {onSidebarToggle && (
+            <IconButton
+              onClick={onSidebarToggle}
+              sx={{
+                backgroundColor: 'grey.100',
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  backgroundColor: 'grey.200',
+                },
+              }}
+              aria-label="toggle sidebar"
+            >
+              {sidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+            </IconButton>
+          )}
           <Typography 
-            variant="h3" 
+            variant="h4" 
             sx={{ 
               fontWeight: "bold",
             }}
           >
-            {filterType === "all" ? "All Parameters" : groupLabel}
+            {headerText}
           </Typography>
-          {pageLabel && filterType !== "all" && (
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                color: "#666",
-                marginTop: '1px'
-              }}
-            >
-              {pageLabel}
-            </Typography>
-          )}
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: "10px" }}>
           {filterType !== "advanced" && filterType !== "time" &&(
@@ -566,3 +612,4 @@ export function ParameterTable({ tableData, handleApply, handleRowSelect, handle
 }
 
 export default ParameterTable;
+

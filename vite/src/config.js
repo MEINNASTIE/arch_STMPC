@@ -3,7 +3,7 @@ const config = {
   // like '/berry-material-react/react/default'
   basename: '/',
   defaultPath: '/measurement-status',
-  fontFamily: `'Roboto', sans-serif`,
+  fontFamily: `'Inter', sans-serif`,
   borderRadius: 8
 };
 

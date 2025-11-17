@@ -10,6 +10,9 @@ function ConfigMainFactory() {
   const [refs, setRefs] = useState({});
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedPage, setSelectedPage] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    JSON.parse(localStorage.getItem("configFactorySidebarOpen")) ?? true
+  );
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
@@ -111,6 +114,7 @@ function ConfigMainFactory() {
             val_rt: [], 
             state: "U",
             groupPage: `${group.id}.${page.id}`,
+            pageId: page.id,
             val_new_last: field.val || '',
             validation: field.validation || null,
             list: field.list || []
@@ -130,11 +134,7 @@ function ConfigMainFactory() {
       case "notApplied":
         return tableData.filter((row) => row.state !== "A");
       default:
-        return tableData.filter((row) => {
-          const parts = row.groupPage.split('.');
-          const pageId = parts[parts.length - 1];
-          return pageId === filterType;
-        });
+        return tableData.filter((row) => row.pageId === filterType);
     }
   };
   
@@ -184,7 +184,6 @@ function ConfigMainFactory() {
     setFilterType(pageId);
     setSelectedGroup(group);
     setSelectedPage(page);
-    setValidationStates({});
     
     if (group) {
       localStorage.setItem("selectedGroup", JSON.stringify(group));
@@ -267,6 +266,12 @@ function ConfigMainFactory() {
     );
   }, []);
 
+  const handleSidebarToggle = () => {
+    const newState = !sidebarOpen;
+    setSidebarOpen(newState);
+    localStorage.setItem("configFactorySidebarOpen", JSON.stringify(newState));
+  };
+
   return (
     <Box
       sx={{
@@ -277,20 +282,35 @@ function ConfigMainFactory() {
       }}
     >
       <Tabs value={0} centered></Tabs>
-      <Box display="flex" flexGrow={1} gap={2} p={2}>
-        <Box sx={{ 
-          width: { xs: '100%', sm: '25%', md: '20%' },
-          minWidth: { xs: 'auto', sm: '200px' },
-          maxWidth: { xs: '100%', sm: '300px' },
-          overflow: 'auto',
-          mb: { xs: 2, sm: 0 }
-        }}>
-          <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
-        </Box>
+      <Box 
+        display="flex" 
+        flexGrow={1} 
+        gap={2} 
+        p={2}
+        sx={{
+          flexDirection: { xs: 'column', sm: 'row' },
+          position: 'relative'
+        }}
+      >
+        {/* Sidebar */}
+        {sidebarOpen && (
+          <Box sx={{ 
+            width: { xs: '100%', sm: '25%', md: '20%' },
+            minWidth: { xs: 'auto', sm: '200px' },
+            maxWidth: { xs: '100%', sm: '300px' },
+            overflow: 'auto',
+            mb: { xs: 2, sm: 0 },
+          }}>
+            <TreeView treeData={treeData} handleFilterChange={handleFilterChange} />
+          </Box>
+        )}
+
+        {/* Main Content Area */}
         <Box sx={{ 
           flex: 1,
-          minWidth: '100%',
-          overflow: 'auto'
+          width: '100%',
+          transition: 'margin-left 0.3s ease',
+          marginLeft: sidebarOpen ? 0 : 0,
         }}>
           <ParameterTable 
             tableData={getFilteredData()} 
@@ -301,7 +321,9 @@ function ConfigMainFactory() {
             handleFilterChange={handleFilterChange} 
             refs={refs}
             groupLabel={selectedGroup?.label}
-            pageLabel={selectedPage?.label} 
+            pageLabel={selectedPage?.label}
+            sidebarOpen={sidebarOpen}
+            onSidebarToggle={handleSidebarToggle}
           />
         </Box>
       </Box>
